@@ -6,7 +6,16 @@
  */
 
 const API_URL = import.meta.env.VITE_EMBER_API_URL || 'http://localhost:8000/v1'
+const API_KEY = import.meta.env.VITE_EMBER_API_KEY || ''
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN || ''
+
+if (!API_KEY) {
+  console.warn(
+    '[ember.js] VITE_EMBER_API_KEY is not set. Authenticated API calls will fail.\n' +
+    'Add it to .env: VITE_EMBER_API_KEY=your_key\n' +
+    'Get your key from: python scripts/set_api_key.py (in the ember-2 repo)',
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Chat — streaming SSE
@@ -16,12 +25,12 @@ const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN || ''
  * Stream a chat response from the Ember API.
  * Yields text chunks as they arrive.
  */
-export async function* streamChat(messages, { apiKey = '', sessionId = '', signal } = {}) {
+export async function* streamChat(messages, { sessionId = '', signal } = {}) {
   const res = await fetch(`${API_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
+      ...authHeaders(),
       ...(sessionId && { 'X-Session-ID': sessionId }),
     },
     body: JSON.stringify({
@@ -71,7 +80,10 @@ export async function* streamChat(messages, { apiKey = '', sessionId = '', signa
 
 export async function checkConnection() {
   try {
-    const res = await fetch(API_URL.replace('/v1', '/'), { signal: AbortSignal.timeout(5000) })
+    const res = await fetch(API_URL.replace('/v1', '/'), {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(5000),
+    })
     if (!res.ok) return { ok: false }
     const data = await res.json().catch(() => ({}))
     return { ok: true, model: data.model || 'unknown' }
@@ -86,7 +98,7 @@ export async function checkConnection() {
 
 export async function getModel() {
   try {
-    const res = await fetch(API_URL.replace('/v1', '/model'))
+    const res = await fetch(API_URL.replace('/v1', '/model'), { headers: authHeaders() })
     return await res.json()
   } catch {
     return { model: 'unknown' }
@@ -97,7 +109,7 @@ export async function setModel(model) {
   try {
     const res = await fetch(API_URL.replace('/v1', '/model'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ model }),
     })
     return await res.json()
@@ -168,12 +180,12 @@ export async function uploadDocument(file) {
 /**
  * Send a chat message (non-streaming) with session tracking.
  */
-export async function sendChat(messages, { sessionId, apiKey = '' } = {}) {
+export async function sendChat(messages, { sessionId } = {}) {
   const res = await fetch(`${API_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
+      ...authHeaders(),
       ...(sessionId && { 'X-Session-ID': sessionId }),
     },
     body: JSON.stringify({
@@ -191,9 +203,7 @@ export async function sendChat(messages, { sessionId, apiKey = '' } = {}) {
 }
 
 function authHeaders() {
-  // Read API key from env if available
-  const key = import.meta.env.VITE_EMBER_API_KEY || ''
-  return key ? { Authorization: `Bearer ${key}` } : {}
+  return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
 }
 
 // ---------------------------------------------------------------------------
