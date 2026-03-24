@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { mockCheckUpdate } from '../../api/mock.js'
+import { checkUpdate as realCheckUpdate } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Updates.css'
 
@@ -17,7 +18,13 @@ export default function Updates({ isOpen, onClose }) {
   async function checkNow() {
     setChecking(true)
     try {
-      const result = await mockCheckUpdate()
+      let result
+      try {
+        result = await realCheckUpdate('v0.9.1')
+      } catch {
+        console.warn('[Updates] Real API failed, using mock')
+        result = await mockCheckUpdate()
+      }
       setInfo(result)
     } catch {
       setInfo({ error: true })

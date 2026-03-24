@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { checkConnection } from '../../api/ember.js'
 import { mockCheckConnection } from '../../api/mock.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Splash.css'
@@ -12,12 +13,24 @@ export default function Splash({ onConnected }) {
 
     async function check() {
       try {
-        const result = await mockCheckConnection()
+        // Try real API first
+        const result = await checkConnection()
         if (cancelled) return
         if (result.ok) {
           setStatus('connected')
           setTimeout(() => onConnected(result.model), 600)
+          return
         }
+        // Real API returned not ok — try mock fallback
+        const mock = await mockCheckConnection()
+        if (cancelled) return
+        if (mock.ok) {
+          setStatus('connected')
+          setTimeout(() => onConnected(mock.model), 600)
+          return
+        }
+        setStatus('error')
+        setError("Ember isn't running. Start the API and refresh.")
       } catch {
         if (cancelled) return
         setStatus('error')

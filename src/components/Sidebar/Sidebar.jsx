@@ -29,9 +29,27 @@ export default function Sidebar({
   const [contextMenu, setContextMenu] = useState(null)
   const contextRef = useRef(null)
 
+  // Load conversations — try real API, fall back to mock
   useEffect(() => {
+    async function loadConversations() {
+      try {
+        const convos = await realGetConversations(100)
+        setConversations(
+          convos.map((c) => ({
+            id: c.id,
+            title: c.title,
+            updatedAt: c.updated_at,
+            projectId: c.project_id || null,
+          })),
+        )
+      } catch {
+        console.warn('[Sidebar] API unreachable, using mock conversations')
+        mockGetConversations().then(setConversations)
+      }
+    }
+    loadConversations()
+    // Projects are UI-only for now (no backend endpoint)
     mockGetProjects().then(setProjects)
-    mockGetConversations().then(setConversations)
   }, [])
 
   // Close context menu on click outside
@@ -113,21 +131,33 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY, conv })
   }
 
-  function handleRename() {
+  async function handleRename() {
     if (!contextMenu) return
     const name = prompt('Rename conversation:', contextMenu.conv.title)
     if (name && name.trim()) {
+      // Optimistic UI update
       setConversations((prev) =>
         prev.map((c) => c.id === contextMenu.conv.id ? { ...c, title: name.trim() } : c),
       )
+      try {
+        await realRenameConversation(contextMenu.conv.id, name.trim())
+      } catch {
+        console.warn('[Sidebar] Rename API failed, local update only')
+      }
       onRenameConversation?.(contextMenu.conv.id, name.trim())
     }
     setContextMenu(null)
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!contextMenu) return
+    // Optimistic UI update
     setConversations((prev) => prev.filter((c) => c.id !== contextMenu.conv.id))
+    try {
+      await realDeleteConversation(contextMenu.conv.id)
+    } catch {
+      console.warn('[Sidebar] Delete API failed, local update only')
+    }
     onDeleteConversation?.(contextMenu.conv.id)
     setContextMenu(null)
   }

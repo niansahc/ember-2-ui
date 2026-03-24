@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { mockSubmitBug } from '../../api/mock.js'
+import { submitBug as realSubmitBug } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './BugReport.css'
 
@@ -18,7 +19,13 @@ export default function BugReport({ isOpen, onClose }) {
     setSubmitting(true)
 
     try {
-      const res = await mockSubmitBug(title, description)
+      let res
+      try {
+        res = await realSubmitBug(title, description)
+      } catch {
+        console.warn('[BugReport] Real API failed, using mock')
+        res = await mockSubmitBug(title, description)
+      }
       setResult(res)
     } catch {
       setResult({ ok: false })

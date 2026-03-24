@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { mockGetOllamaModels } from '../../api/mock.js'
+import { getModel as realGetModel } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
 
@@ -17,10 +18,24 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   useEffect(() => {
     if (isOpen && models.length === 0) {
       setLoadingModels(true)
-      mockGetOllamaModels().then((list) => {
-        setModels(list)
-        setLoadingModels(false)
-      })
+      async function loadModels() {
+        try {
+          const data = await realGetModel()
+          if (data.available && data.available.length > 0) {
+            setModels(data.available)
+            if (data.model) setModel(data.model)
+          } else {
+            throw new Error('No models from API')
+          }
+        } catch {
+          console.warn('[Settings] Model API unreachable, using mock')
+          const list = await mockGetOllamaModels()
+          setModels(list)
+        } finally {
+          setLoadingModels(false)
+        }
+      }
+      loadModels()
     }
   }, [isOpen])
 
