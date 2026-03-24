@@ -1,6 +1,16 @@
 import { useState, useRef, useCallback } from 'react'
 import './InputBar.css'
 
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const DOC_EXTENSIONS = ['.pdf', '.docx', '.csv', '.xlsx']
+
+function classifyFile(file) {
+  if (IMAGE_TYPES.includes(file.type)) return 'image'
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+  if (DOC_EXTENSIONS.includes(ext)) return 'document'
+  return 'unknown'
+}
+
 export default function InputBar({ onSend, isStreaming, onStop }) {
   const [text, setText] = useState('')
   const [files, setFiles] = useState([])
@@ -14,7 +24,9 @@ export default function InputBar({ onSend, isStreaming, onStop }) {
       return
     }
     if (!text.trim() && files.length === 0) return
-    onSend(text, files)
+    const images = files.filter((f) => classifyFile(f) === 'image')
+    const documents = files.filter((f) => classifyFile(f) === 'document')
+    onSend(text, { images, documents })
     setText('')
     setFiles([])
     inputRef.current?.focus()
@@ -29,7 +41,7 @@ export default function InputBar({ onSend, isStreaming, onStop }) {
 
   function handleFileChange(e) {
     const selected = Array.from(e.target.files)
-    setFiles(selected)
+    setFiles((prev) => [...prev, ...selected])
     e.target.value = ''
   }
 
@@ -41,31 +53,39 @@ export default function InputBar({ onSend, isStreaming, onStop }) {
     <form className="input-bar" onSubmit={handleSubmit}>
       {files.length > 0 && (
         <div className="input-files" role="list" aria-label="Attached files">
-          {files.map((f, i) => (
-            <div key={i} className="input-file-chip" role="listitem">
-              {f.type?.startsWith('image/') ? (
-                <img
-                  src={URL.createObjectURL(f)}
-                  alt={f.name}
-                  className="input-file-thumb"
-                />
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="input-file-icon" aria-hidden="true">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-              )}
-              <span className="input-file-name">{f.name}</span>
-              <button
-                type="button"
-                className="input-file-remove"
-                onClick={() => removeFile(i)}
-                aria-label={`Remove ${f.name}`}
-              >
-                &times;
-              </button>
-            </div>
-          ))}
+          {files.map((f, i) => {
+            const kind = classifyFile(f)
+            return (
+              <div key={i} className={`input-file-chip input-file-chip-${kind}`} role="listitem">
+                {kind === 'image' ? (
+                  <img
+                    src={URL.createObjectURL(f)}
+                    alt={f.name}
+                    className="input-file-thumb"
+                  />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="input-file-icon" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                )}
+                <div className="input-file-info">
+                  <span className="input-file-name">{f.name}</span>
+                  <span className="input-file-hint">
+                    {kind === 'image' ? 'Sent with your message' : 'Added to your vault'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="input-file-remove"
+                  onClick={() => removeFile(i)}
+                  aria-label={`Remove ${f.name}`}
+                >
+                  &times;
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
       <div className="input-row">
@@ -79,7 +99,7 @@ export default function InputBar({ onSend, isStreaming, onStop }) {
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
           </svg>
         </button>
-        <input type="file" ref={fileRef} className="sr-only" onChange={handleFileChange} multiple />
+        <input type="file" ref={fileRef} className="sr-only" onChange={handleFileChange} multiple accept=".pdf,.docx,.csv,.xlsx,.jpg,.jpeg,.png,.gif,.webp" />
         <textarea
           ref={inputRef}
           className="input-textarea"

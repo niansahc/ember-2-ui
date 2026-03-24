@@ -34,11 +34,28 @@
   color: var(--text-muted);
 }
 
+.input-file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .input-file-name {
-  max-width: 120px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.input-file-hint {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.input-file-chip-document {
+  border-color: var(--accent);
+  border-style: dashed;
 }
 
 .input-file-remove {

@@ -147,6 +147,25 @@ export async function deleteConversation(sessionId) {
 }
 
 /**
+ * Upload a document for ingestion into the vault.
+ * Returns { status, filename, chunks } for documents.
+ */
+export async function uploadDocument(file) {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${API_URL.replace('/v1', '')}/ingest/upload`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form,
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`Upload failed ${res.status}: ${text}`)
+  }
+  return await res.json()
+}
+
+/**
  * Send a chat message (non-streaming) with session tracking.
  */
 export async function sendChat(messages, { sessionId, apiKey = '' } = {}) {

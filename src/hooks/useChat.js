@@ -3,12 +3,14 @@ import { mockStreamChat, mockGetMessages } from '../api/mock.js'
 import {
   sendChat as realSendChat,
   getConversation as realGetConversation,
+  uploadDocument as realUploadDocument,
 } from '../api/ember.js'
 
 /**
  * useChat — manages message state, session tracking, and streaming responses.
  *
  * Tries the real Ember API first. Falls back to mock on failure.
+ * Handles split file attachments: images go with chat, documents go to /ingest/upload.
  */
 export function useChat() {
   const [messages, setMessages] = useState([])
@@ -21,15 +23,64 @@ export function useChat() {
     return `sess_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
   }
 
-  const sendMessage = useCallback(async (text, files = []) => {
-    if (!text.trim() && files.length === 0) return
+  /**
+   * Add a system-style message from Ember (not from the LLM — UI-injected).
+   */
+  function addEmberMessage(text) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: text,
+        timestamp: new Date().toISOString(),
+      },
+    ])
+  }
+
+  const sendMessage = useCallback(async (text, { images = [], documents = [] } = {}) => {
+    if (!text.trim() && images.length === 0 && documents.length === 0) return
     if (isStreaming) return
+
+    // --- Ingest documents first ---
+    for (const doc of documents) {
+      addEmberMessage(`Uploading **${doc.name}** to your vault...`)
+
+      try {
+        const result = await realUploadDocument(doc)
+        if (result.status === 'ingested') {
+          setMessages((prev) => {
+            const updated = [...prev]
+            // Replace the "uploading" message with success
+            const lastIdx = updated.length - 1
+            updated[lastIdx] = {
+              ...updated[lastIdx],
+              content: `I've added **${result.filename}** to your vault (${result.chunks} chunks). You can ask me about it now.`,
+            }
+            return updated
+          })
+        }
+      } catch (err) {
+        setMessages((prev) => {
+          const updated = [...prev]
+          const lastIdx = updated.length - 1
+          updated[lastIdx] = {
+            ...updated[lastIdx],
+            content: `I couldn't process **${doc.name}**: ${err.message}`,
+          }
+          return updated
+        })
+      }
+    }
+
+    // If only documents were attached with no text, we're done
+    if (!text.trim() && images.length === 0) return
 
     const userMsg = {
       id: crypto.randomUUID(),
       role: 'user',
       content: text.trim(),
-      files,
+      files: images,
       timestamp: new Date().toISOString(),
     }
 
@@ -50,7 +101,6 @@ export function useChat() {
       }))
 
       if (apiAvailableRef.current) {
-        // Try real API (non-streaming for now since backend doesn't stream yet)
         try {
           const reply = await realSendChat(allMessages, { sessionId })
           setMessages((prev) =>
@@ -60,13 +110,12 @@ export function useChat() {
           )
           return
         } catch {
-          // Real API failed — fall back to mock
           apiAvailableRef.current = false
           console.warn('[useChat] Real API unreachable, falling back to mock')
         }
       }
 
-      // Mock fallback — streaming simulation
+      // Mock fallback
       for await (const chunk of mockStreamChat(allMessages)) {
         if (abortRef.current) break
         setMessages((prev) =>
@@ -98,7 +147,6 @@ export function useChat() {
   }, [])
 
   const loadConversation = useCallback(async (conversationId) => {
-    // Try real API first
     try {
       const data = await realGetConversation(conversationId)
       const turns = (data.turns || []).map((t) => ({
@@ -113,8 +161,6 @@ export function useChat() {
     } catch {
       // Fall back to mock
     }
-
-    // Mock fallback
     const history = await mockGetMessages(conversationId)
     setMessages(history)
     setSessionId(conversationId)
