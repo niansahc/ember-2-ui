@@ -1,0 +1,207 @@
+.updates-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 300;
+}
+
+.updates-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-width: 92vw;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  z-index: 301;
+  animation: updates-pop 0.2s ease;
+}
+
+@keyframes updates-pop {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.updates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.updates-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.updates-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+.updates-close:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.updates-body {
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-height: 120px;
+}
+
+/* ── Checking state ───────────────────────────────────────────── */
+
+.updates-checking {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.updates-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Version badges ───────────────────────────────────────────── */
+
+.updates-current,
+.updates-available,
+.updates-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.updates-version-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.updates-version-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.updates-version-new {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.updates-version {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  color: var(--text-primary);
+}
+
+.updates-version-new .updates-version {
+  color: var(--accent);
+}
+
+.updates-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.updates-uptodate {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ── Changelog ────────────────────────────────────────────────── */
+
+.updates-changelog {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  text-align: left;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.updates-changelog-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.updates-changelog-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+
+.updates-recheck {
+  padding: 0.4rem 1rem;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.updates-recheck:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.updates-update-btn {
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: #1a0a2e;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.updates-update-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--ember-glow);
+}
+
+.updates-error p {
+  color: #e85d5d;
+  font-size: 0.9rem;
+}

@@ -1,0 +1,185 @@
+.bubble-row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+  max-width: 85%;
+}
+
+.bubble-row-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.bubble-row-ember {
+  align-self: flex-start;
+}
+
+.bubble-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.2);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.bubble {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.bubble-user {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.bubble-ember {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.75rem 0;
+}
+
+.bubble-wrap {
+  min-width: 0;
+}
+
+.bubble-text {
+  margin: 0;
+}
+
+/* ── Actions bar (copy, regenerate, timestamp) ────────────────── */
+
+.bubble-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.bubble-row:hover .bubble-actions {
+  opacity: 1;
+}
+
+.bubble-row-user .bubble-actions {
+  justify-content: flex-end;
+}
+
+.bubble-timestamp {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+}
+
+.bubble-action-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.bubble-action-btn:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Markdown content ─────────────────────────────────────────── */
+
+.bubble-markdown p {
+  margin: 0 0 0.5rem;
+}
+
+.bubble-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.bubble-markdown h1,
+.bubble-markdown h2,
+.bubble-markdown h3 {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--accent);
+}
+
+.bubble-markdown ul,
+.bubble-markdown ol {
+  margin: 0.25rem 0 0.5rem 1.25rem;
+}
+
+.bubble-markdown li {
+  margin-bottom: 0.2rem;
+}
+
+.bubble-markdown code {
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+
+.bubble-markdown pre {
+  background: var(--code-block-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.bubble-markdown pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.bubble-markdown blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  color: var(--text-secondary);
+}
+
+.bubble-markdown strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.bubble-markdown a {
+  color: var(--accent);
+}
+
+.bubble-markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.bubble-markdown th,
+.bubble-markdown td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.bubble-markdown th {
+  background: var(--bg-surface-hover);
+}
+
+@media (max-width: 767px) {
+  .bubble-row {
+    max-width: 92%;
+  }
+}

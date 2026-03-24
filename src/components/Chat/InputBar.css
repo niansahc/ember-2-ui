@@ -1,0 +1,135 @@
+.input-bar {
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+}
+
+.input-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.input-file-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.input-file-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.input-file-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.input-file-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input-file-remove {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  padding: 0 0.15rem;
+}
+
+.input-file-remove:hover {
+  color: #e85d5d;
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.input-attach {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.input-attach:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.input-textarea {
+  flex: 1;
+  resize: none;
+  min-height: 40px;
+  max-height: 160px;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-y: auto;
+  field-sizing: content;
+}
+
+.input-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.input-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  outline: none;
+}
+
+.input-send {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 140, 0, 0.15);
+  color: var(--accent);
+  border-radius: 50%;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.input-send:hover {
+  background: rgba(255, 140, 0, 0.25);
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.2);
+}
+
+.input-stop {
+  background: #e85d5d;
+}
+
+.input-stop:hover {
+  background: #ff7070;
+  box-shadow: 0 0 15px rgba(232, 93, 93, 0.4);
+}
+
+@media (max-width: 767px) {
+  .input-bar {
+    padding: 0.5rem;
+  }
+}

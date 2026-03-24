@@ -1,0 +1,72 @@
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  gap: 1.5rem;
+}
+
+.splash-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.25);
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.splash-logo:hover {
+  box-shadow:
+    0 0 35px rgba(255, 140, 0, 0.5),
+    0 0 70px rgba(255, 140, 0, 0.2);
+}
+
+.splash-logo.pulse {
+  animation: ember-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ember-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 140, 0, 0.5);
+    transform: scale(1.03);
+  }
+}
+
+.splash-text {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.splash-ready {
+  color: var(--accent);
+}
+
+.splash-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.splash-error-text {
+  color: #e85d5d;
+}
+
+.splash-retry {
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: #1a0a2e;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: background 0.2s;
+}
+
+.splash-retry:hover {
+  background: var(--accent-hover);
+}

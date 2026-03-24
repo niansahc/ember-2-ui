@@ -1,0 +1,248 @@
+/* ================================================================
+   Global styles & CSS variables — Ember-2 UI
+   ================================================================ */
+
+:root {
+  /* ── Shared layout tokens ─────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sidebar-width: 280px;
+  --header-height: 56px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Ember (default) — purple & orange
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="ember"], :root {
+  --bg-primary: #0d0520;
+  --bg-surface: #110828;
+  --bg-surface-hover: #1a0e35;
+  --bg-input: #150a25;
+  --accent: #ff8c00;
+  --accent-hover: #ff9f2e;
+  --accent-dim: rgba(255, 140, 0, 0.15);
+  --text-primary: #f5e6d0;
+  --text-secondary: #b8a89c;
+  --text-muted: #9a8a7e;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-focus: #ff8c00;
+  --ember-glow: 0 0 20px rgba(255, 140, 0, 0.3);
+  --ember-glow-strong: 0 0 30px rgba(255, 140, 0, 0.45);
+  --code-bg: rgba(255, 140, 0, 0.1);
+  --code-block-bg: #0a0318;
+  --error: #e85d5d;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Midnight — black & silver
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="midnight"] {
+  --bg-primary: #101010;
+  --bg-surface: #181818;
+  --bg-surface-hover: #222222;
+  --bg-input: #141414;
+  --accent: #c0c0c0;
+  --accent-hover: #e0e0e0;
+  --accent-dim: rgba(192, 192, 192, 0.1);
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0a0;
+  --text-muted: #808080;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-focus: #c0c0c0;
+  --ember-glow: 0 0 20px rgba(192, 192, 192, 0.15);
+  --ember-glow-strong: 0 0 30px rgba(192, 192, 192, 0.25);
+  --code-bg: rgba(255, 255, 255, 0.06);
+  --code-block-bg: #0a0a0a;
+  --error: #f06060;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Forest — deep greens
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="forest"] {
+  --bg-primary: #0a160e;
+  --bg-surface: #0e1e14;
+  --bg-surface-hover: #15291c;
+  --bg-input: #0c1a11;
+  --accent: #6bcb8b;
+  --accent-hover: #85d9a0;
+  --accent-dim: rgba(107, 203, 139, 0.12);
+  --text-primary: #d4e8d8;
+  --text-secondary: #9abfa2;
+  --text-muted: #7a9f84;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-focus: #6bcb8b;
+  --ember-glow: 0 0 20px rgba(107, 203, 139, 0.2);
+  --ember-glow-strong: 0 0 30px rgba(107, 203, 139, 0.35);
+  --code-bg: rgba(107, 203, 139, 0.08);
+  --code-block-bg: #070f0a;
+  --error: #e87070;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Ocean — dark blues
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="ocean"] {
+  --bg-primary: #0a1525;
+  --bg-surface: #0e1c32;
+  --bg-surface-hover: #152840;
+  --bg-input: #0c1a2e;
+  --accent: #5ba8f5;
+  --accent-hover: #78bbff;
+  --accent-dim: rgba(91, 168, 245, 0.12);
+  --text-primary: #d4e4f4;
+  --text-secondary: #8eb4d4;
+  --text-muted: #6e94b4;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-focus: #5ba8f5;
+  --ember-glow: 0 0 20px rgba(91, 168, 245, 0.2);
+  --ember-glow-strong: 0 0 30px rgba(91, 168, 245, 0.35);
+  --code-bg: rgba(91, 168, 245, 0.08);
+  --code-block-bg: #070e1a;
+  --error: #f06060;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Bloom — light mode, pale pinks & soft greys
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="bloom"] {
+  --bg-primary: #faf6f7;
+  --bg-surface: #f0eaed;
+  --bg-surface-hover: #e6dce2;
+  --bg-input: #ffffff;
+  --accent: #c75b7a;
+  --accent-hover: #d4708e;
+  --accent-dim: rgba(199, 91, 122, 0.1);
+  --text-primary: #2d2030;
+  --text-secondary: #6b5a6e;
+  --text-muted: #9a8a95;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-focus: #c75b7a;
+  --ember-glow: 0 0 20px rgba(199, 91, 122, 0.15);
+  --ember-glow-strong: 0 0 30px rgba(199, 91, 122, 0.25);
+  --code-bg: rgba(199, 91, 122, 0.08);
+  --code-block-bg: #f5eff2;
+  --error: #d44040;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* ── Focus indicators (WCAG AA) ────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Utility ───────────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font);
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--border-focus);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

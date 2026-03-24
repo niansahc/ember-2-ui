@@ -1,0 +1,62 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+}
+
+/* ── Header (mobile + desktop) ────────────────────────────────── */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 0.75rem;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.app-header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.app-menu-btn,
+.app-header-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-menu-btn:hover,
+.app-header-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--accent);
+}
+
+@media (min-width: 768px) {
+  .app-menu-btn {
+    display: none;
+  }
+}

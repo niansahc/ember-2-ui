@@ -1,0 +1,112 @@
+import { useState, useRef, useCallback } from 'react'
+import './InputBar.css'
+
+export default function InputBar({ onSend, isStreaming, onStop }) {
+  const [text, setText] = useState('')
+  const [files, setFiles] = useState([])
+  const inputRef = useRef(null)
+  const fileRef = useRef(null)
+
+  const handleSubmit = useCallback((e) => {
+    e.preventDefault()
+    if (isStreaming) {
+      onStop()
+      return
+    }
+    if (!text.trim() && files.length === 0) return
+    onSend(text, files)
+    setText('')
+    setFiles([])
+    inputRef.current?.focus()
+  }, [text, files, isStreaming, onSend, onStop])
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
+    }
+  }
+
+  function handleFileChange(e) {
+    const selected = Array.from(e.target.files)
+    setFiles(selected)
+    e.target.value = ''
+  }
+
+  function removeFile(index) {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  return (
+    <form className="input-bar" onSubmit={handleSubmit}>
+      {files.length > 0 && (
+        <div className="input-files" role="list" aria-label="Attached files">
+          {files.map((f, i) => (
+            <div key={i} className="input-file-chip" role="listitem">
+              {f.type?.startsWith('image/') ? (
+                <img
+                  src={URL.createObjectURL(f)}
+                  alt={f.name}
+                  className="input-file-thumb"
+                />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="input-file-icon" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              )}
+              <span className="input-file-name">{f.name}</span>
+              <button
+                type="button"
+                className="input-file-remove"
+                onClick={() => removeFile(i)}
+                aria-label={`Remove ${f.name}`}
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="input-row">
+        <button
+          type="button"
+          className="input-attach"
+          onClick={() => fileRef.current?.click()}
+          aria-label="Attach file"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+        <input type="file" ref={fileRef} className="sr-only" onChange={handleFileChange} multiple />
+        <textarea
+          ref={inputRef}
+          className="input-textarea"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Talk to Ember..."
+          rows={1}
+          aria-label="Message input"
+        />
+        <button
+          type="submit"
+          className={`input-send ${isStreaming ? 'input-stop' : ''}`}
+          aria-label={isStreaming ? 'Stop generating' : 'Send message'}
+        >
+          {isStreaming ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </form>
+  )
+}
