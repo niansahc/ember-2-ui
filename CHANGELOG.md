@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.1 — 2026-03-24
+
+### Projects — Real API
+- Sidebar now loads projects from `GET /v1/projects` with mock fallback
+- Move conversation to project calls `PATCH /v1/conversations/{id}` with `project_id`
+- Added to ember.js: `getProjects()`, `createProject()`, `renameProject()`, `deleteProject()`, `getProjectConversations()`, `moveConversationToProject()`
+- All operations use optimistic UI updates with async API calls
+
+### API Connectivity
+- Vite proxy configured for all backend routes — zero CORS in development
+- Health check uses `/v1/models` endpoint (works through proxy)
+- All API calls use centralized `authHeaders()` with `VITE_EMBER_API_KEY`
+
 ## v0.2.0 — 2026-03-24
 
 First fully functional release of Ember's custom frontend.
