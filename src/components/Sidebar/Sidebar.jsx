@@ -20,6 +20,7 @@ export default function Sidebar({
   onDeleteConversation,
   onOpenSettings,
   onOpenUpdates,
+  onOpenAbout,
 }) {
   const [conversations, setConversations] = useState([])
   const [projects, setProjects] = useState([])
@@ -284,7 +285,7 @@ export default function Sidebar({
           </div>
 
           <div className="sidebar-footer">
-            <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} emberMascotImg={emberMascot} />
+            <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
           </div>
         </nav>
         <ContextMenuPopup />
@@ -367,7 +368,7 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-footer">
-          <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} emberMascotImg={emberMascot} />
+          <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
         </div>
       </nav>
       <ContextMenuPopup />
@@ -375,7 +376,7 @@ export default function Sidebar({
   )
 }
 
-function SidebarFooter({ onOpenSettings, onOpenUpdates, emberMascotImg }) {
+function SidebarFooter({ onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg }) {
   return (
     <>
       <button className="sidebar-footer-btn" onClick={onOpenSettings} aria-label="Open settings">
@@ -385,15 +386,13 @@ function SidebarFooter({ onOpenSettings, onOpenUpdates, emberMascotImg }) {
         </svg>
         Settings
       </button>
-      <div className="sidebar-brand">
+      <button className="sidebar-brand" onClick={onOpenAbout} aria-label="About Ember">
         <img src={emberMascotImg} alt="" className="sidebar-brand-logo" aria-hidden="true" />
         <div className="sidebar-brand-info">
           <span className="sidebar-brand-name">Ember</span>
-          <button className="sidebar-version" onClick={onOpenUpdates} aria-label="Check for updates">
-            v0.9.0
-          </button>
+          <span className="sidebar-version">v0.9.1</span>
         </div>
-      </div>
+      </button>
     </>
   )
 }

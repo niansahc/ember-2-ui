@@ -3,7 +3,7 @@ import { mockGetOllamaModels } from '../../api/mock.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
 
-export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, theme, setTheme, themes }) {
+export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, theme, setTheme, themes }) {
   const modalRef = useModal(isOpen, onClose)
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
@@ -229,6 +229,15 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             Report a bug
+          </button>
+
+          <button className="settings-link-btn" onClick={onOpenAbout}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+            About Ember
           </button>
         </div>
       </aside>

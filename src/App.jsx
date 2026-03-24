@@ -5,6 +5,7 @@ import Chat from './components/Chat/Chat.jsx'
 import Settings from './components/Settings/Settings.jsx'
 import BugReport from './components/BugReport/BugReport.jsx'
 import Updates from './components/Updates/Updates.jsx'
+import About from './components/About/About.jsx'
 import { useChat } from './hooks/useChat.js'
 import { useTheme } from './hooks/useTheme.js'
 import './App.css'
@@ -15,6 +16,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [bugReportOpen, setBugReportOpen] = useState(false)
   const [updatesOpen, setUpdatesOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const [activeConversation, setActiveConversation] = useState(null)
   const [activeProject, setActiveProject] = useState('general')
   const [model, setModel] = useState(null)
@@ -103,6 +105,7 @@ export default function App() {
         onDeleteConversation={(id) => { if (activeConversation === id) clearMessages(); }}
         onOpenSettings={() => { setSettingsOpen(true); setSidebarOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSidebarOpen(false) }}
+        onOpenAbout={() => { setAboutOpen(true); setSidebarOpen(false) }}
       />
 
       <main className="app-main">
@@ -163,6 +166,7 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
+        onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
         theme={theme}
         setTheme={setTheme}
         themes={themes}
@@ -176,6 +180,12 @@ export default function App() {
       <Updates
         isOpen={updatesOpen}
         onClose={() => setUpdatesOpen(false)}
+      />
+
+      <About
+        isOpen={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+        onOpenBugReport={() => { setBugReportOpen(true); setAboutOpen(false) }}
       />
     </div>
   )
