@@ -4,6 +4,8 @@ import {
   getConversations as realGetConversations,
   renameConversation as realRenameConversation,
   deleteConversation as realDeleteConversation,
+  getProjects as realGetProjects,
+  moveConversationToProject as realMoveConversationToProject,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -48,8 +50,24 @@ export default function Sidebar({
       }
     }
     loadConversations()
-    // Projects are UI-only for now (no backend endpoint)
-    mockGetProjects().then(setProjects)
+    // Load projects — try real API, fall back to mock
+    async function loadProjects() {
+      try {
+        const projs = await realGetProjects()
+        setProjects(
+          projs.map((p) => ({
+            id: p.id,
+            name: p.name,
+            color: p.color,
+            conversationCount: p.conversation_count || 0,
+          })),
+        )
+      } catch {
+        console.warn('[Sidebar] Projects API unreachable, using mock')
+        mockGetProjects().then(setProjects)
+      }
+    }
+    loadProjects()
   }, [])
 
   // Close context menu on click outside
@@ -162,11 +180,17 @@ export default function Sidebar({
     setContextMenu(null)
   }
 
-  function handleMoveToProject(projectId) {
+  async function handleMoveToProject(projectId) {
     if (!contextMenu) return
+    // Optimistic UI update
     setConversations((prev) =>
       prev.map((c) => c.id === contextMenu.conv.id ? { ...c, projectId } : c),
     )
+    try {
+      await realMoveConversationToProject(contextMenu.conv.id, projectId)
+    } catch {
+      console.warn('[Sidebar] Move API failed, local update only')
+    }
     setContextMenu(null)
   }
 

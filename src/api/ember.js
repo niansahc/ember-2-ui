@@ -80,13 +80,15 @@ export async function* streamChat(messages, { sessionId = '', signal } = {}) {
 
 export async function checkConnection() {
   try {
-    const res = await fetch(API_URL.replace('/v1', '/'), {
+    // Use /v1/models as health check — works through Vite proxy and direct
+    const res = await fetch(`${API_URL}/models`, {
       headers: authHeaders(),
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return { ok: false }
     const data = await res.json().catch(() => ({}))
-    return { ok: true, model: data.model || 'unknown' }
+    const models = data.data || []
+    return { ok: true, model: models[0]?.id || 'ember-2' }
   } catch {
     return { ok: false }
   }
@@ -98,7 +100,7 @@ export async function checkConnection() {
 
 export async function getModel() {
   try {
-    const res = await fetch(API_URL.replace('/v1', '/model'), { headers: authHeaders() })
+    const res = await fetch('/model', { headers: authHeaders() })
     return await res.json()
   } catch {
     return { model: 'unknown' }
@@ -107,7 +109,7 @@ export async function getModel() {
 
 export async function setModel(model) {
   try {
-    const res = await fetch(API_URL.replace('/v1', '/model'), {
+    const res = await fetch('/model', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ model }),
@@ -158,6 +160,69 @@ export async function deleteConversation(sessionId) {
   return await res.json()
 }
 
+// ---------------------------------------------------------------------------
+// Projects — CRUD
+// ---------------------------------------------------------------------------
+
+export async function getProjects() {
+  const res = await fetch(`${API_URL}/projects`, { headers: authHeaders() })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  const data = await res.json()
+  return data.projects || []
+}
+
+export async function createProject(name, color = '#ff8c00') {
+  const res = await fetch(`${API_URL}/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ name, color }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function renameProject(projectId, name) {
+  const res = await fetch(`${API_URL}/projects/${projectId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ name }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function deleteProject(projectId) {
+  const res = await fetch(`${API_URL}/projects/${projectId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function getProjectConversations(projectId, limit = 50) {
+  const res = await fetch(`${API_URL}/projects/${projectId}/conversations?limit=${limit}`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  const data = await res.json()
+  return data.conversations || []
+}
+
+export async function moveConversationToProject(conversationId, projectId) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ project_id: projectId }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
+// File upload
+// ---------------------------------------------------------------------------
+
 /**
  * Upload a document for ingestion into the vault.
  * Returns { status, filename, chunks } for documents.
@@ -165,7 +230,7 @@ export async function deleteConversation(sessionId) {
 export async function uploadDocument(file) {
   const form = new FormData()
   form.append('file', file)
-  const res = await fetch(`${API_URL.replace('/v1', '')}/ingest/upload`, {
+  const res = await fetch('/ingest/upload', {
     method: 'POST',
     headers: authHeaders(),
     body: form,
