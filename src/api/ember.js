@@ -80,15 +80,13 @@ export async function* streamChat(messages, { sessionId = '', signal } = {}) {
 
 export async function checkConnection() {
   try {
-    // Use /v1/models as health check — works through Vite proxy and direct
-    const res = await fetch(`${API_URL}/models`, {
+    const res = await fetch('/api/health', {
       headers: authHeaders(),
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return { ok: false }
     const data = await res.json().catch(() => ({}))
-    const models = data.data || []
-    return { ok: true, model: models[0]?.id || 'ember-2' }
+    return { ok: true, model: data.model || 'unknown' }
   } catch {
     return { ok: false }
   }
