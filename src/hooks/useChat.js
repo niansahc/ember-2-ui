@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { uuid } from '../utils/uuid.js'
 import { mockStreamChat, mockGetMessages } from '../api/mock.js'
 import {
   sendChat as realSendChat,
@@ -20,7 +21,7 @@ export function useChat() {
   const apiAvailableRef = useRef(true)
 
   function generateSessionId() {
-    return `sess_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
+    return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
   }
 
   /**
@@ -30,7 +31,7 @@ export function useChat() {
     setMessages((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'assistant',
         content: text,
         timestamp: new Date().toISOString(),
@@ -77,7 +78,7 @@ export function useChat() {
     if (!text.trim() && images.length === 0) return
 
     const userMsg = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: 'user',
       content: text.trim(),
       files: images,
@@ -88,7 +89,7 @@ export function useChat() {
     setIsStreaming(true)
     abortRef.current = false
 
-    const assistantId = crypto.randomUUID()
+    const assistantId = uuid()
     setMessages((prev) => [
       ...prev,
       { id: assistantId, role: 'assistant', content: '', timestamp: new Date().toISOString() },
@@ -150,7 +151,7 @@ export function useChat() {
     try {
       const data = await realGetConversation(conversationId)
       const turns = (data.turns || []).map((t) => ({
-        id: t.id || crypto.randomUUID(),
+        id: t.id || uuid(),
         role: t.role,
         content: t.content,
         timestamp: t.timestamp,
@@ -176,7 +177,7 @@ export function useChat() {
     setIsStreaming(true)
     abortRef.current = false
 
-    const assistantId = crypto.randomUUID()
+    const assistantId = uuid()
     setMessages((prev) => [
       ...prev,
       { id: assistantId, role: 'assistant', content: '', timestamp: new Date().toISOString() },

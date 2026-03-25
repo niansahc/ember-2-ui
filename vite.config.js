@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    host: true,
     open: true,
     proxy: {
       // Proxy API calls to the Ember backend — avoids CORS in development
