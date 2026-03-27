@@ -21,7 +21,7 @@ export default function App() {
   const [activeProject, setActiveProject] = useState('general')
   const [model, setModel] = useState(null)
 
-  const { messages, isStreaming, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate } = useChat()
+  const { messages, isStreaming, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation } = useChat()
   const { theme, setTheme, themes } = useTheme()
 
   // Global keyboard shortcuts
@@ -74,10 +74,14 @@ export default function App() {
     setView('chat')
   }, [])
 
-  function handleNewConversation() {
+  function handleNewConversation(projectId) {
     clearMessages()
     setActiveConversation(null)
     setSidebarOpen(false)
+    // If started from a project view, assign new conversation to that project
+    if (projectId && projectId !== 'general') {
+      setProjectForNewConversation(projectId)
+    }
   }
 
   function handleSelectConversation(id, projectId) {

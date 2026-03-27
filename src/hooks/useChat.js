@@ -5,6 +5,7 @@ import {
   sendChat as realSendChat,
   getConversation as realGetConversation,
   uploadDocument as realUploadDocument,
+  moveConversationToProject as realMoveToProject,
 } from '../api/ember.js'
 
 /**
@@ -19,6 +20,8 @@ export function useChat() {
   const [sessionId, setSessionId] = useState(() => generateSessionId())
   const abortRef = useRef(false)
   const apiAvailableRef = useRef(true)
+  const pendingProjectRef = useRef(null)
+  const projectAssignedRef = useRef(false)
 
   function generateSessionId() {
     return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
@@ -109,6 +112,13 @@ export function useChat() {
               m.id === assistantId ? { ...m, content: reply } : m,
             ),
           )
+          // Assign to project after first message creates the session
+          if (pendingProjectRef.current && !projectAssignedRef.current) {
+            try {
+              await realMoveToProject(sessionId, pendingProjectRef.current)
+              projectAssignedRef.current = true
+            } catch {}
+          }
           return
         } catch {
           apiAvailableRef.current = false
@@ -145,6 +155,13 @@ export function useChat() {
   const clearMessages = useCallback(() => {
     setMessages([])
     setSessionId(generateSessionId())
+    pendingProjectRef.current = null
+    projectAssignedRef.current = false
+  }, [])
+
+  const setProjectForNewConversation = useCallback((projectId) => {
+    pendingProjectRef.current = projectId || null
+    projectAssignedRef.current = false
   }, [])
 
   const loadConversation = useCallback(async (conversationId) => {
@@ -230,5 +247,6 @@ export function useChat() {
     clearMessages,
     loadConversation,
     regenerate,
+    setProjectForNewConversation,
   }
 }
