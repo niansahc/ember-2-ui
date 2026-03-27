@@ -238,6 +238,20 @@ export function useChat() {
     }
   }, [messages, isStreaming, sessionId])
 
+  const editAndResend = useCallback(async (messageId, newText) => {
+    if (isStreaming) return
+
+    // Find the message index, trim everything after it, resend with new text
+    const msgIdx = messages.findIndex((m) => m.id === messageId)
+    if (msgIdx === -1) return
+
+    const trimmed = messages.slice(0, msgIdx)
+    setMessages(trimmed)
+
+    // Send the edited text as a new message
+    await sendMessage(newText)
+  }, [messages, isStreaming, sendMessage])
+
   return {
     messages,
     isStreaming,
@@ -248,5 +262,6 @@ export function useChat() {
     loadConversation,
     regenerate,
     setProjectForNewConversation,
+    editAndResend,
   }
 }

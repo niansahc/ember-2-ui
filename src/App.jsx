@@ -21,7 +21,7 @@ export default function App() {
   const [activeProject, setActiveProject] = useState('general')
   const [model, setModel] = useState(null)
 
-  const { messages, isStreaming, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation } = useChat()
+  const { messages, isStreaming, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
   const { theme, setTheme, themes } = useTheme()
 
   // Global keyboard shortcuts
@@ -162,6 +162,7 @@ export default function App() {
           onSend={sendMessage}
           onStop={stopStreaming}
           onRegenerate={regenerate}
+          onEdit={editAndResend}
         />
       </main>
 

@@ -4,7 +4,7 @@ import InputBar from './InputBar.jsx'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Chat.css'
 
-export default function Chat({ messages, isStreaming, onSend, onStop, onRegenerate }) {
+export default function Chat({ messages, isStreaming, onSend, onStop, onRegenerate, onEdit }) {
   const scrollRef = useRef(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
 
@@ -60,6 +60,7 @@ export default function Chat({ messages, isStreaming, onSend, onStop, onRegenera
             message={msg}
             isLast={i === lastAssistantIdx && !isStreaming}
             onRegenerate={i === lastAssistantIdx && !isStreaming ? onRegenerate : undefined}
+            onEdit={!isStreaming ? onEdit : undefined}
           />
         ))}
         {isStreaming && (
