@@ -155,6 +155,11 @@
   background: rgba(232, 93, 93, 0.1);
 }
 
+.sidebar-context-new-project {
+  color: var(--accent);
+  font-style: italic;
+}
+
 .sidebar-context-divider {
   height: 1px;
   background: var(--border);
@@ -231,13 +236,40 @@
   margin-bottom: 0.5rem;
 }
 
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.6rem 0.25rem;
+}
+
 .sidebar-section-label {
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-  padding: 0.5rem 0.6rem 0.25rem;
+}
+
+.sidebar-section-add {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-section-add:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.sidebar-empty-sm {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
 }
 
 .sidebar-time-group {

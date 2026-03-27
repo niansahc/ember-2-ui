@@ -5,6 +5,7 @@ import {
   renameConversation as realRenameConversation,
   deleteConversation as realDeleteConversation,
   getProjects as realGetProjects,
+  createProject as realCreateProject,
   moveConversationToProject as realMoveConversationToProject,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
@@ -194,6 +195,41 @@ export default function Sidebar({
     setContextMenu(null)
   }
 
+  // Default project colors — cycles through these for new projects
+  const PROJECT_COLORS = ['#ff8c00', '#4a9eff', '#8b5cf6', '#6bcb8b', '#e85d75', '#f5c542']
+
+  async function handleCreateProject() {
+    const name = prompt('Project name:')
+    if (!name || !name.trim()) return
+    const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
+    try {
+      const result = await realCreateProject(name.trim(), color)
+      setProjects((prev) => [...prev, { id: result.id, name: name.trim(), color, conversationCount: 0 }])
+    } catch {
+      console.warn('[Sidebar] Create project API failed')
+    }
+  }
+
+  async function handleCreateProjectAndMove() {
+    if (!contextMenu) return
+    const name = prompt('New project name:')
+    if (!name || !name.trim()) return
+    const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
+    try {
+      const result = await realCreateProject(name.trim(), color)
+      const newProject = { id: result.id, name: name.trim(), color, conversationCount: 1 }
+      setProjects((prev) => [...prev, newProject])
+      // Move the conversation into the new project
+      setConversations((prev) =>
+        prev.map((c) => c.id === contextMenu.conv.id ? { ...c, projectId: result.id } : c),
+      )
+      await realMoveConversationToProject(contextMenu.conv.id, result.id)
+    } catch {
+      console.warn('[Sidebar] Create project + move failed')
+    }
+    setContextMenu(null)
+  }
+
   // Shared conversation item renderer
   function ConvoItem({ conv, projectId }) {
     return (
@@ -255,34 +291,37 @@ export default function Sidebar({
         <button className="sidebar-context-item" onClick={handleRename} role="menuitem">
           Rename
         </button>
-        {realProjects.length > 0 && (
-          <>
-            <div className="sidebar-context-divider" />
-            <div className="sidebar-context-label">Move to...</div>
-            {contextMenu.conv.projectId && (
-              <button
-                className="sidebar-context-item"
-                onClick={() => handleMoveToProject(null)}
-                role="menuitem"
-              >
-                General
-              </button>
-            )}
-            {realProjects
-              .filter((p) => p.id !== contextMenu.conv.projectId)
-              .map((p) => (
-                <button
-                  key={p.id}
-                  className="sidebar-context-item"
-                  onClick={() => handleMoveToProject(p.id)}
-                  role="menuitem"
-                >
-                  <span className="sidebar-project-dot" style={{ background: p.color }} aria-hidden="true" />
-                  {p.name}
-                </button>
-              ))}
-          </>
+        <div className="sidebar-context-divider" />
+        <div className="sidebar-context-label">Move to...</div>
+        {contextMenu.conv.projectId && (
+          <button
+            className="sidebar-context-item"
+            onClick={() => handleMoveToProject(null)}
+            role="menuitem"
+          >
+            General
+          </button>
         )}
+        {realProjects
+          .filter((p) => p.id !== contextMenu.conv.projectId)
+          .map((p) => (
+            <button
+              key={p.id}
+              className="sidebar-context-item"
+              onClick={() => handleMoveToProject(p.id)}
+              role="menuitem"
+            >
+              <span className="sidebar-project-dot" style={{ background: p.color }} aria-hidden="true" />
+              {p.name}
+            </button>
+          ))}
+        <button className="sidebar-context-item sidebar-context-new-project" onClick={handleCreateProjectAndMove} role="menuitem">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Project...
+        </button>
         <div className="sidebar-context-divider" />
         <button className="sidebar-context-item sidebar-context-danger" onClick={handleDelete} role="menuitem">
           Delete
@@ -380,10 +419,23 @@ export default function Sidebar({
             </>
           ) : (
             <>
-              {/* Projects section */}
-              {realProjects.length > 0 && (
-                <div className="sidebar-section">
+              {/* Projects section — always visible */}
+              <div className="sidebar-section">
+                <div className="sidebar-section-header">
                   <div className="sidebar-section-label">Projects</div>
+                  <button
+                    className="sidebar-section-add"
+                    onClick={handleCreateProject}
+                    aria-label="New project"
+                    title="New project"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </button>
+                </div>
+                {realProjects.length > 0 ? (
                   <ul className="sidebar-convo-list" role="list">
                     {realProjects.map((proj) => {
                       const count = conversations.filter((c) => c.projectId === proj.id).length
@@ -405,8 +457,10 @@ export default function Sidebar({
                       )
                     })}
                   </ul>
-                </div>
-              )}
+                ) : (
+                  <p className="sidebar-empty sidebar-empty-sm">No projects yet. Click + to create one.</p>
+                )}
+              </div>
 
               {/* Chronological general conversations */}
               {timeBuckets.map(({ label, items }) => (
