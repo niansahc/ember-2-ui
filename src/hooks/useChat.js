@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { uuid } from '../utils/uuid.js'
 import { mockStreamChat, mockGetMessages } from '../api/mock.js'
 import {
-  sendChat as realSendChat,
+  streamChat as realStreamChat,
   getConversation as realGetConversation,
   uploadDocument as realUploadDocument,
   moveConversationToProject as realMoveToProject,
@@ -106,12 +106,15 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          const reply = await realSendChat(allMessages, { sessionId })
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, content: reply } : m,
-            ),
-          )
+          // Stream from real API — tokens arrive one at a time
+          for await (const chunk of realStreamChat(allMessages, { sessionId })) {
+            if (abortRef.current) break
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            )
+          }
           // Assign to project after first message creates the session
           if (pendingProjectRef.current && !projectAssignedRef.current) {
             try {
@@ -126,7 +129,7 @@ export function useChat() {
         }
       }
 
-      // Mock fallback
+      // Mock fallback (also streams)
       for await (const chunk of mockStreamChat(allMessages)) {
         if (abortRef.current) break
         setMessages((prev) =>
@@ -205,12 +208,14 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          const reply = await realSendChat(allMessages, { sessionId })
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, content: reply } : m,
-            ),
-          )
+          for await (const chunk of realStreamChat(allMessages, { sessionId })) {
+            if (abortRef.current) break
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            )
+          }
           return
         } catch {
           apiAvailableRef.current = false
