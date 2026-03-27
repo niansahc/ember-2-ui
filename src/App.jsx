@@ -126,7 +126,7 @@ export default function App() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <h1 className="app-header-title">Ember</h1>
+          <h1 className="app-header-title">Ember-2</h1>
           <div className="app-header-actions">
             {messages.length > 0 && (
               <button

@@ -497,7 +497,7 @@ function SidebarFooter({ onOpenSettings, onOpenUpdates, onOpenAbout, emberMascot
       <button className="sidebar-brand" onClick={onOpenAbout} aria-label="About Ember">
         <img src={emberMascotImg} alt="" className="sidebar-brand-logo" aria-hidden="true" />
         <div className="sidebar-brand-info">
-          <span className="sidebar-brand-name">Ember</span>
+          <span className="sidebar-brand-name">Ember-2</span>
           <span className="sidebar-version">v0.9.1</span>
         </div>
       </button>
