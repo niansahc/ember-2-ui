@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.0 — 2026-03-27
+- Streaming responses via streamChat() — real-time token rendering
+- PWA manifest — installable as home screen app
+- New Project button always visible in sidebar
+- Project conversations auto-assigned on creation
+- Edit and resend user messages (pencil icon on hover)
+- Mobile viewport fix (100dvh)
+- Consistent Ember-2 branding throughout
+- Stop button works during streaming
+- crypto.randomUUID fallback for non-secure contexts (Tailscale HTTP)
+- Chat input bar stays visible on long responses (flex min-height fix)
+
 ## v0.2.1 — 2026-03-24
 
 ### Projects — Real API
