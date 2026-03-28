@@ -7,7 +7,6 @@ import {
   getProjects as realGetProjects,
   createProject as realCreateProject,
   moveConversationToProject as realMoveConversationToProject,
-  getModel as realGetModel,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -38,10 +37,6 @@ export default function Sidebar({
     try { return localStorage.getItem('ember-sidebar-collapsed') === 'true' } catch { return false }
   })
 
-  // Current model info for the indicator
-  const [currentModel, setCurrentModel] = useState('')
-  const [isCloudModel, setIsCloudModel] = useState(false)
-
   function toggleCollapse() {
     setCollapsed((prev) => {
       const next = !prev
@@ -49,20 +44,6 @@ export default function Sidebar({
       return next
     })
   }
-
-  // Load model info
-  useEffect(() => {
-    async function loadModel() {
-      try {
-        const data = await realGetModel()
-        if (data.model) {
-          setCurrentModel(data.model)
-          setIsCloudModel(data.model.startsWith('claude-') || data.model.startsWith('gpt-'))
-        }
-      } catch {}
-    }
-    loadModel()
-  }, [])
 
   // Load conversations — try real API, fall back to mock
   useEffect(() => {
@@ -262,21 +243,6 @@ export default function Sidebar({
     setContextMenu(null)
   }
 
-  // Truncate model name for display
-  function displayModelName(name) {
-    if (!name) return ''
-    // Remove version suffixes for cleaner display
-    if (name.startsWith('claude-')) {
-      if (name.includes('haiku')) return 'Claude Haiku'
-      if (name.includes('sonnet')) return 'Claude Sonnet'
-      if (name.includes('opus')) return 'Claude Opus'
-      return name
-    }
-    if (name.startsWith('gpt-')) return name
-    // Local models: show as-is but truncate if long
-    return name.length > 20 ? name.slice(0, 18) + '...' : name
-  }
-
   // Shared conversation item renderer
   function ConvoItem({ conv, projectId }) {
     return (
@@ -378,23 +344,6 @@ export default function Sidebar({
     )
   }
 
-  // ── Model indicator ─────────────────────────────────────────
-  function ModelIndicator() {
-    return (
-      <button
-        className="sidebar-model-indicator"
-        onClick={onOpenSettings}
-        title={currentModel || 'No model loaded'}
-        aria-label={`Current model: ${currentModel || 'none'}. Click to open settings.`}
-      >
-        <span className={`sidebar-model-dot ${isCloudModel ? 'sidebar-model-dot-cloud' : ''}`} />
-        {!collapsed && (
-          <span className="sidebar-model-name">{displayModelName(currentModel) || 'No model'}</span>
-        )}
-      </button>
-    )
-  }
-
   // ── Project detail view ──────────────────────────────────────
   if (viewingProject) {
     const proj = projects.find((p) => p.id === viewingProject)
@@ -455,7 +404,6 @@ export default function Sidebar({
           )}
 
           <div className="sidebar-footer">
-            <ModelIndicator />
             <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
           </div>
         </nav>

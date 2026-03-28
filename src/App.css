@@ -27,10 +27,58 @@
   flex-shrink: 0;
 }
 
+.app-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 .app-header-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+/* ── Model indicator (header) ────────────────────────────────── */
+
+.app-model-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.app-model-indicator:hover {
+  background: var(--bg-surface-hover);
+}
+
+.app-model-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.app-model-dot-cloud {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: header-model-pulse 3s ease-in-out infinite;
+}
+
+@keyframes header-model-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--accent); }
+  50% { box-shadow: 0 0 14px var(--accent); }
+}
+
+.app-model-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .app-header-actions {

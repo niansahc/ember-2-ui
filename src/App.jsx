@@ -6,9 +6,26 @@ import Settings from './components/Settings/Settings.jsx'
 import BugReport from './components/BugReport/BugReport.jsx'
 import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
+import { getModel as realGetModel } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { useTheme } from './hooks/useTheme.js'
 import './App.css'
+
+function isCloudModelName(name) {
+  return name && (name.startsWith('claude-') || name.startsWith('gpt-'))
+}
+
+function displayModelName(name) {
+  if (!name) return ''
+  if (name.startsWith('claude-')) {
+    if (name.includes('haiku')) return 'Claude Haiku'
+    if (name.includes('sonnet')) return 'Claude Sonnet'
+    if (name.includes('opus')) return 'Claude Opus'
+    return name
+  }
+  if (name.startsWith('gpt-')) return name
+  return name.length > 15 ? name.slice(0, 13) + '...' : name
+}
 
 export default function App() {
   const [view, setView] = useState('splash')
@@ -72,6 +89,10 @@ export default function App() {
   const handleConnected = useCallback((detectedModel) => {
     setModel(detectedModel)
     setView('chat')
+    // Fetch full model info for accurate display
+    realGetModel().then((data) => {
+      if (data.model) setModel(data.model)
+    }).catch(() => {})
   }, [])
 
   function handleNewConversation(projectId) {
@@ -126,7 +147,20 @@ export default function App() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <h1 className="app-header-title">Ember-2</h1>
+          <div className="app-header-title-group">
+            <h1 className="app-header-title">Ember-2</h1>
+            {model && (
+              <button
+                className="app-model-indicator"
+                onClick={() => setSettingsOpen(true)}
+                title={model}
+                aria-label={`Current model: ${model}. Click to change.`}
+              >
+                <span className={`app-model-dot ${isCloudModelName(model) ? 'app-model-dot-cloud' : ''}`} />
+                <span className="app-model-name">{displayModelName(model)}</span>
+              </button>
+            )}
+          </div>
           <div className="app-header-actions">
             {messages.length > 0 && (
               <button
