@@ -32,8 +32,12 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [rememberConvo, setRememberConvo] = useState(true)
   const [tone, setTone] = useState('balanced')
   const [currentModel, setCurrentModel] = useState('')
-  const [visionEnabled, setVisionEnabled] = useState(false)
-  const [visionModel, setVisionModel] = useState('llama3.2-vision:11b')
+  const [visionEnabled, setVisionEnabled] = useState(() => {
+    try { return localStorage.getItem('ember-vision-enabled') !== 'false' } catch { return true }
+  })
+  const [visionModel, setVisionModel] = useState(() => {
+    try { return localStorage.getItem('ember-vision-model') || 'llama3.2-vision:11b' } catch { return 'llama3.2-vision:11b' }
+  })
   const [localModels, setLocalModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelTab, setModelTab] = useState('local') // 'local' | 'cloud'
@@ -365,7 +369,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
               <input
                 type="checkbox" role="switch"
                 checked={visionEnabled}
-                onChange={(e) => setVisionEnabled(e.target.checked)}
+                onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
               />
               <span className="toggle-track" />
             </label>
@@ -380,7 +384,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
               <select
                 className="settings-select"
                 value={visionModel}
-                onChange={(e) => setVisionModel(e.target.value)}
+                onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
                 aria-label="Vision model"
               >
                 {visionModels.length > 0 ? (
