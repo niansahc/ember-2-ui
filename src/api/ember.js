@@ -78,6 +78,20 @@ export async function* streamChat(messages, { sessionId = '', signal } = {}) {
 // Connection check
 // ---------------------------------------------------------------------------
 
+export async function getVersion() {
+  try {
+    const res = await fetch('/api/health', {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return 'unknown'
+    const data = await res.json()
+    return data.version || 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
 export async function checkConnection() {
   try {
     const res = await fetch('/api/health', {

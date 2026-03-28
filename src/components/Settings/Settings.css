@@ -304,14 +304,15 @@
 
 .model-tab {
   flex: 1;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-muted);
   background: transparent;
   border: none;
   transition: background 0.15s, color 0.15s;
   text-align: center;
+  cursor: pointer;
 }
 
 .model-tab:not(:last-child) {

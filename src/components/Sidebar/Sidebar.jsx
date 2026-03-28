@@ -7,6 +7,7 @@ import {
   getProjects as realGetProjects,
   createProject as realCreateProject,
   moveConversationToProject as realMoveConversationToProject,
+  getVersion,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -521,6 +522,12 @@ export default function Sidebar({
 }
 
 function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg }) {
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => {})
+  }, [])
+
   if (collapsed) return null
   return (
     <>
@@ -535,7 +542,7 @@ function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, 
         <img src={emberMascotImg} alt="" className="sidebar-brand-logo" aria-hidden="true" />
         <div className="sidebar-brand-info">
           <span className="sidebar-brand-name">Ember-2</span>
-          <span className="sidebar-version">v0.10.4</span>
+          <span className="sidebar-version">{version || '...'}</span>
         </div>
       </button>
     </>

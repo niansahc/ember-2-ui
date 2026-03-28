@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getVersion } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './About.css'
@@ -48,6 +49,13 @@ Ember is open source. She is built in public. She is licensed to protect communi
 export default function About({ isOpen, onClose, onOpenBugReport }) {
   const modalRef = useModal(isOpen, onClose)
   const [ethosExpanded, setEthosExpanded] = useState(false)
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    if (isOpen && !version) {
+      getVersion().then(setVersion).catch(() => {})
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -70,7 +78,7 @@ export default function About({ isOpen, onClose, onOpenBugReport }) {
             <div className="about-glow" aria-hidden="true" />
             <img src={emberMascot} alt="Ember" className="about-logo" />
             <h1 className="about-title">Ember-2</h1>
-            <span className="about-version">v0.9.1</span>
+            <span className="about-version">{version || '...'}</span>
             <a
               href="https://github.com/niansahc/ember-2"
               target="_blank"
