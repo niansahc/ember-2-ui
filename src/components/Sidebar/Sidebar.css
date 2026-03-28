@@ -38,59 +38,40 @@
   }
 }
 
-/* ── Collapse toggle ─────────────────────────────────────────── */
+/* ── Icon row (top of sidebar — new, search, collapse) ───────── */
 
-.sidebar-collapse-toggle {
+.sidebar-icon-row {
   display: none;
 }
 
 @media (min-width: 768px) {
-  .sidebar-collapse-toggle {
+  .sidebar-icon-row {
     display: flex;
-    justify-content: flex-end;
-    padding: 0.5rem 0.5rem 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .sidebar-collapsed .sidebar-icon-row {
+    flex-direction: column;
+    align-items: center;
   }
 }
 
-.sidebar-collapse-btn {
-  width: 28px;
-  height: 28px;
+.sidebar-icon-row-btn {
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
 
-.sidebar-collapse-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-surface-hover);
-}
-
-/* ── Collapsed icon buttons ──────────────────────────────────── */
-
-.sidebar-collapsed-icons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  flex: 1;
-}
-
-.sidebar-collapsed-icon-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  transition: color 0.15s, background 0.15s;
-}
-
-.sidebar-collapsed-icon-btn:hover {
+.sidebar-icon-row-btn:hover {
   color: var(--accent);
   background: var(--accent-dim);
 }

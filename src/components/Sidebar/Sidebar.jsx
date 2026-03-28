@@ -419,8 +419,22 @@ export default function Sidebar({
     <>
       {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
       <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Conversation history">
-        <div className="sidebar-collapse-toggle">
-          <button onClick={toggleCollapse} className="sidebar-collapse-btn" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+        <div className="sidebar-icon-row">
+          <button className="sidebar-icon-row-btn" onClick={onNewConversation} aria-label="New conversation" title="New conversation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          {!collapsed && (
+            <button className="sidebar-icon-row-btn" onClick={() => document.querySelector('.sidebar-search-input')?.focus()} aria-label="Search conversations" title="Search conversations">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
+          <button onClick={toggleCollapse} className="sidebar-icon-row-btn" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <polyline points={collapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'} />
             </svg>
@@ -429,16 +443,6 @@ export default function Sidebar({
 
         {!collapsed && (
           <>
-            <div className="sidebar-header">
-              <button className="sidebar-new-btn" onClick={onNewConversation} aria-label="Start new conversation">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                New conversation
-              </button>
-            </div>
-
             <SearchBar />
 
             <div className="sidebar-scroll">
@@ -513,26 +517,7 @@ export default function Sidebar({
           </>
         )}
 
-        {/* Collapsed state: just icons for new conversation and settings */}
-        {collapsed && (
-          <div className="sidebar-collapsed-icons">
-            <button className="sidebar-collapsed-icon-btn" onClick={onNewConversation} aria-label="New conversation" title="New conversation">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-            <button className="sidebar-collapsed-icon-btn" onClick={onOpenSettings} aria-label="Settings" title="Settings">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            </button>
-          </div>
-        )}
-
         <div className="sidebar-footer">
-          <ModelIndicator />
           {!collapsed && (
             <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
           )}
