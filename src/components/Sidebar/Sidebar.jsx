@@ -7,6 +7,7 @@ import {
   getProjects as realGetProjects,
   createProject as realCreateProject,
   moveConversationToProject as realMoveConversationToProject,
+  getModel as realGetModel,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -31,6 +32,37 @@ export default function Sidebar({
   const [search, setSearch] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const contextRef = useRef(null)
+
+  // Collapse state — persisted in localStorage
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('ember-sidebar-collapsed') === 'true' } catch { return false }
+  })
+
+  // Current model info for the indicator
+  const [currentModel, setCurrentModel] = useState('')
+  const [isCloudModel, setIsCloudModel] = useState(false)
+
+  function toggleCollapse() {
+    setCollapsed((prev) => {
+      const next = !prev
+      try { localStorage.setItem('ember-sidebar-collapsed', String(next)) } catch {}
+      return next
+    })
+  }
+
+  // Load model info
+  useEffect(() => {
+    async function loadModel() {
+      try {
+        const data = await realGetModel()
+        if (data.model) {
+          setCurrentModel(data.model)
+          setIsCloudModel(data.model.startsWith('claude-') || data.model.startsWith('gpt-'))
+        }
+      } catch {}
+    }
+    loadModel()
+  }, [])
 
   // Load conversations — try real API, fall back to mock
   useEffect(() => {
@@ -230,6 +262,21 @@ export default function Sidebar({
     setContextMenu(null)
   }
 
+  // Truncate model name for display
+  function displayModelName(name) {
+    if (!name) return ''
+    // Remove version suffixes for cleaner display
+    if (name.startsWith('claude-')) {
+      if (name.includes('haiku')) return 'Claude Haiku'
+      if (name.includes('sonnet')) return 'Claude Sonnet'
+      if (name.includes('opus')) return 'Claude Opus'
+      return name
+    }
+    if (name.startsWith('gpt-')) return name
+    // Local models: show as-is but truncate if long
+    return name.length > 20 ? name.slice(0, 18) + '...' : name
+  }
+
   // Shared conversation item renderer
   function ConvoItem({ conv, projectId }) {
     return (
@@ -248,6 +295,7 @@ export default function Sidebar({
 
   // Search bar component
   function SearchBar() {
+    if (collapsed) return null
     return (
       <div className="sidebar-search">
         <svg className="sidebar-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -330,6 +378,23 @@ export default function Sidebar({
     )
   }
 
+  // ── Model indicator ─────────────────────────────────────────
+  function ModelIndicator() {
+    return (
+      <button
+        className="sidebar-model-indicator"
+        onClick={onOpenSettings}
+        title={currentModel || 'No model loaded'}
+        aria-label={`Current model: ${currentModel || 'none'}. Click to open settings.`}
+      >
+        <span className={`sidebar-model-dot ${isCloudModel ? 'sidebar-model-dot-cloud' : ''}`} />
+        {!collapsed && (
+          <span className="sidebar-model-name">{displayModelName(currentModel) || 'No model'}</span>
+        )}
+      </button>
+    )
+  }
+
   // ── Project detail view ──────────────────────────────────────
   if (viewingProject) {
     const proj = projects.find((p) => p.id === viewingProject)
@@ -338,47 +403,60 @@ export default function Sidebar({
     return (
       <>
         {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
-        <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''}`} aria-label="Project conversations">
-          <div className="sidebar-header">
-            <button className="sidebar-back-btn" onClick={() => setViewingProject(null)} aria-label="Back to all conversations">
+        <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Project conversations">
+          <div className="sidebar-collapse-toggle">
+            <button onClick={toggleCollapse} className="sidebar-collapse-btn" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <polyline points="15 18 9 12 15 6" />
+                <polyline points={collapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'} />
               </svg>
-              Back
             </button>
           </div>
 
-          <div className="sidebar-project-detail-header">
-            <span className="sidebar-project-dot-lg" style={{ background: proj?.color }} aria-hidden="true" />
-            <h2 className="sidebar-project-detail-name">{proj?.name}</h2>
-          </div>
-
-          <button className="sidebar-new-btn sidebar-new-btn-inset" onClick={() => onNewConversation(viewingProject)} aria-label="Start new conversation in this project">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            New conversation
-          </button>
-
-          <SearchBar />
-
-          <div className="sidebar-scroll">
-            {buckets.map(({ label, items }) => (
-              <div key={label} className="sidebar-time-group">
-                <div className="sidebar-time-label">{label}</div>
-                <ul className="sidebar-convo-list" role="list">
-                  {items.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={viewingProject} />)}
-                </ul>
+          {!collapsed && (
+            <>
+              <div className="sidebar-header">
+                <button className="sidebar-back-btn" onClick={() => setViewingProject(null)} aria-label="Back to all conversations">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Back
+                </button>
               </div>
-            ))}
-            {projectConvos.length === 0 && (
-              <p className="sidebar-empty">{search ? 'No matches.' : 'No conversations yet.'}</p>
-            )}
-          </div>
+
+              <div className="sidebar-project-detail-header">
+                <span className="sidebar-project-dot-lg" style={{ background: proj?.color }} aria-hidden="true" />
+                <h2 className="sidebar-project-detail-name">{proj?.name}</h2>
+              </div>
+
+              <button className="sidebar-new-btn sidebar-new-btn-inset" onClick={() => onNewConversation(viewingProject)} aria-label="Start new conversation in this project">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New conversation
+              </button>
+
+              <SearchBar />
+
+              <div className="sidebar-scroll">
+                {buckets.map(({ label, items }) => (
+                  <div key={label} className="sidebar-time-group">
+                    <div className="sidebar-time-label">{label}</div>
+                    <ul className="sidebar-convo-list" role="list">
+                      {items.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={viewingProject} />)}
+                    </ul>
+                  </div>
+                ))}
+                {projectConvos.length === 0 && (
+                  <p className="sidebar-empty">{search ? 'No matches.' : 'No conversations yet.'}</p>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="sidebar-footer">
-            <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
+            <ModelIndicator />
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
           </div>
         </nav>
         <ContextMenuPopup />
@@ -392,91 +470,124 @@ export default function Sidebar({
   return (
     <>
       {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
-      <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''}`} aria-label="Conversation history">
-        <div className="sidebar-header">
-          <button className="sidebar-new-btn" onClick={onNewConversation} aria-label="Start new conversation">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
+      <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Conversation history">
+        <div className="sidebar-collapse-toggle">
+          <button onClick={toggleCollapse} className="sidebar-collapse-btn" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <polyline points={collapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'} />
             </svg>
-            New conversation
           </button>
         </div>
 
-        <SearchBar />
+        {!collapsed && (
+          <>
+            <div className="sidebar-header">
+              <button className="sidebar-new-btn" onClick={onNewConversation} aria-label="Start new conversation">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New conversation
+              </button>
+            </div>
 
-        <div className="sidebar-scroll">
-          {/* Search results — flat list */}
-          {search ? (
-            <>
-              {filteredConvos.length > 0 ? (
-                <ul className="sidebar-convo-list" role="list">
-                  {filteredConvos.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={conv.projectId} />)}
-                </ul>
+            <SearchBar />
+
+            <div className="sidebar-scroll">
+              {/* Search results — flat list */}
+              {search ? (
+                <>
+                  {filteredConvos.length > 0 ? (
+                    <ul className="sidebar-convo-list" role="list">
+                      {filteredConvos.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={conv.projectId} />)}
+                    </ul>
+                  ) : (
+                    <p className="sidebar-empty">No matches.</p>
+                  )}
+                </>
               ) : (
-                <p className="sidebar-empty">No matches.</p>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Projects section — always visible */}
-              <div className="sidebar-section">
-                <div className="sidebar-section-header">
-                  <div className="sidebar-section-label">Projects</div>
-                  <button
-                    className="sidebar-section-add"
-                    onClick={handleCreateProject}
-                    aria-label="New project"
-                    title="New project"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                  </button>
-                </div>
-                {realProjects.length > 0 ? (
-                  <ul className="sidebar-convo-list" role="list">
-                    {realProjects.map((proj) => {
-                      const count = conversations.filter((c) => c.projectId === proj.id).length
-                      return (
-                        <li key={proj.id}>
-                          <button
-                            className={`sidebar-project-row ${activeProjectId === proj.id ? 'sidebar-project-row-active' : ''}`}
-                            onClick={() => handleProjectClick(proj.id)}
-                            aria-label={`${proj.name}, ${count} conversations`}
-                          >
-                            <span className="sidebar-project-dot" style={{ background: proj.color }} aria-hidden="true" />
-                            <span className="sidebar-project-row-name">{proj.name}</span>
-                            <span className="sidebar-project-count">{count}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="sidebar-project-arrow" aria-hidden="true">
-                              <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                ) : (
-                  <p className="sidebar-empty sidebar-empty-sm">No projects yet. Click + to create one.</p>
-                )}
-              </div>
+                <>
+                  {/* Projects section — always visible */}
+                  <div className="sidebar-section">
+                    <div className="sidebar-section-header">
+                      <div className="sidebar-section-label">Projects</div>
+                      <button
+                        className="sidebar-section-add"
+                        onClick={handleCreateProject}
+                        aria-label="New project"
+                        title="New project"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </button>
+                    </div>
+                    {realProjects.length > 0 ? (
+                      <ul className="sidebar-convo-list" role="list">
+                        {realProjects.map((proj) => {
+                          const count = conversations.filter((c) => c.projectId === proj.id).length
+                          return (
+                            <li key={proj.id}>
+                              <button
+                                className={`sidebar-project-row ${activeProjectId === proj.id ? 'sidebar-project-row-active' : ''}`}
+                                onClick={() => handleProjectClick(proj.id)}
+                                aria-label={`${proj.name}, ${count} conversations`}
+                              >
+                                <span className="sidebar-project-dot" style={{ background: proj.color }} aria-hidden="true" />
+                                <span className="sidebar-project-row-name">{proj.name}</span>
+                                <span className="sidebar-project-count">{count}</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="sidebar-project-arrow" aria-hidden="true">
+                                  <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="sidebar-empty sidebar-empty-sm">No projects yet. Click + to create one.</p>
+                    )}
+                  </div>
 
-              {/* Chronological general conversations */}
-              {timeBuckets.map(({ label, items }) => (
-                <div key={label} className="sidebar-time-group">
-                  <div className="sidebar-time-label">{label}</div>
-                  <ul className="sidebar-convo-list" role="list">
-                    {items.map((conv) => <ConvoItem key={conv.id} conv={conv} />)}
-                  </ul>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+                  {/* Chronological general conversations */}
+                  {timeBuckets.map(({ label, items }) => (
+                    <div key={label} className="sidebar-time-group">
+                      <div className="sidebar-time-label">{label}</div>
+                      <ul className="sidebar-convo-list" role="list">
+                        {items.map((conv) => <ConvoItem key={conv.id} conv={conv} />)}
+                      </ul>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Collapsed state: just icons for new conversation and settings */}
+        {collapsed && (
+          <div className="sidebar-collapsed-icons">
+            <button className="sidebar-collapsed-icon-btn" onClick={onNewConversation} aria-label="New conversation" title="New conversation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            <button className="sidebar-collapsed-icon-btn" onClick={onOpenSettings} aria-label="Settings" title="Settings">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         <div className="sidebar-footer">
-          <SidebarFooter onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
+          <ModelIndicator />
+          {!collapsed && (
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
+          )}
         </div>
       </nav>
       <ContextMenuPopup />
@@ -484,7 +595,8 @@ export default function Sidebar({
   )
 }
 
-function SidebarFooter({ onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg }) {
+function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg }) {
+  if (collapsed) return null
   return (
     <>
       <button className="sidebar-footer-btn" onClick={onOpenSettings} aria-label="Open settings">
@@ -498,7 +610,7 @@ function SidebarFooter({ onOpenSettings, onOpenUpdates, onOpenAbout, emberMascot
         <img src={emberMascotImg} alt="" className="sidebar-brand-logo" aria-hidden="true" />
         <div className="sidebar-brand-info">
           <span className="sidebar-brand-name">Ember-2</span>
-          <span className="sidebar-version">v0.9.1</span>
+          <span className="sidebar-version">v0.10.4</span>
         </div>
       </button>
     </>

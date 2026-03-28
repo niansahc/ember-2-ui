@@ -1,52 +1,138 @@
 import { useState, useEffect } from 'react'
 import { mockGetOllamaModels } from '../../api/mock.js'
-import { getModel as realGetModel } from '../../api/ember.js'
+import {
+  getModel as realGetModel,
+  setModel as realSetModel,
+  getProviderKey,
+  setProviderKey,
+} from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
+
+// Cloud models by provider (matches CLOUD_MODELS in config.py)
+const CLOUD_MODELS = {
+  anthropic: [
+    { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', desc: 'Best value. 8.7/10, fastest, cheapest.' },
+    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4.6', desc: '8.5/10, 1M token context window.' },
+  ],
+  openai: [
+    { id: 'gpt-4o', name: 'GPT-4o', desc: 'Not yet tested against Ember eval.' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Not yet tested against Ember eval.' },
+  ],
+}
+
+const PROVIDERS = [
+  { id: 'anthropic', name: 'Anthropic' },
+  { id: 'openai', name: 'OpenAI' },
+]
 
 export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, theme, setTheme, themes }) {
   const modalRef = useModal(isOpen, onClose)
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
   const [tone, setTone] = useState('balanced')
-  const [model, setModel] = useState('qwen2.5:14b')
+  const [currentModel, setCurrentModel] = useState('')
   const [visionEnabled, setVisionEnabled] = useState(false)
   const [visionModel, setVisionModel] = useState('llama3.2-vision:11b')
-  const [models, setModels] = useState([])
+  const [localModels, setLocalModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(false)
+  const [modelTab, setModelTab] = useState('local') // 'local' | 'cloud'
+
+  // Cloud provider state
+  const [providerStatus, setProviderStatus] = useState({}) // { anthropic: { configured: true }, ... }
+  const [addingProvider, setAddingProvider] = useState(false)
+  const [newProviderType, setNewProviderType] = useState('anthropic')
+  const [newProviderKey, setNewProviderKey] = useState('')
+  const [savingKey, setSavingKey] = useState(false)
 
   useEffect(() => {
-    if (isOpen && models.length === 0) {
-      setLoadingModels(true)
-      async function loadModels() {
-        try {
-          const data = await realGetModel()
-          if (data.available && data.available.length > 0) {
-            setModels(data.available)
-            if (data.model) setModel(data.model)
+    if (!isOpen) return
+
+    setLoadingModels(true)
+    async function loadModels() {
+      try {
+        const data = await realGetModel()
+        if (data.model) {
+          setCurrentModel(data.model)
+          // Set tab based on current model
+          if (data.model.startsWith('claude-') || data.model.startsWith('gpt-')) {
+            setModelTab('cloud')
           } else {
-            throw new Error('No models from API')
+            setModelTab('local')
           }
+        }
+        if (data.available && data.available.length > 0) {
+          setLocalModels(data.available)
+        }
+        // Check if vision model is configured
+        if (data.vision_model) {
+          setVisionEnabled(true)
+          setVisionModel(data.vision_model)
+        }
+      } catch {
+        console.warn('[Settings] Model API unreachable, using mock')
+        const list = await mockGetOllamaModels()
+        setLocalModels(list)
+      } finally {
+        setLoadingModels(false)
+      }
+    }
+    loadModels()
+
+    // Check provider key status
+    async function checkProviders() {
+      const status = {}
+      for (const p of PROVIDERS) {
+        try {
+          const result = await getProviderKey(p.id)
+          status[p.id] = result
         } catch {
-          console.warn('[Settings] Model API unreachable, using mock')
-          const list = await mockGetOllamaModels()
-          setModels(list)
-        } finally {
-          setLoadingModels(false)
+          status[p.id] = { configured: false }
         }
       }
-      loadModels()
+      setProviderStatus(status)
     }
+    checkProviders()
   }, [isOpen])
+
+  async function handleSelectModel(modelId) {
+    setCurrentModel(modelId)
+    try {
+      await realSetModel(modelId)
+    } catch {
+      console.warn('[Settings] Failed to switch model')
+    }
+  }
+
+  async function handleSaveProviderKey() {
+    if (!newProviderKey.trim()) return
+    setSavingKey(true)
+    try {
+      await setProviderKey(newProviderType, newProviderKey.trim())
+      setProviderStatus((prev) => ({
+        ...prev,
+        [newProviderType]: { configured: true },
+      }))
+      setNewProviderKey('')
+      setAddingProvider(false)
+    } catch {
+      console.warn('[Settings] Failed to save provider key')
+    } finally {
+      setSavingKey(false)
+    }
+  }
 
   if (!isOpen) return null
 
-  const visionModels = models.filter(
+  const visionModels = localModels.filter(
     (m) => m.toLowerCase().includes('vision') || m.toLowerCase().includes('llava'),
   )
-  const textModels = models.filter(
+  const textModels = localModels.filter(
     (m) => !m.toLowerCase().includes('vision') && !m.toLowerCase().includes('llava'),
   )
+
+  const configuredProviders = PROVIDERS.filter((p) => providerStatus[p.id]?.configured)
+  const unconfiguredProviders = PROVIDERS.filter((p) => !providerStatus[p.id]?.configured)
 
   return (
     <>
@@ -153,29 +239,123 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           {/* ── Models ────────────────────────────────────────── */}
           <div className="settings-section-label">Models</div>
 
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Ember's brain</span>
-              <span className="settings-row-hint">The model used for conversation and reasoning</span>
-            </div>
-            <select
-              className="settings-select"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              aria-label="Primary model"
-              disabled={loadingModels}
+          {/* Tab selector */}
+          <div className="model-tabs" role="tablist">
+            <button
+              className={`model-tab ${modelTab === 'local' ? 'model-tab-active' : ''}`}
+              onClick={() => setModelTab('local')}
+              role="tab"
+              aria-selected={modelTab === 'local'}
             >
-              {loadingModels && <option>Loading...</option>}
-              {textModels.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-              {/* Include vision models in the list too, in case someone wants to use one as primary */}
-              {visionModels.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              Local
+            </button>
+            <button
+              className={`model-tab ${modelTab === 'cloud' ? 'model-tab-active' : ''}`}
+              onClick={() => setModelTab('cloud')}
+              role="tab"
+              aria-selected={modelTab === 'cloud'}
+            >
+              Cloud
+            </button>
           </div>
 
+          {/* Local tab */}
+          {modelTab === 'local' && (
+            <div className="model-list" role="tabpanel">
+              {loadingModels ? (
+                <p className="model-list-empty">Loading models...</p>
+              ) : textModels.length === 0 ? (
+                <p className="model-list-empty">No local models found. Install one with <code>ollama pull qwen3:8b</code></p>
+              ) : (
+                textModels.map((m) => (
+                  <button
+                    key={m}
+                    className={`model-list-item ${m === currentModel ? 'model-list-item-active' : ''}`}
+                    onClick={() => handleSelectModel(m)}
+                  >
+                    <span className="model-list-item-name">{m}</span>
+                    {m === currentModel && <span className="model-list-item-check">Active</span>}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Cloud tab */}
+          {modelTab === 'cloud' && (
+            <div className="model-list" role="tabpanel">
+              <div className="cloud-disclosure">
+                When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device. Check your provider's terms for their data handling policy.
+              </div>
+
+              {configuredProviders.length === 0 && !addingProvider && (
+                <p className="model-list-empty">No cloud providers configured. Add an API key to get started.</p>
+              )}
+
+              {configuredProviders.map((provider) => (
+                <div key={provider.id} className="cloud-provider-section">
+                  <div className="cloud-provider-name">{provider.name}</div>
+                  {CLOUD_MODELS[provider.id]?.map((m) => (
+                    <button
+                      key={m.id}
+                      className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
+                      onClick={() => handleSelectModel(m.id)}
+                    >
+                      <div className="model-list-item-info">
+                        <span className="model-list-item-name">{m.name}</span>
+                        <span className="model-list-item-desc">{m.desc}</span>
+                      </div>
+                      {m.id === currentModel && <span className="model-list-item-check">Active</span>}
+                    </button>
+                  ))}
+                </div>
+              ))}
+
+              {/* Add provider form */}
+              {addingProvider ? (
+                <div className="cloud-add-form">
+                  <select
+                    className="settings-select"
+                    value={newProviderType}
+                    onChange={(e) => setNewProviderType(e.target.value)}
+                  >
+                    {unconfiguredProviders.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="password"
+                    className="cloud-key-input"
+                    placeholder="API key"
+                    value={newProviderKey}
+                    onChange={(e) => setNewProviderKey(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveProviderKey()}
+                    autoFocus
+                  />
+                  <div className="cloud-add-actions">
+                    <button className="settings-action-btn" onClick={handleSaveProviderKey} disabled={savingKey}>
+                      {savingKey ? 'Saving...' : 'Save'}
+                    </button>
+                    <button className="settings-action-btn" onClick={() => { setAddingProvider(false); setNewProviderKey('') }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : unconfiguredProviders.length > 0 && (
+                <button className="cloud-add-btn" onClick={() => setAddingProvider(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add provider
+                </button>
+              )}
+            </div>
+          )}
+
+          <hr className="settings-divider" />
+
+          {/* ── Vision ──────────────────────────────────────────── */}
           <div className="settings-row">
             <div className="settings-row-info">
               <span className="settings-row-label">Can Ember see images?</span>

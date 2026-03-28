@@ -119,6 +119,30 @@ export async function setModel(model) {
 }
 
 // ---------------------------------------------------------------------------
+// Cloud provider keys
+// ---------------------------------------------------------------------------
+
+export async function getProviderKey(provider) {
+  try {
+    const res = await fetch(`/provider-key/${provider}`, { headers: authHeaders() })
+    if (!res.ok) return { configured: false }
+    return await res.json()
+  } catch {
+    return { configured: false }
+  }
+}
+
+export async function setProviderKey(provider, apiKey) {
+  const res = await fetch('/provider-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ provider, api_key: apiKey }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Conversations — session CRUD
 // ---------------------------------------------------------------------------
 
