@@ -17,8 +17,10 @@ const CLOUD_MODELS = {
     { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4.6', desc: '8.5/10, 1M token context window.' },
   ],
   openai: [
-    { id: 'gpt-4o', name: 'GPT-4o', desc: 'Not yet tested against Ember eval.' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Not yet tested against Ember eval.' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast, cheap. Not yet tested against Ember eval.' },
+    { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strong reasoning. Not yet tested against Ember eval.' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', desc: '128K context. Not yet tested against Ember eval.' },
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', desc: 'Cheapest OpenAI option. Not yet tested.' },
   ],
 }
 
