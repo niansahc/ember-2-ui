@@ -35,20 +35,16 @@ test.describe('Model Indicator', () => {
     await expect(panel).toBeVisible()
   })
 
-  test('dot has cloud class when cloud model is active', async ({ page }) => {
-    // This test checks the CSS class logic — if a cloud model happens
-    // to be active, the dot should have the cloud class. If local model
-    // is active, it should not. We just verify the dot exists and has
-    // a consistent class state.
+  test('dot class is consistent with displayed model name', async ({ page }) => {
+    // If model name contains "Claude" or "gpt", dot should have cloud class.
+    // Otherwise it should not. We read from the UI, not the API.
     const dot = page.locator('.app-model-dot')
+    const modelName = page.locator('.app-model-name')
     await expect(dot).toBeVisible({ timeout: 5000 })
+    await expect(modelName).toBeVisible({ timeout: 5000 })
 
-    // Get current model from API
-    const apiResponse = await page.request.get('/model', {
-      headers: { Authorization: 'Bearer test' },
-    })
-    const data = await apiResponse.json()
-    const isCloud = data.model?.startsWith('claude-') || data.model?.startsWith('gpt-')
+    const name = (await modelName.textContent()).toLowerCase()
+    const isCloud = name.includes('claude') || name.includes('gpt')
 
     if (isCloud) {
       await expect(dot).toHaveClass(/app-model-dot-cloud/)
