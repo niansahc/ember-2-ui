@@ -4,7 +4,6 @@ import {
   getModel as realGetModel,
   setModel as realSetModel,
   getProviderKey,
-  setProviderKey,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -44,10 +43,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
   // Cloud provider state
   const [providerStatus, setProviderStatus] = useState({}) // { anthropic: { configured: true }, ... }
-  const [addingProvider, setAddingProvider] = useState(false)
-  const [newProviderType, setNewProviderType] = useState('anthropic')
-  const [newProviderKey, setNewProviderKey] = useState('')
-  const [savingKey, setSavingKey] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -108,24 +103,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
     }
   }
 
-  async function handleSaveProviderKey() {
-    if (!newProviderKey.trim()) return
-    setSavingKey(true)
-    try {
-      await setProviderKey(newProviderType, newProviderKey.trim())
-      setProviderStatus((prev) => ({
-        ...prev,
-        [newProviderType]: { configured: true },
-      }))
-      setNewProviderKey('')
-      setAddingProvider(false)
-    } catch {
-      console.warn('[Settings] Failed to save provider key')
-    } finally {
-      setSavingKey(false)
-    }
-  }
-
   if (!isOpen) return null
 
   const visionModels = localModels.filter(
@@ -134,9 +111,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const textModels = localModels.filter(
     (m) => !m.toLowerCase().includes('vision') && !m.toLowerCase().includes('llava'),
   )
-
-  const configuredProviders = PROVIDERS.filter((p) => providerStatus[p.id]?.configured)
-  const unconfiguredProviders = PROVIDERS.filter((p) => !providerStatus[p.id]?.configured)
 
   return (
     <>
@@ -292,68 +266,50 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                 When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device. Check your provider's terms for their data handling policy.
               </div>
 
-              {configuredProviders.length === 0 && !addingProvider && (
-                <p className="model-list-empty">No cloud providers configured. Add an API key to get started.</p>
-              )}
+              {PROVIDERS.map((provider) => {
+                const configured = providerStatus[provider.id]?.configured
+                const models = CLOUD_MODELS[provider.id] || []
+                const envVar = `${provider.id.toUpperCase()}_API_KEY`
 
-              {configuredProviders.map((provider) => (
-                <div key={provider.id} className="cloud-provider-section">
-                  <div className="cloud-provider-name">{provider.name}</div>
-                  {CLOUD_MODELS[provider.id]?.map((m) => (
-                    <button
-                      key={m.id}
-                      className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
-                      onClick={() => handleSelectModel(m.id)}
-                    >
-                      <div className="model-list-item-info">
-                        <span className="model-list-item-name">{m.name}</span>
-                        <span className="model-list-item-desc">{m.desc}</span>
-                      </div>
-                      {m.id === currentModel && <span className="model-list-item-check">Active</span>}
-                    </button>
-                  ))}
-                </div>
-              ))}
+                return (
+                  <div key={provider.id} className="cloud-provider-section">
+                    <div className="cloud-provider-header">
+                      <span className="cloud-provider-name">{provider.name}</span>
+                      {configured ? (
+                        <span className="cloud-provider-status cloud-provider-configured">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Configured
+                        </span>
+                      ) : (
+                        <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
+                      )}
+                    </div>
 
-              {/* Add provider form */}
-              {addingProvider ? (
-                <div className="cloud-add-form">
-                  <select
-                    className="settings-select"
-                    value={newProviderType}
-                    onChange={(e) => setNewProviderType(e.target.value)}
-                  >
-                    {unconfiguredProviders.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="password"
-                    className="cloud-key-input"
-                    placeholder="API key"
-                    value={newProviderKey}
-                    onChange={(e) => setNewProviderKey(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveProviderKey()}
-                    autoFocus
-                  />
-                  <div className="cloud-add-actions">
-                    <button className="settings-action-btn" onClick={handleSaveProviderKey} disabled={savingKey}>
-                      {savingKey ? 'Saving...' : 'Save'}
-                    </button>
-                    <button className="settings-action-btn" onClick={() => { setAddingProvider(false); setNewProviderKey('') }}>
-                      Cancel
-                    </button>
+                    {configured ? (
+                      models.map((m) => (
+                        <button
+                          key={m.id}
+                          className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
+                          onClick={() => handleSelectModel(m.id)}
+                        >
+                          <div className="model-list-item-info">
+                            <span className="model-list-item-name">{m.name}</span>
+                            <span className="model-list-item-desc">{m.desc}</span>
+                          </div>
+                          {m.id === currentModel && <span className="model-list-item-check">Active</span>}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="cloud-provider-hint">
+                        Set <code>{envVar}</code> in your .env file or run:<br />
+                        <code>python scripts/set_provider_key.py --provider {provider.id}</code>
+                      </p>
+                    )}
                   </div>
-                </div>
-              ) : unconfiguredProviders.length > 0 && (
-                <button className="cloud-add-btn" onClick={() => setAddingProvider(true)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add provider
-                </button>
-              )}
+                )
+              })}
             </div>
           )}
 

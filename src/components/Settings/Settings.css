@@ -412,62 +412,47 @@
   margin-bottom: 0.5rem;
 }
 
-.cloud-provider-name {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  padding: 0.4rem 0.6rem 0.2rem;
-}
-
-/* ── Add provider ────────────────────────────────────────────── */
-
-.cloud-add-btn {
+.cloud-provider-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.6rem;
-  font-size: 0.85rem;
-  color: var(--accent);
-  border-radius: var(--radius-sm);
-  transition: background 0.15s;
-  width: 100%;
-  text-align: left;
-  font-style: italic;
+  justify-content: space-between;
+  padding: 0.5rem 0.6rem 0.2rem;
 }
 
-.cloud-add-btn:hover {
-  background: var(--accent-dim);
-}
-
-.cloud-add-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-
-.cloud-key-input {
-  padding: 0.4rem 0.6rem;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+.cloud-provider-name {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.85rem;
 }
 
-.cloud-key-input:focus {
-  border-color: var(--border-focus);
-  outline: none;
-}
-
-.cloud-add-actions {
+.cloud-provider-status {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cloud-provider-configured {
+  color: #6bcb8b;
+}
+
+.cloud-provider-not-configured {
+  color: var(--text-muted);
+}
+
+.cloud-provider-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.4rem 0.6rem 0.6rem;
+  line-height: 1.5;
+}
+
+.cloud-provider-hint code {
+  background: var(--code-bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
 }
 
 @media (max-width: 767px) {
