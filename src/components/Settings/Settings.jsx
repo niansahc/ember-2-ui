@@ -50,6 +50,8 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [keySaving, setKeySaving] = useState(false)
   const [keyError, setKeyError] = useState('')
   const [confirmingRemove, setConfirmingRemove] = useState(null) // provider id or null
+  const [vaultPathRevealed, setVaultPathRevealed] = useState(false)
+  const [vaultCopied, setVaultCopied] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -435,14 +437,62 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           {/* ── System ────────────────────────────────────────── */}
           <div className="settings-section-label">System</div>
 
-          <div className="settings-row">
+          <div className="settings-row vault-path-row">
             <div className="settings-row-info">
               <span className="settings-row-label">Where is my vault?</span>
-              <span className="settings-row-hint settings-row-path">C:\EmberVault</span>
+              <span className="settings-row-hint settings-row-path">
+                {vaultPathRevealed ? 'C:\\EmberVault' : '••••••••••••'}
+              </span>
             </div>
-            <button className="settings-action-btn" aria-label="Open vault folder">
-              Open
-            </button>
+            <div className="vault-path-actions">
+              <button
+                className="vault-path-icon-btn"
+                onClick={() => {
+                  setVaultPathRevealed(true)
+                  setTimeout(() => setVaultPathRevealed(false), 10000)
+                }}
+                aria-label={vaultPathRevealed ? 'Path visible' : 'Reveal vault path'}
+                title={vaultPathRevealed ? 'Hiding in 10s' : 'Reveal path'}
+              >
+                {vaultPathRevealed ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                )}
+              </button>
+              <button
+                className="vault-path-icon-btn"
+                onClick={() => {
+                  navigator.clipboard.writeText('C:\\EmberVault').then(() => {
+                    setVaultCopied(true)
+                    setTimeout(() => setVaultCopied(false), 2000)
+                  })
+                }}
+                aria-label="Copy vault path"
+                title={vaultCopied ? 'Copied!' : 'Copy path'}
+              >
+                {vaultCopied ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                  </svg>
+                )}
+              </button>
+              <button className="settings-action-btn" aria-label="Open vault folder">
+                Open
+              </button>
+            </div>
           </div>
 
           <button className="settings-link-btn" onClick={onOpenUpdates}>

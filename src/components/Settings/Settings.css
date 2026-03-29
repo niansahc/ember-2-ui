@@ -184,6 +184,34 @@
   border-color: var(--accent);
 }
 
+/* ── Vault path masking ──────────────────────────────────────── */
+
+.vault-path-row {
+  flex-wrap: wrap;
+}
+
+.vault-path-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.vault-path-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.vault-path-icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
 /* ── Theme picker ─────────────────────────────────────────────── */
 
 .theme-picker {
