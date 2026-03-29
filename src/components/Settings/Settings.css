@@ -296,37 +296,32 @@
 .model-tabs {
   display: flex;
   gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin: 0.5rem 0;
+  border-bottom: 2px solid var(--border);
+  margin: 0.75rem 0 0.5rem;
 }
 
 .model-tab {
   flex: 1;
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-muted);
   background: transparent;
   border: none;
-  transition: background 0.15s, color 0.15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
   text-align: center;
   cursor: pointer;
 }
 
-.model-tab:not(:last-child) {
-  border-right: 1px solid var(--border);
-}
-
 .model-tab:hover {
-  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
 .model-tab-active {
-  background: var(--accent-dim);
   color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* ── Model list ──────────────────────────────────────────────── */
