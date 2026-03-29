@@ -80,10 +80,17 @@ export function useChat() {
     // If only documents were attached with no text, we're done
     if (!text.trim() && images.length === 0) return
 
+    // If documents were ingested, prepend context so Ember knows about them
+    let enrichedText = text.trim()
+    if (documents.length > 0) {
+      const docNames = documents.map((d) => d.name).join(', ')
+      enrichedText = `[I just uploaded ${docNames} to my vault. The content is now available in your memory.] ${enrichedText}`
+    }
+
     const userMsg = {
       id: uuid(),
       role: 'user',
-      content: text.trim(),
+      content: enrichedText,
       files: images,
       timestamp: new Date().toISOString(),
     }
