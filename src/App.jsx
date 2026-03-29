@@ -206,6 +206,7 @@ export default function App() {
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
+        onModelChange={setModel}
         theme={theme}
         setTheme={setTheme}
         themes={themes}

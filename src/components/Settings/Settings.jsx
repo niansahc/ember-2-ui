@@ -27,7 +27,7 @@ const PROVIDERS = [
   { id: 'openai', name: 'OpenAI' },
 ]
 
-export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, theme, setTheme, themes }) {
+export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes }) {
   const modalRef = useModal(isOpen, onClose)
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
@@ -101,9 +101,10 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   }, [isOpen])
 
   async function handleSelectModel(modelId) {
-    setCurrentModel(modelId)
     try {
       await realSetModel(modelId)
+      setCurrentModel(modelId)
+      onModelChange?.(modelId)
     } catch {
       console.warn('[Settings] Failed to switch model')
     }
