@@ -49,6 +49,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [keyInput, setKeyInput] = useState('')
   const [keySaving, setKeySaving] = useState(false)
   const [keyError, setKeyError] = useState('')
+  const [confirmingRemove, setConfirmingRemove] = useState(null) // provider id or null
 
   useEffect(() => {
     if (!isOpen) return
@@ -303,26 +304,16 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                   <div key={provider.id} className="cloud-provider-section">
                     <div className="cloud-provider-header">
                       <span className="cloud-provider-name">{provider.name}</span>
-                      <div className="cloud-provider-header-right">
-                        {configured ? (
-                          <>
-                            <span className="cloud-provider-status cloud-provider-configured">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              Configured
-                            </span>
-                            <button className="cloud-remove-btn" onClick={() => handleRemoveKey(provider.id)} title="Remove API key">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </>
-                        ) : (
-                          <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
-                        )}
-                      </div>
+                      {configured ? (
+                        <span className="cloud-provider-status cloud-provider-configured">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Configured
+                        </span>
+                      ) : (
+                        <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
+                      )}
                     </div>
 
                     {configured && models.map((m) => (
@@ -338,6 +329,24 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                         {m.id === currentModel && <span className="model-list-item-check">Active</span>}
                       </button>
                     ))}
+
+                    {configured && confirmingRemove !== provider.id && (
+                      <button className="cloud-remove-key-btn" onClick={() => setConfirmingRemove(provider.id)}>
+                        Remove key
+                      </button>
+                    )}
+
+                    {confirmingRemove === provider.id && (
+                      <div className="cloud-remove-confirm">
+                        <p className="cloud-remove-confirm-text">
+                          Remove your {provider.name} API key? You'll need to add it again to use cloud models.
+                        </p>
+                        <div className="cloud-key-actions">
+                          <button className="settings-action-btn" onClick={() => setConfirmingRemove(null)}>Cancel</button>
+                          <button className="settings-action-btn cloud-remove-confirm-btn" onClick={() => { handleRemoveKey(provider.id); setConfirmingRemove(null) }}>Remove</button>
+                        </div>
+                      </div>
+                    )}
 
                     {!configured && !isAdding && (
                       <button className="cloud-add-key-btn" onClick={() => { setAddingKeyFor(provider.id); setKeyInput(''); setKeyError('') }}>
