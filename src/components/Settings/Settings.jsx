@@ -4,6 +4,8 @@ import {
   getModel as realGetModel,
   setModel as realSetModel,
   getProviderKey,
+  setProviderKey,
+  deleteProviderKey,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -43,6 +45,10 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
   // Cloud provider state
   const [providerStatus, setProviderStatus] = useState({}) // { anthropic: { configured: true }, ... }
+  const [addingKeyFor, setAddingKeyFor] = useState(null) // provider id or null
+  const [keyInput, setKeyInput] = useState('')
+  const [keySaving, setKeySaving] = useState(false)
+  const [keyError, setKeyError] = useState('')
 
   useEffect(() => {
     if (!isOpen) return
@@ -100,6 +106,31 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
       await realSetModel(modelId)
     } catch {
       console.warn('[Settings] Failed to switch model')
+    }
+  }
+
+  async function handleSaveKey(providerId) {
+    if (!keyInput.trim()) return
+    setKeySaving(true)
+    setKeyError('')
+    try {
+      await setProviderKey(providerId, keyInput.trim())
+      setProviderStatus((prev) => ({ ...prev, [providerId]: { configured: true } }))
+      setAddingKeyFor(null)
+      setKeyInput('')
+    } catch (err) {
+      setKeyError('Failed to save key. Check the API and try again.')
+    } finally {
+      setKeySaving(false)
+    }
+  }
+
+  async function handleRemoveKey(providerId) {
+    try {
+      await deleteProviderKey(providerId)
+      setProviderStatus((prev) => ({ ...prev, [providerId]: { configured: false } }))
+    } catch {
+      console.warn('[Settings] Failed to remove key')
     }
   }
 
@@ -262,54 +293,89 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           {/* Cloud tab */}
           {modelTab === 'cloud' && (
             <div className="model-list" role="tabpanel">
-              <div className="cloud-disclosure">
-                When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device. Check your provider's terms for their data handling policy.
-              </div>
-
               {PROVIDERS.map((provider) => {
                 const configured = providerStatus[provider.id]?.configured
                 const models = CLOUD_MODELS[provider.id] || []
-                const envVar = `${provider.id.toUpperCase()}_API_KEY`
+                const isAdding = addingKeyFor === provider.id
 
                 return (
                   <div key={provider.id} className="cloud-provider-section">
                     <div className="cloud-provider-header">
                       <span className="cloud-provider-name">{provider.name}</span>
-                      {configured ? (
-                        <span className="cloud-provider-status cloud-provider-configured">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          Configured
-                        </span>
-                      ) : (
-                        <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
-                      )}
+                      <div className="cloud-provider-header-right">
+                        {configured ? (
+                          <>
+                            <span className="cloud-provider-status cloud-provider-configured">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              Configured
+                            </span>
+                            <button className="cloud-remove-btn" onClick={() => handleRemoveKey(provider.id)} title="Remove API key">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
+                          <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
+                        )}
+                      </div>
                     </div>
 
-                    {configured ? (
-                      models.map((m) => (
-                        <button
-                          key={m.id}
-                          className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
-                          onClick={() => handleSelectModel(m.id)}
-                        >
-                          <div className="model-list-item-info">
-                            <span className="model-list-item-name">{m.name}</span>
-                            <span className="model-list-item-desc">{m.desc}</span>
-                          </div>
-                          {m.id === currentModel && <span className="model-list-item-check">Active</span>}
-                        </button>
-                      ))
-                    ) : (
-                      <p className="cloud-provider-hint">
-                        Set <code>{envVar}</code> in your .env file or run:<br />
-                        <code>python scripts/set_provider_key.py --provider {provider.id}</code>
-                      </p>
+                    {configured && models.map((m) => (
+                      <button
+                        key={m.id}
+                        className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
+                        onClick={() => handleSelectModel(m.id)}
+                      >
+                        <div className="model-list-item-info">
+                          <span className="model-list-item-name">{m.name}</span>
+                          <span className="model-list-item-desc">{m.desc}</span>
+                        </div>
+                        {m.id === currentModel && <span className="model-list-item-check">Active</span>}
+                      </button>
+                    ))}
+
+                    {!configured && !isAdding && (
+                      <button className="cloud-add-key-btn" onClick={() => { setAddingKeyFor(provider.id); setKeyInput(''); setKeyError('') }}>
+                        Add API key
+                      </button>
+                    )}
+
+                    {isAdding && (
+                      <div className="cloud-key-form">
+                        <p className="cloud-key-disclosure">
+                          Your key is stored securely in your system's credential store on this device. It never leaves your machine and is never stored in a file.
+                        </p>
+                        <input
+                          type="password"
+                          className="cloud-key-input"
+                          placeholder={`${provider.name} API key`}
+                          value={keyInput}
+                          onChange={(e) => setKeyInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveKey(provider.id)}
+                          autoFocus
+                        />
+                        {keyError && <p className="cloud-key-error">{keyError}</p>}
+                        <div className="cloud-key-actions">
+                          <button className="settings-action-btn cloud-key-save" onClick={() => handleSaveKey(provider.id)} disabled={keySaving}>
+                            {keySaving ? 'Saving...' : 'Save'}
+                          </button>
+                          <button className="settings-action-btn" onClick={() => { setAddingKeyFor(null); setKeyInput(''); setKeyError('') }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )
               })}
+
+              <div className="cloud-disclosure">
+                When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device.
+              </div>
             </div>
           )}
 

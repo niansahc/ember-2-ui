@@ -156,6 +156,14 @@ export async function setProviderKey(provider, apiKey) {
   return await res.json()
 }
 
+export async function deleteProviderKey(provider) {
+  const res = await fetch(`/provider-key/${provider}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  return await res.json()
+}
+
 // ---------------------------------------------------------------------------
 // Conversations — session CRUD
 // ---------------------------------------------------------------------------

@@ -416,11 +416,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.6rem 0.2rem;
+  padding: 0.6rem 0.6rem 0.3rem;
+}
+
+.cloud-provider-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cloud-provider-name {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -439,20 +445,95 @@
 
 .cloud-provider-not-configured {
   color: var(--text-muted);
+  opacity: 0.7;
+  font-style: italic;
 }
 
-.cloud-provider-hint {
+.cloud-remove-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.cloud-remove-btn:hover {
+  color: var(--error);
+  background: rgba(232, 93, 93, 0.1);
+}
+
+/* ── Add key button ──────────────────────────────────────────── */
+
+.cloud-add-key-btn {
+  padding: 0.4rem 0.6rem;
   font-size: 0.8rem;
   color: var(--text-muted);
-  padding: 0.4rem 0.6rem 0.6rem;
-  line-height: 1.5;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  margin: 0.25rem 0.6rem 0.5rem;
+  transition: color 0.15s, border-color 0.15s;
 }
 
-.cloud-provider-hint code {
-  background: var(--code-bg);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
+.cloud-add-key-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Key input form ──────────────────────────────────────────── */
+
+.cloud-key-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem 0.75rem;
+  animation: cloud-form-in 0.15s ease;
+}
+
+@keyframes cloud-form-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cloud-key-disclosure {
   font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding: 0.4rem 0.5rem;
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+}
+
+.cloud-key-input {
+  padding: 0.45rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.cloud-key-input:focus {
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+.cloud-key-error {
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
+.cloud-key-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cloud-key-save {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 @media (max-width: 767px) {
