@@ -64,9 +64,11 @@ test.describe('Sidebar', () => {
   test('project detail view has icon row when collapsed', async ({ page }) => {
     const sidebar = page.locator('.sidebar')
 
-    // Check if any project rows exist — skip if no projects
+    // Wait for projects to load — skip if none exist
     const projectRow = sidebar.locator('.sidebar-project-row').first()
-    if (!(await projectRow.isVisible({ timeout: 2000 }).catch(() => false))) {
+    try {
+      await projectRow.waitFor({ state: 'visible', timeout: 5000 })
+    } catch {
       test.skip()
       return
     }
@@ -98,7 +100,9 @@ test.describe('Sidebar', () => {
     const sidebar = page.locator('.sidebar')
 
     const projectRow = sidebar.locator('.sidebar-project-row').first()
-    if (!(await projectRow.isVisible({ timeout: 2000 }).catch(() => false))) {
+    try {
+      await projectRow.waitFor({ state: 'visible', timeout: 5000 })
+    } catch {
       test.skip()
       return
     }
