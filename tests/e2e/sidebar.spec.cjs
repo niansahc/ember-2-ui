@@ -60,4 +60,59 @@ test.describe('Sidebar', () => {
     await expect(newBtn).toBeVisible()
     await expect(newBtn).toHaveAttribute('aria-label', 'New conversation')
   })
+
+  test('project detail view has icon row when collapsed', async ({ page }) => {
+    const sidebar = page.locator('.sidebar')
+
+    // Check if any project rows exist — skip if no projects
+    const projectRow = sidebar.locator('.sidebar-project-row').first()
+    if (!(await projectRow.isVisible({ timeout: 2000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+
+    // Click into the project
+    await projectRow.click()
+
+    // Should now be in project detail view (back button visible)
+    const backBtn = sidebar.locator('.sidebar-back-btn')
+    await expect(backBtn).toBeVisible()
+
+    // Collapse the sidebar
+    const collapseBtn = sidebar.locator('.sidebar-icon-row-btn').last()
+    await collapseBtn.click()
+    await expect(sidebar).toHaveClass(/sidebar-collapsed/)
+
+    // Icon row should still be visible with new conversation and search icons
+    const newBtn = sidebar.locator('.sidebar-icon-row-btn[aria-label="New conversation"]')
+    await expect(newBtn).toBeVisible()
+
+    const searchBtn = sidebar.locator('.sidebar-icon-row-btn[aria-label="Search conversations"]')
+    await expect(searchBtn).toBeVisible()
+
+    const expandBtn = sidebar.locator('.sidebar-icon-row-btn[aria-label="Expand sidebar"]')
+    await expect(expandBtn).toBeVisible()
+  })
+
+  test('project detail view search icon expands sidebar', async ({ page }) => {
+    const sidebar = page.locator('.sidebar')
+
+    const projectRow = sidebar.locator('.sidebar-project-row').first()
+    if (!(await projectRow.isVisible({ timeout: 2000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+
+    await projectRow.click()
+
+    // Collapse
+    const collapseBtn = sidebar.locator('.sidebar-icon-row-btn').last()
+    await collapseBtn.click()
+    await expect(sidebar).toHaveClass(/sidebar-collapsed/)
+
+    // Click search icon — should expand
+    const searchBtn = sidebar.locator('.sidebar-icon-row-btn[aria-label="Search conversations"]')
+    await searchBtn.click()
+    await expect(sidebar).not.toHaveClass(/sidebar-collapsed/)
+  })
 })
