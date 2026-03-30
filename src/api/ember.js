@@ -271,6 +271,34 @@ export async function moveConversationToProject(conversationId, projectId) {
 }
 
 // ---------------------------------------------------------------------------
+// Preferences
+// ---------------------------------------------------------------------------
+
+export async function getPreferences() {
+  try {
+    const res = await fetch(`${API_URL}/preferences`, { headers: authHeaders() })
+    if (!res.ok) return {}
+    return await res.json()
+  } catch {
+    return {}
+  }
+}
+
+export async function updatePreferences(updates) {
+  try {
+    const res = await fetch(`${API_URL}/preferences`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(updates),
+    })
+    if (!res.ok) return {}
+    return await res.json()
+  } catch {
+    return {}
+  }
+}
+
+// ---------------------------------------------------------------------------
 // File upload
 // ---------------------------------------------------------------------------
 

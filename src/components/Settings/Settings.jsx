@@ -6,6 +6,8 @@ import {
   getProviderKey,
   setProviderKey,
   deleteProviderKey,
+  getPreferences,
+  updatePreferences,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -103,6 +105,17 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
       setProviderStatus(status)
     }
     checkProviders()
+
+    // Load conversational style preference
+    async function loadPreferences() {
+      try {
+        const prefs = await getPreferences()
+        if (prefs.conversational_style) {
+          setTone(prefs.conversational_style)
+        }
+      } catch {}
+    }
+    loadPreferences()
   }, [isOpen])
 
   async function handleSelectModel(modelId) {
@@ -244,21 +257,37 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
             </label>
           </div>
 
-          <div className="settings-row">
+          <div className="settings-style-section">
             <div className="settings-row-info">
-              <span className="settings-row-label">How should Ember talk to me?</span>
-              <span className="settings-row-hint">Sets the conversational style</span>
+              <span className="settings-row-label">Conversational Style</span>
+              <span className="settings-row-hint">Controls how Ember responds</span>
             </div>
-            <select
-              className="settings-select"
-              value={tone}
-              onChange={(e) => setTone(e.target.value)}
-              aria-label="Conversation tone"
-            >
-              <option value="casual">Casual</option>
-              <option value="balanced">Balanced</option>
-              <option value="thoughtful">Thoughtful</option>
-            </select>
+            <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
+              {[
+                { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
+                { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
+                { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="conversational_style"
+                    value={opt.value}
+                    checked={tone === opt.value}
+                    onChange={() => {
+                      setTone(opt.value)
+                      updatePreferences({ conversational_style: opt.value })
+                    }}
+                    className="sr-only"
+                  />
+                  <span className="settings-style-label">{opt.label}</span>
+                  <span className="settings-style-desc">{opt.desc}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <hr className="settings-divider" />

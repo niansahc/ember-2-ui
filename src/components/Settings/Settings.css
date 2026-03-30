@@ -201,6 +201,54 @@
   outline: none;
 }
 
+/* ── Conversational style selector ────────────────────────────── */
+
+.settings-style-section {
+  padding: 0.75rem 0;
+}
+
+.settings-style-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.settings-style-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.settings-style-option:hover {
+  border-color: var(--border-focus);
+}
+
+.settings-style-option-active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.settings-style-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-style-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.settings-style-option-active .settings-style-label {
+  color: var(--accent);
+}
+
 /* ── Action button ────────────────────────────────────────────── */
 
 .settings-action-btn {
