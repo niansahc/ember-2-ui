@@ -424,9 +424,54 @@
   text-align: center;
 }
 
+/* ── Task tray ────────────────────────────────────────────────── */
+
+.sidebar-tasks {
+  padding: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
+}
+
+.sidebar-task-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+}
+
+.sidebar-task-checkbox {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sidebar-task-title {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sidebar-task-title:hover {
+  color: var(--accent);
+}
+
+.sidebar-tasks-more {
+  display: block;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
 /* ── Footer ───────────────────────────────────────────────────── */
 
 .sidebar-footer {
+  border-top: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;

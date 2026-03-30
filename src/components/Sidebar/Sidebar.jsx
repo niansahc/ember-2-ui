@@ -8,6 +8,8 @@ import {
   createProject as realCreateProject,
   moveConversationToProject as realMoveConversationToProject,
   getVersion,
+  getTasks,
+  updateTaskStatus,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -32,6 +34,7 @@ export default function Sidebar({
   const [search, setSearch] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const contextRef = useRef(null)
+  const [tasks, setTasks] = useState([])
 
   // Collapse state — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
@@ -84,6 +87,29 @@ export default function Sidebar({
     }
     loadProjects()
   }, [])
+
+  // Load active/proposed tasks and poll every 30 seconds
+  useEffect(() => {
+    async function loadTasks() {
+      try {
+        const [active, proposed] = await Promise.all([
+          getTasks({ status: 'active' }),
+          getTasks({ status: 'proposed' }),
+        ])
+        setTasks([...active, ...proposed])
+      } catch {}
+    }
+    loadTasks()
+    const interval = setInterval(loadTasks, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  function handleTaskDone(taskId) {
+    // Optimistically remove from list
+    setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    // PATCH in background
+    updateTaskStatus(taskId, 'done').catch(() => {})
+  }
 
   // Close context menu on click outside
   useEffect(() => {
@@ -572,6 +598,39 @@ export default function Sidebar({
               )}
             </div>
           </>
+        )}
+
+        {/* Task tray — bottom-anchored, above footer */}
+        {!collapsed && tasks.length > 0 && (
+          <div className="sidebar-tasks">
+            <div className="sidebar-time-label">TASKS</div>
+            <ul className="sidebar-convo-list" role="list">
+              {tasks.slice(0, 5).map((task) => (
+                <li key={task.id} className="sidebar-task-row">
+                  <input
+                    type="checkbox"
+                    className="sidebar-task-checkbox"
+                    checked={false}
+                    onChange={() => handleTaskDone(task.id)}
+                    aria-label={`Mark "${task.title}" as done`}
+                  />
+                  <button
+                    className="sidebar-task-title"
+                    onClick={() => {
+                      const sessionId = task.metadata?.session_id
+                      if (sessionId) onSelectConversation(sessionId)
+                    }}
+                    title={task.title}
+                  >
+                    {task.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {tasks.length > 5 && (
+              <span className="sidebar-tasks-more">and {tasks.length - 5} more</span>
+            )}
+          </div>
         )}
 
         <div className="sidebar-footer">

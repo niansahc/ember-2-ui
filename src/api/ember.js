@@ -271,6 +271,32 @@ export async function moveConversationToProject(conversationId, projectId) {
 }
 
 // ---------------------------------------------------------------------------
+// Tasks
+// ---------------------------------------------------------------------------
+
+export async function getTasks({ status } = {}) {
+  try {
+    const params = status ? `?status=${status}` : ''
+    const res = await fetch(`${API_URL}/tasks${params}`, { headers: authHeaders() })
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.tasks || []
+  } catch {
+    return []
+  }
+}
+
+export async function updateTaskStatus(taskId, status) {
+  const res = await fetch(`${API_URL}/tasks/${taskId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ status }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Preferences
 // ---------------------------------------------------------------------------
 
