@@ -25,7 +25,7 @@ if (!API_KEY) {
  * Stream a chat response from the Ember API.
  * Yields text chunks as they arrive.
  */
-export async function* streamChat(messages, { sessionId = '', signal } = {}) {
+export async function streamChat(messages, { sessionId = '', signal } = {}) {
   const res = await fetch(`${API_URL}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -46,32 +46,39 @@ export async function* streamChat(messages, { sessionId = '', signal } = {}) {
     throw new Error(`API error ${res.status}: ${text}`)
   }
 
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+  // Web search transparency: read header before consuming the stream
+  const usedWebSearch = res.headers.get('x-ember-web-search') === 'true'
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
+  async function* chunks() {
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
 
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() || ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      const data = line.slice(6)
-      if (data === '[DONE]') return
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
 
-      try {
-        const parsed = JSON.parse(data)
-        const content = parsed.choices?.[0]?.delta?.content
-        if (content) yield content
-      } catch {
-        // Skip malformed chunks
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6)
+        if (data === '[DONE]') return
+
+        try {
+          const parsed = JSON.parse(data)
+          const content = parsed.choices?.[0]?.delta?.content
+          if (content) yield content
+        } catch {
+          // Skip malformed chunks
+        }
       }
     }
   }
+
+  return { stream: chunks(), usedWebSearch }
 }
 
 // ---------------------------------------------------------------------------

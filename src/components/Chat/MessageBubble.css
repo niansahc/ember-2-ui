@@ -69,6 +69,22 @@
   object-fit: cover;
 }
 
+/* ── Web search transparency indicator ─────────────────────────── */
+
+.bubble-web-search {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.bubble-web-search svg {
+  flex-shrink: 0;
+}
+
 /* ── Actions bar (copy, regenerate, timestamp) ────────────────── */
 
 .bubble-actions {

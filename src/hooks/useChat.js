@@ -141,11 +141,22 @@ export function useChat() {
       if (apiAvailableRef.current) {
         try {
           // Stream from real API — tokens arrive one at a time
-          for await (const chunk of realStreamChat(allMessages, { sessionId })) {
+          // streamChat returns { stream, usedWebSearch } so we can read
+          // the web search transparency header before consuming chunks.
+          const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
+          for await (const chunk of stream) {
             if (abortRef.current) break
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            )
+          }
+          // Set web search flag on the assistant message after streaming completes
+          if (usedWebSearch) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
               ),
             )
           }
@@ -242,11 +253,19 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          for await (const chunk of realStreamChat(allMessages, { sessionId })) {
+          const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
+          for await (const chunk of stream) {
             if (abortRef.current) break
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            )
+          }
+          if (usedWebSearch) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
               ),
             )
           }

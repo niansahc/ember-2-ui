@@ -109,6 +109,17 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
           )}
         </div>
 
+        {/* Web search transparency indicator */}
+        {!isUser && message.usedWebSearch && (
+          <div className="bubble-web-search" aria-label="Web search was used for this response">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>Web search used</span>
+          </div>
+        )}
+
         {/* Actions bar — visible on hover */}
         {!editing && (
           <div className="bubble-actions">
