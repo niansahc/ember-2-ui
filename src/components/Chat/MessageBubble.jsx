@@ -90,7 +90,16 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
               </div>
             </div>
           ) : isUser ? (
-            <p className="bubble-text">{message.content}</p>
+            <>
+              {message.imageDataUrls && message.imageDataUrls.length > 0 && (
+                <div className="bubble-images">
+                  {message.imageDataUrls.map((url, i) => (
+                    <img key={i} src={url} alt={`Uploaded image ${i + 1}`} className="bubble-image-thumb" />
+                  ))}
+                </div>
+              )}
+              <p className="bubble-text">{message.content}</p>
+            </>
           ) : (
             <div className="bubble-markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

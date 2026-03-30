@@ -9,6 +9,18 @@ import {
 } from '../api/ember.js'
 
 /**
+ * Convert a File object to a base64 data URL string.
+ */
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`))
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
  * useChat — manages message state, session tracking, and streaming responses.
  *
  * Tries the real Ember API first. Falls back to mock on failure.
@@ -87,11 +99,17 @@ export function useChat() {
       enrichedText = `[I just uploaded ${docNames} to my vault. The content is now available in your memory.] ${enrichedText}`
     }
 
+    // Convert image File objects to base64 data URLs for the API
+    const imageDataUrls = await Promise.all(
+      images.map((file) => fileToDataUrl(file))
+    )
+
     const userMsg = {
       id: uuid(),
       role: 'user',
       content: enrichedText,
       files: images,
+      imageDataUrls,
       timestamp: new Date().toISOString(),
     }
 
@@ -106,10 +124,19 @@ export function useChat() {
     ])
 
     try {
-      const allMessages = [...messages, userMsg].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }))
+      // Build the messages array for the API. The last user message uses
+      // OpenAI multipart content format when images are attached.
+      const allMessages = [...messages, userMsg].map((m) => {
+        // For the message that has images, format as multipart content
+        if (m.imageDataUrls && m.imageDataUrls.length > 0) {
+          const parts = [{ type: 'text', text: m.content || '' }]
+          for (const dataUrl of m.imageDataUrls) {
+            parts.push({ type: 'image_url', image_url: { url: dataUrl } })
+          }
+          return { role: m.role, content: parts }
+        }
+        return { role: m.role, content: m.content }
+      })
 
       if (apiAvailableRef.current) {
         try {

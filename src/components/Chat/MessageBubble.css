@@ -53,6 +53,22 @@
   margin: 0;
 }
 
+/* ── Image thumbnails in sent messages ─────────────────────────── */
+
+.bubble-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bubble-image-thumb {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
 /* ── Actions bar (copy, regenerate, timestamp) ────────────────── */
 
 .bubble-actions {
