@@ -204,7 +204,19 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
           <div className="settings-row">
             <div className="settings-row-info">
-              <span className="settings-row-label">Can Ember search the web?</span>
+              <span className="settings-row-label">
+                Can Ember search the web?
+                <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Web search privacy information">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  <span className="settings-info-tooltip">
+                    Web search queries are sent through a local SearXNG instance running on your machine. SearXNG forwards queries to external search engines without exposing your IP address or identity. Your queries are not stored. Disable web search here to keep all processing fully local.
+                  </span>
+                </span>
+              </span>
               <span className="settings-row-hint">Enables live web results via SearXNG</span>
             </div>
             <label className="toggle" aria-label="Toggle web search">
