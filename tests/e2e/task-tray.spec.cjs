@@ -52,16 +52,13 @@ test.describe('Task Tray', () => {
   })
 
   test('task tray appears when a task is created via API', async ({ page }) => {
-    // Create a task via the API
     const result = await createTask('Playwright test task')
     const taskId = result.id
 
     try {
-      // Reload to trigger task fetch
       await page.reload()
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-      // Task tray should appear with the TASKS header and our task
       const taskTray = page.locator('.sidebar-tasks')
       await expect(taskTray).toBeVisible({ timeout: 10000 })
 
@@ -75,29 +72,56 @@ test.describe('Task Tray', () => {
     }
   })
 
-  test('checking a task checkbox removes it from the tray', async ({ page }) => {
-    // Create a task via the API
-    const result = await createTask('Task to complete')
+  test('checking a task shows strikethrough and stays visible', async ({ page }) => {
+    const result = await createTask('Task to check off')
     const taskId = result.id
 
     try {
       await page.reload()
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-      // Wait for task tray to appear
       const taskTray = page.locator('.sidebar-tasks')
       await expect(taskTray).toBeVisible({ timeout: 10000 })
 
-      // Find the checkbox and click it
+      // Click the checkbox
       const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
-      await expect(checkbox).toBeVisible()
       await checkbox.click()
 
-      // Task should disappear (optimistic removal)
-      const taskTitle = taskTray.locator('.sidebar-task-title')
-      await expect(taskTitle.filter({ hasText: 'Task to complete' })).not.toBeVisible({ timeout: 5000 })
+      // Task row should get the done class (strikethrough + dimmed)
+      const taskRow = taskTray.locator('.sidebar-task-row').first()
+      await expect(taskRow).toHaveClass(/sidebar-task-done/, { timeout: 3000 })
+
+      // Task title should still be visible (not removed)
+      const taskTitle = taskTray.locator('.sidebar-task-title').first()
+      await expect(taskTitle).toBeVisible()
+      await expect(taskTitle).toContainText('Task to check off')
     } finally {
-      // Task was already marked done by the checkbox, but clean up just in case
+      await cleanupTask(taskId)
+    }
+  })
+
+  test('unchecking a done task removes strikethrough', async ({ page }) => {
+    const result = await createTask('Task to toggle')
+    const taskId = result.id
+
+    try {
+      await page.reload()
+      await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+      const taskTray = page.locator('.sidebar-tasks')
+      await expect(taskTray).toBeVisible({ timeout: 10000 })
+
+      const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
+      const taskRow = taskTray.locator('.sidebar-task-row').first()
+
+      // Check it
+      await checkbox.click()
+      await expect(taskRow).toHaveClass(/sidebar-task-done/, { timeout: 3000 })
+
+      // Uncheck it
+      await checkbox.click()
+      await expect(taskRow).not.toHaveClass(/sidebar-task-done/, { timeout: 3000 })
+    } finally {
       await cleanupTask(taskId)
     }
   })
