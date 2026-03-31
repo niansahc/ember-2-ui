@@ -461,6 +461,14 @@
   color: var(--accent);
 }
 
+.sidebar-task-done {
+  opacity: 0.5;
+}
+
+.sidebar-task-done .sidebar-task-title {
+  text-decoration: line-through;
+}
+
 .sidebar-tasks-more {
   display: block;
   padding: 0.2rem 0.75rem;

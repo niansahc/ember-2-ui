@@ -36,7 +36,8 @@ export default function Sidebar({
   const contextRef = useRef(null)
   const [tasks, setTasks] = useState([])
   const [showAllTasks, setShowAllTasks] = useState(false)
-  const completedTaskIds = useRef(new Set())
+  // Track tasks toggled done in this session (visual state, not removed)
+  const [doneTasks, setDoneTasks] = useState(new Set())
 
   // Collapse state — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
@@ -98,11 +99,7 @@ export default function Sidebar({
           getTasks({ status: 'active' }),
           getTasks({ status: 'proposed' }),
         ])
-        // Filter out tasks the user just completed (prevents reappear on poll)
-        const all = [...active, ...proposed].filter(
-          (t) => !completedTaskIds.current.has(t.id)
-        )
-        setTasks(all)
+        setTasks([...active, ...proposed])
       } catch {}
     }
     loadTasks()
@@ -110,15 +107,23 @@ export default function Sidebar({
     return () => clearInterval(interval)
   }, [])
 
-  function handleTaskDone(taskId) {
-    // Track completed ID so poll doesn't bring it back
-    completedTaskIds.current.add(taskId)
-    // Optimistically remove from list
-    setTasks((prev) => prev.filter((t) => t.id !== taskId))
+  function handleTaskToggle(taskId) {
+    const isDone = doneTasks.has(taskId)
+    const newStatus = isDone ? 'active' : 'done'
+
+    // Toggle visual state
+    setDoneTasks((prev) => {
+      const next = new Set(prev)
+      if (isDone) {
+        next.delete(taskId)
+      } else {
+        next.add(taskId)
+      }
+      return next
+    })
+
     // PATCH in background
-    updateTaskStatus(taskId, 'done').catch(() => {})
-    // Clear from completed set after 60s (poll will have fresh data by then)
-    setTimeout(() => completedTaskIds.current.delete(taskId), 60000)
+    updateTaskStatus(taskId, newStatus).catch(() => {})
   }
 
   // Close context menu on click outside
@@ -615,27 +620,30 @@ export default function Sidebar({
           <div className="sidebar-tasks">
             <div className="sidebar-time-label">TASKS</div>
             <ul className="sidebar-convo-list" role="list">
-              {(showAllTasks ? tasks : tasks.slice(0, 5)).map((task) => (
-                <li key={task.id} className="sidebar-task-row">
-                  <input
-                    type="checkbox"
-                    className="sidebar-task-checkbox"
-                    checked={false}
-                    onChange={() => handleTaskDone(task.id)}
-                    aria-label={`Mark "${task.title}" as done`}
-                  />
-                  <button
-                    className="sidebar-task-title"
-                    onClick={() => {
-                      const sessionId = task.metadata?.session_id
-                      if (sessionId) onSelectConversation(sessionId)
-                    }}
-                    title={task.title}
-                  >
-                    {task.title}
-                  </button>
-                </li>
-              ))}
+              {(showAllTasks ? tasks : tasks.slice(0, 5)).map((task) => {
+                const isDone = doneTasks.has(task.id)
+                return (
+                  <li key={task.id} className={`sidebar-task-row ${isDone ? 'sidebar-task-done' : ''}`}>
+                    <input
+                      type="checkbox"
+                      className="sidebar-task-checkbox"
+                      checked={isDone}
+                      onChange={() => handleTaskToggle(task.id)}
+                      aria-label={isDone ? `Mark "${task.title}" as active` : `Mark "${task.title}" as done`}
+                    />
+                    <button
+                      className="sidebar-task-title"
+                      onClick={() => {
+                        const sessionId = task.metadata?.session_id
+                        if (sessionId) onSelectConversation(sessionId)
+                      }}
+                      title={task.title}
+                    >
+                      {task.title}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
             {tasks.length > 5 && !showAllTasks && (
               <button
