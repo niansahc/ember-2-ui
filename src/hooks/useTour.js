@@ -66,30 +66,18 @@ export function useTour(isReady) {
           ],
         })
 
-        tour.addStep({
-          id: 'tasks',
-          text: "Ask Ember to create tasks and they\u2019ll appear here. Check them off when done \u2014 they clear at the end of the day.",
-          attachTo: { element: '.sidebar-tasks', on: 'right' },
-          // If no tasks exist, fall back to the footer area
-          beforeShowPromise: () => {
-            return new Promise((resolve) => {
-              const el = document.querySelector('.sidebar-tasks')
-              if (!el) {
-                // Re-attach to footer if no tasks section visible
-                const step = tour.getCurrentStep()
-                step.updateStepOptions({
-                  attachTo: { element: '.sidebar-footer', on: 'right' },
-                  text: "When you ask Ember to create tasks, they\u2019ll appear here in the sidebar. Check them off when done.",
-                })
-              }
-              resolve()
-            })
-          },
-          buttons: [
-            { text: 'Back', action: tour.back, classes: 'ember-tour-back' },
-            { text: 'Next', action: tour.next, classes: 'ember-tour-next' },
-          ],
-        })
+        // Only show task step if tasks exist in the sidebar
+        if (document.querySelector('.sidebar-tasks')) {
+          tour.addStep({
+            id: 'tasks',
+            text: "Ask Ember to create tasks and they\u2019ll appear here. Check them off when done \u2014 they clear at the end of the day.",
+            attachTo: { element: '.sidebar-tasks', on: 'right' },
+            buttons: [
+              { text: 'Back', action: tour.back, classes: 'ember-tour-back' },
+              { text: 'Next', action: tour.next, classes: 'ember-tour-next' },
+            ],
+          })
+        }
 
         tour.addStep({
           id: 'settings',
