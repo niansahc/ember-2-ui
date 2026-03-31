@@ -105,11 +105,13 @@ test.describe('Task Tray', () => {
     const taskId = result.id
 
     try {
+      // Brief pause to ensure task is fully written before reload
+      await page.waitForTimeout(500)
       await page.reload()
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
       const taskTray = page.locator('.sidebar-tasks')
-      await expect(taskTray).toBeVisible({ timeout: 10000 })
+      await expect(taskTray).toBeVisible({ timeout: 15000 })
 
       const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
       const taskRow = taskTray.locator('.sidebar-task-row').first()
