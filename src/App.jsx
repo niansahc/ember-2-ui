@@ -10,7 +10,9 @@ import { getModel as realGetModel } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
+import { useTour } from './hooks/useTour.js'
 import './App.css'
+import './styles/tour.css'
 
 function isCloudModelName(name) {
   return name && (name.startsWith('claude-') || name.startsWith('gpt-'))
@@ -40,6 +42,9 @@ export default function App() {
   const [model, setModel] = useState(null)
 
   const { messages, isStreaming, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
+
+  // Guided first-run tour — shows once for new users
+  useTour(view === 'chat')
 
   // Sync active conversation to localStorage when messages arrive in a new session
   useEffect(() => {

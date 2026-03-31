@@ -1,0 +1,78 @@
+/* Ember first-run tour — Shepherd.js overrides */
+
+.shepherd-modal-overlay-container {
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.ember-tour-step.shepherd-element {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  max-width: 340px;
+  z-index: 200;
+}
+
+.ember-tour-step .shepherd-content {
+  padding: 0;
+}
+
+.ember-tour-step .shepherd-text {
+  padding: 1.25rem 1.25rem 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.ember-tour-step .shepherd-header {
+  display: none;
+}
+
+.ember-tour-step .shepherd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem 1rem;
+}
+
+.ember-tour-step .shepherd-button {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ember-tour-next {
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-weight: 500;
+}
+
+.ember-tour-next:hover {
+  filter: brightness(1.1);
+}
+
+.ember-tour-back {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.ember-tour-back:hover {
+  color: var(--text-primary);
+}
+
+.ember-tour-skip {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.ember-tour-skip:hover {
+  color: var(--text-primary);
+}
+
+.shepherd-arrow::before {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+}
