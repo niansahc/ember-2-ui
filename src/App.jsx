@@ -39,7 +39,15 @@ export default function App() {
   const [activeProject, setActiveProject] = useState('general')
   const [model, setModel] = useState(null)
 
-  const { messages, isStreaming, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
+  const { messages, isStreaming, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
+
+  // Sync active conversation to localStorage when messages arrive in a new session
+  useEffect(() => {
+    if (messages.length > 0 && sessionId && !activeConversation) {
+      setActiveConversation(sessionId)
+      try { localStorage.setItem('ember_active_session', sessionId) } catch {}
+    }
+  }, [messages.length, sessionId, activeConversation])
   const { theme, setTheme, themes } = useTheme()
 
   // Global keyboard shortcuts
@@ -94,11 +102,24 @@ export default function App() {
     realGetModel().then((data) => {
       if (data.model) setModel(data.model)
     }).catch(() => {})
-  }, [])
+    // Restore active conversation from localStorage if one was saved
+    try {
+      const savedSession = localStorage.getItem('ember_active_session')
+      if (savedSession) {
+        setActiveConversation(savedSession)
+        loadConversation(savedSession).catch(() => {
+          // Saved session no longer exists — fall back to blank state
+          setActiveConversation(null)
+          localStorage.removeItem('ember_active_session')
+        })
+      }
+    } catch {}
+  }, [loadConversation])
 
   function handleNewConversation(projectId) {
     clearMessages()
     setActiveConversation(null)
+    try { localStorage.removeItem('ember_active_session') } catch {}
     setSidebarOpen(false)
     // If started from a project view, assign new conversation to that project
     if (projectId && projectId !== 'general') {
@@ -108,6 +129,7 @@ export default function App() {
 
   function handleSelectConversation(id, projectId) {
     setActiveConversation(id)
+    try { localStorage.setItem('ember_active_session', id) } catch {}
     if (projectId) setActiveProject(projectId)
     setSidebarOpen(false)
     loadConversation(id)
