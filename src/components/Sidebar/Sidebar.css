@@ -466,6 +466,13 @@
   padding: 0.2rem 0.75rem;
   font-size: 0.7rem;
   color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebar-tasks-more:hover {
+  color: var(--accent);
 }
 
 /* ── Footer ───────────────────────────────────────────────────── */

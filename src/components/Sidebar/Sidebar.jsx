@@ -35,6 +35,8 @@ export default function Sidebar({
   const [contextMenu, setContextMenu] = useState(null)
   const contextRef = useRef(null)
   const [tasks, setTasks] = useState([])
+  const [showAllTasks, setShowAllTasks] = useState(false)
+  const completedTaskIds = useRef(new Set())
 
   // Collapse state — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
@@ -96,7 +98,11 @@ export default function Sidebar({
           getTasks({ status: 'active' }),
           getTasks({ status: 'proposed' }),
         ])
-        setTasks([...active, ...proposed])
+        // Filter out tasks the user just completed (prevents reappear on poll)
+        const all = [...active, ...proposed].filter(
+          (t) => !completedTaskIds.current.has(t.id)
+        )
+        setTasks(all)
       } catch {}
     }
     loadTasks()
@@ -105,10 +111,14 @@ export default function Sidebar({
   }, [])
 
   function handleTaskDone(taskId) {
+    // Track completed ID so poll doesn't bring it back
+    completedTaskIds.current.add(taskId)
     // Optimistically remove from list
     setTasks((prev) => prev.filter((t) => t.id !== taskId))
     // PATCH in background
     updateTaskStatus(taskId, 'done').catch(() => {})
+    // Clear from completed set after 60s (poll will have fresh data by then)
+    setTimeout(() => completedTaskIds.current.delete(taskId), 60000)
   }
 
   // Close context menu on click outside
@@ -605,7 +615,7 @@ export default function Sidebar({
           <div className="sidebar-tasks">
             <div className="sidebar-time-label">TASKS</div>
             <ul className="sidebar-convo-list" role="list">
-              {tasks.slice(0, 5).map((task) => (
+              {(showAllTasks ? tasks : tasks.slice(0, 5)).map((task) => (
                 <li key={task.id} className="sidebar-task-row">
                   <input
                     type="checkbox"
@@ -627,8 +637,22 @@ export default function Sidebar({
                 </li>
               ))}
             </ul>
-            {tasks.length > 5 && (
-              <span className="sidebar-tasks-more">and {tasks.length - 5} more</span>
+            {tasks.length > 5 && !showAllTasks && (
+              <button
+                className="sidebar-tasks-more"
+                onClick={() => setShowAllTasks(true)}
+                aria-label={`Show ${tasks.length - 5} more tasks`}
+              >
+                and {tasks.length - 5} more
+              </button>
+            )}
+            {tasks.length > 5 && showAllTasks && (
+              <button
+                className="sidebar-tasks-more"
+                onClick={() => setShowAllTasks(false)}
+              >
+                show less
+              </button>
             )}
           </div>
         )}
