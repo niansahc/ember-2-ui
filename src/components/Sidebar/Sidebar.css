@@ -431,6 +431,11 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
 }
 
+.sidebar-tasks .sidebar-convo-list {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
 .sidebar-task-row {
   display: flex;
   align-items: center;
@@ -556,5 +561,11 @@
 
 .sidebar-version:hover {
   color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .sidebar-tasks .sidebar-convo-list {
+    max-height: 30vh;
+  }
 }
 
