@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import emberMascot from '../../../assets/ember-mascot.png'
+import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
 import './MessageBubble.css'
 
 export default function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
@@ -55,11 +56,16 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
   }
 
   function formatTime(iso) {
-    if (!iso) return ''
-    return new Date(iso).toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    })
+    const d = parseEmberTimestamp(iso)
+    if (!d) return ''
+    const now = new Date()
+    const isToday = d.toDateString() === now.toDateString()
+    const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    if (isToday) return time
+    const sameYear = d.getFullYear() === now.getFullYear()
+    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    if (sameYear) return `${date}, ${time}`
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   return (

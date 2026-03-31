@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
 import { mockGetConversations, mockGetProjects } from '../../api/mock.js'
 import {
   getConversations as realGetConversations,
@@ -168,7 +169,7 @@ export default function Sidebar({
     : []
 
   function getTimeBucket(iso) {
-    const d = new Date(iso)
+    const d = parseEmberTimestamp(iso) || new Date(0)
     const now = new Date()
     const diffDays = Math.floor((now - d) / 86400000)
     if (diffDays === 0) return 'Today'

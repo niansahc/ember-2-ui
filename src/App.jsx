@@ -8,6 +8,7 @@ import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
 import { getModel as realGetModel } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
+import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
 import './App.css'
 
@@ -75,7 +76,7 @@ export default function App() {
   function exportConversation() {
     if (messages.length === 0) return
     const md = messages
-      .map((m) => `**${m.role === 'user' ? 'You' : 'Ember'}** (${new Date(m.timestamp).toLocaleString()})\n\n${m.content}`)
+      .map((m) => `**${m.role === 'user' ? 'You' : 'Ember'}** (${(parseEmberTimestamp(m.timestamp) || new Date()).toLocaleString()})\n\n${m.content}`)
       .join('\n\n---\n\n')
     const blob = new Blob([md], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
