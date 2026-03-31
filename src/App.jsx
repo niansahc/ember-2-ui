@@ -121,6 +121,7 @@ export default function App() {
     <div className="app-layout">
       <Sidebar
         isOpen={sidebarOpen}
+        isStreaming={isStreaming}
         onClose={() => setSidebarOpen(false)}
         onNewConversation={handleNewConversation}
         activeConversationId={activeConversation}

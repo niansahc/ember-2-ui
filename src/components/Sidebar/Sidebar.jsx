@@ -17,6 +17,7 @@ import './Sidebar.css'
 
 export default function Sidebar({
   isOpen,
+  isStreaming,
   onClose,
   onNewConversation,
   activeConversationId,
@@ -92,21 +93,33 @@ export default function Sidebar({
     loadProjects()
   }, [])
 
-  // Load active/proposed tasks and poll every 30 seconds
+  // Load active/proposed tasks
+  const loadTasksRef = useRef(null)
+  loadTasksRef.current = async function loadTasks() {
+    try {
+      const [active, proposed] = await Promise.all([
+        getTasks({ status: 'active' }),
+        getTasks({ status: 'proposed' }),
+      ])
+      setTasks([...active, ...proposed])
+    } catch {}
+  }
+
+  // Initial load + poll every 30 seconds
   useEffect(() => {
-    async function loadTasks() {
-      try {
-        const [active, proposed] = await Promise.all([
-          getTasks({ status: 'active' }),
-          getTasks({ status: 'proposed' }),
-        ])
-        setTasks([...active, ...proposed])
-      } catch {}
-    }
-    loadTasks()
-    const interval = setInterval(loadTasks, 30000)
+    loadTasksRef.current()
+    const interval = setInterval(() => loadTasksRef.current(), 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Refresh tasks immediately when streaming ends (new tasks may have been created)
+  const wasStreamingRef = useRef(false)
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) {
+      loadTasksRef.current()
+    }
+    wasStreamingRef.current = isStreaming
+  }, [isStreaming])
 
   function handleTaskToggle(taskId) {
     const isDone = doneTasks.has(taskId)
