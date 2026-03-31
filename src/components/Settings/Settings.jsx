@@ -8,6 +8,7 @@ import {
   deleteProviderKey,
   getPreferences,
   updatePreferences,
+  getPinStatus,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -56,6 +57,10 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [confirmingRemove, setConfirmingRemove] = useState(null) // provider id or null
   const [vaultPathRevealed, setVaultPathRevealed] = useState(false)
   const [vaultCopied, setVaultCopied] = useState(false)
+  const [securityPinSet, setSecurityPinSet] = useState(false)
+  const [lockOnLaunch, setLockOnLaunch] = useState(false)
+  const [idleLockEnabled, setIdleLockEnabled] = useState(false)
+  const [idleTimeout, setIdleTimeout] = useState(15)
 
   useEffect(() => {
     if (!isOpen) return
@@ -109,10 +114,12 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
     // Load conversational style preference
     async function loadPreferences() {
       try {
-        const prefs = await getPreferences()
-        if (prefs.conversational_style) {
-          setTone(prefs.conversational_style)
-        }
+        const [prefs, pinStatus] = await Promise.all([getPreferences(), getPinStatus()])
+        if (prefs.conversational_style) setTone(prefs.conversational_style)
+        setLockOnLaunch(prefs.lock_on_launch || false)
+        setIdleLockEnabled(prefs.idle_lock_enabled || false)
+        setIdleTimeout(prefs.idle_timeout || 15)
+        setSecurityPinSet(pinStatus.pin_set)
       } catch {}
     }
     loadPreferences()
@@ -473,6 +480,93 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                 )}
               </select>
             </div>
+          )}
+
+          <hr className="settings-divider" />
+
+          {/* ── Security ───────────────────────────────────────── */}
+          <div className="settings-section-label">Security</div>
+
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <span className="settings-row-label">Lock on launch</span>
+              <span className="settings-row-hint">Require PIN when Ember opens</span>
+            </div>
+            <label className="toggle" aria-label="Toggle lock on launch">
+              <input
+                type="checkbox" role="switch"
+                checked={lockOnLaunch}
+                onChange={(e) => {
+                  setLockOnLaunch(e.target.checked)
+                  updatePreferences({ lock_on_launch: e.target.checked })
+                }}
+              />
+              <span className="toggle-track" />
+            </label>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <span className="settings-row-label">Lock after idle</span>
+              <span className="settings-row-hint">Auto-lock after inactivity</span>
+            </div>
+            <label className="toggle" aria-label="Toggle idle lock">
+              <input
+                type="checkbox" role="switch"
+                checked={idleLockEnabled}
+                onChange={(e) => {
+                  setIdleLockEnabled(e.target.checked)
+                  updatePreferences({ idle_lock_enabled: e.target.checked })
+                }}
+              />
+              <span className="toggle-track" />
+            </label>
+          </div>
+
+          {idleLockEnabled && (
+            <div className="settings-row settings-row-nested">
+              <div className="settings-row-info">
+                <span className="settings-row-label">Idle timeout</span>
+                <span className="settings-row-hint">Minutes before auto-lock</span>
+              </div>
+              <select
+                className="settings-select"
+                value={idleTimeout}
+                onChange={(e) => {
+                  const val = Number(e.target.value)
+                  setIdleTimeout(val)
+                  updatePreferences({ idle_timeout: val })
+                }}
+                aria-label="Idle timeout minutes"
+              >
+                <option value={5}>5 min</option>
+                <option value={10}>10 min</option>
+                <option value={15}>15 min</option>
+                <option value={30}>30 min</option>
+                <option value={60}>60 min</option>
+              </select>
+            </div>
+          )}
+
+          {!securityPinSet && (
+            <button
+              className="settings-action-btn"
+              onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-setup')) }}
+            >
+              Set up PIN
+            </button>
+          )}
+
+          {securityPinSet && (
+            <button
+              className="settings-action-btn settings-action-btn-danger"
+              onClick={() => {
+                // PIN removal is a sensitive operation — for MVP, direct to settings
+                alert('To remove your PIN, use the recovery passphrase flow or contact support.')
+              }}
+            >
+              Remove PIN
+            </button>
           )}
 
           <hr className="settings-divider" />

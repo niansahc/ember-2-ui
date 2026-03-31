@@ -1,0 +1,127 @@
+.lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.lock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2.5rem 2rem;
+  max-width: 340px;
+  width: 100%;
+}
+
+.lock-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.3);
+}
+
+.lock-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.lock-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.15em;
+}
+
+.lock-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.lock-input:disabled {
+  opacity: 0.5;
+}
+
+.lock-btn {
+  width: 100%;
+  padding: 0.6rem;
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.lock-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.lock-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lock-error {
+  color: #e85d5d;
+  font-size: 0.8rem;
+  text-align: center;
+  margin: 0;
+}
+
+.lock-attempts {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0;
+}
+
+.lock-success {
+  color: var(--accent);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.lock-link {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lock-link:hover {
+  color: var(--accent);
+}
+
+/* Shake animation on wrong PIN */
+@keyframes lock-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+.lock-shake {
+  animation: lock-shake 0.4s ease-out;
+}

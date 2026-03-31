@@ -271,6 +271,56 @@ export async function moveConversationToProject(conversationId, projectId) {
 }
 
 // ---------------------------------------------------------------------------
+// Security / PIN
+// ---------------------------------------------------------------------------
+
+export async function getPinStatus() {
+  try {
+    const res = await fetch(`${API_URL}/security/pin/status`)
+    if (!res.ok) return { pin_set: false }
+    return await res.json()
+  } catch {
+    return { pin_set: false }
+  }
+}
+
+export async function setPin(pin, recoveryPassphrase) {
+  const res = await fetch(`${API_URL}/security/pin/set`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ pin, recovery_passphrase: recoveryPassphrase }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Error ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function verifyPin(pin) {
+  const res = await fetch(`${API_URL}/security/pin/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin }),
+  })
+  if (res.status === 429) return { valid: false, locked: true }
+  if (!res.ok) return { valid: false }
+  return await res.json()
+}
+
+export async function recoverPin(recoveryPassphrase, newPin) {
+  const res = await fetch(`${API_URL}/security/pin/recover`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recovery_passphrase: recoveryPassphrase, new_pin: newPin }),
+  })
+  if (res.status === 429) throw new Error('Too many attempts. Try again in 5 minutes.')
+  if (res.status === 403) throw new Error('Invalid recovery passphrase')
+  if (!res.ok) throw new Error(`Error ${res.status}`)
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Tasks
 // ---------------------------------------------------------------------------
 

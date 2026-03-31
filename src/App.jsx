@@ -6,11 +6,14 @@ import Settings from './components/Settings/Settings.jsx'
 import BugReport from './components/BugReport/BugReport.jsx'
 import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
-import { getModel as realGetModel } from './api/ember.js'
+import LockScreen from './components/LockScreen/LockScreen.jsx'
+import PinSetup from './components/LockScreen/PinSetup.jsx'
+import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
 import { useTour } from './hooks/useTour.js'
+import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
 
@@ -40,11 +43,57 @@ export default function App() {
   const [activeConversation, setActiveConversation] = useState(null)
   const [activeProject, setActiveProject] = useState('general')
   const [model, setModel] = useState(null)
+  const [isLocked, setIsLocked] = useState(false)
+  const [showPinSetup, setShowPinSetup] = useState(false)
+  const [pinIsSet, setPinIsSet] = useState(false)
+  const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
 
   const { messages, isStreaming, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
 
-  // Guided first-run tour — shows once for new users
-  useTour(view === 'chat')
+  // Guided first-run tour — shows once for new users, only when not locked
+  useTour(view === 'chat' && !isLocked && !showPinSetup)
+
+  // Check PIN status and lock preferences on app load
+  useEffect(() => {
+    if (view !== 'chat') return
+    async function checkLock() {
+      try {
+        const [pinStatus, prefs] = await Promise.all([getPinStatus(), getPreferences()])
+        setPinIsSet(pinStatus.pin_set)
+        const lp = {
+          lock_on_launch: prefs.lock_on_launch || false,
+          idle_timeout: prefs.idle_timeout || 15,
+          idle_lock_enabled: prefs.idle_lock_enabled || false,
+        }
+        setLockPrefs(lp)
+
+        // Lock on launch if PIN is set and lock_on_launch is enabled
+        if (pinStatus.pin_set && lp.lock_on_launch) {
+          setIsLocked(true)
+        }
+
+        // Show PIN setup prompt for new users (once, after tour)
+        if (!pinStatus.pin_set && !prefs.pin_setup_dismissed && prefs.first_run_tour_complete) {
+          setShowPinSetup(true)
+        }
+      } catch {}
+    }
+    checkLock()
+  }, [view])
+
+  // Listen for PIN setup request from Settings
+  useEffect(() => {
+    function handlePinSetup() { setShowPinSetup(true) }
+    window.addEventListener('ember-show-pin-setup', handlePinSetup)
+    return () => window.removeEventListener('ember-show-pin-setup', handlePinSetup)
+  }, [])
+
+  // Idle timeout — lock after N minutes of inactivity
+  useIdleTimeout(
+    lockPrefs.idle_timeout,
+    () => { if (pinIsSet) setIsLocked(true) },
+    pinIsSet && lockPrefs.idle_lock_enabled && !isLocked,
+  )
 
   // Sync active conversation to localStorage when messages arrive in a new session
   useEffect(() => {
@@ -142,6 +191,27 @@ export default function App() {
 
   if (view === 'splash') {
     return <Splash onConnected={handleConnected} />
+  }
+
+  // Lock screen — renders over everything when locked
+  if (isLocked) {
+    return <LockScreen onUnlock={() => setIsLocked(false)} />
+  }
+
+  // PIN setup prompt — after tour, before first use
+  if (showPinSetup) {
+    return (
+      <PinSetup
+        onComplete={() => {
+          setShowPinSetup(false)
+          setPinIsSet(true)
+        }}
+        onSkip={() => {
+          setShowPinSetup(false)
+          updatePreferences({ pin_setup_dismissed: true }).catch(() => {})
+        }}
+      />
+    )
   }
 
   return (
