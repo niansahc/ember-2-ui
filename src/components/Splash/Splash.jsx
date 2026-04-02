@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { checkConnection } from '../../api/ember.js'
+import { checkConnection, hasApiKey } from '../../api/ember.js'
 import { mockCheckConnection } from '../../api/mock.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Splash.css'
@@ -7,6 +7,7 @@ import './Splash.css'
 export default function Splash({ onConnected }) {
   const [status, setStatus] = useState('connecting')
   const [error, setError] = useState(null)
+  const [missingKey, setMissingKey] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -30,11 +31,21 @@ export default function Splash({ onConnected }) {
           return
         }
         setStatus('error')
-        setError("Ember isn't running. Start the API and refresh.")
+        if (!hasApiKey) {
+          setMissingKey(true)
+          setError('API key not configured')
+        } else {
+          setError("Ember isn't running. Start the API and refresh.")
+        }
       } catch {
         if (cancelled) return
         setStatus('error')
-        setError("Ember isn't running. Start the API and refresh.")
+        if (!hasApiKey) {
+          setMissingKey(true)
+          setError('API key not configured')
+        } else {
+          setError("Ember isn't running. Start the API and refresh.")
+        }
       }
     }
 
@@ -58,6 +69,16 @@ export default function Splash({ onConnected }) {
       {status === 'error' && (
         <div className="splash-error">
           <p className="splash-text splash-error-text">{error}</p>
+          {missingKey && (
+            <div className="splash-key-help">
+              <p>To get started, add your API key to the <code>.env</code> file:</p>
+              <code className="splash-code-block">VITE_EMBER_API_KEY=your_key</code>
+              <p className="splash-key-hint">
+                Run <code>python scripts/set_api_key.py</code> in the ember-2 repo to generate a key,
+                or find it in Windows Credential Manager under <code>ember-2 / api_key</code>.
+              </p>
+            </div>
+          )}
           <button
             className="splash-retry"
             onClick={() => window.location.reload()}

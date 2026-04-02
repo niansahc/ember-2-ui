@@ -422,6 +422,8 @@ export async function sendChat(messages, { sessionId } = {}) {
   return data.choices?.[0]?.message?.content || ''
 }
 
+export const hasApiKey = !!API_KEY
+
 function authHeaders() {
   return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
 }

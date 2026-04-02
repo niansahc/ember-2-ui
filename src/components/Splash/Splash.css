@@ -67,6 +67,40 @@
   transition: background 0.2s;
 }
 
+.splash-key-help {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 420px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.splash-key-help code {
+  background: var(--code-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.splash-code-block {
+  display: block;
+  background: var(--code-block-bg);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.splash-key-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .splash-retry:hover {
   background: var(--accent-hover);
 }
