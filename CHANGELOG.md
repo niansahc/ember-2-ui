@@ -1,26 +1,25 @@
 # Changelog
 
-## v0.5.0 — 2026-04-02
+## v0.12.0 — 2026-04-02
 
 ### Features
-- **Multi-image upload** — select and send multiple images in a single message; thumbnails shown above message text
-- **Web search transparency indicator** — magnifying glass icon on messages that used web search
-- **Web search info tooltip** in settings — accurate privacy description of SearXNG routing
-- **Conversational style selector** — Casual/Balanced/Thoughtful card selector in settings
-- **Task sidebar tray** — bottom-anchored, checkbox to complete, cancel button, 30s polling, internal scroll
-- **Task tray behavior** — done tasks persist today with strikethrough, cancelled tasks removed immediately
-- **Guided first-run tour** — Shepherd.js, 6 steps, triggers once via preferences API, keyboard accessible, Ember-themed
-- **Restore active conversation on refresh** — localStorage persistence of active session
-- **Regenerate button** on assistant messages — re-sends preceding user message through pipeline
-- **PIN/passphrase lock screen** — idle timeout, recovery passphrase entry, setup in onboarding flow
+- Multi-image upload — select and send multiple images in a single message; thumbnails shown above message text
+- Web search transparency indicator — magnifying glass icon on messages that used web search
+- Web search info tooltip in settings — accurate privacy description of SearXNG routing and IP stripping
+- Conversational style selector — Casual/Balanced/Thoughtful card selector in settings; persists via preferences API
+- Task sidebar tray — bottom-anchored below conversations, checkbox to complete, cancel button, end-of-day expiry, 30s polling, internal scroll capped at ~5 tasks
+- Task tray behavior — done tasks persist today with strikethrough, expire end of day, cancelled tasks removed immediately
+- Guided first-run tour — Shepherd.js, 6 steps, triggers once via preferences API, keyboard accessible, Ember-themed dark styling
+- Restore active conversation on refresh — localStorage persistence of active session
+- Regenerate button — confirmed working on last assistant message
 
 ### Bug Fixes
-- Timestamp parsing — hyphenated vault timestamps now parsed correctly, no more Invalid Date
-- SearchBar crash — dangling component reference after inline migration fixed
+- Timestamp fix — hyphenated vault timestamps now parsed correctly, no more Invalid Date in chat UI
+- Task tray max-height — tasks no longer push settings off screen; internal scroll within tray
+- Soft-deleted conversations — confirmed filtered correctly; regression tests added
 
 ### Tests
-- Playwright: 40 passing, 3 skipped (up from 36 at v0.4.0)
-- 4 new task tray tests: hidden when empty, appears on create, check shows strikethrough, uncheck removes it
+40 Playwright passing, 3 skipped (up from 36 at v0.11.0)
 
 ## v0.3.0 — 2026-03-27
 - Streaming responses via streamChat() — real-time token rendering
