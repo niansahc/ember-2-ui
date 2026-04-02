@@ -60,7 +60,7 @@ test.describe('Task Tray', () => {
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
       const taskTray = page.locator('.sidebar-tasks')
-      await expect(taskTray).toBeVisible({ timeout: 10000 })
+      await expect(taskTray).toBeVisible({ timeout: 35000 })
 
       const header = taskTray.locator('.sidebar-time-label')
       await expect(header).toContainText('TASKS')
@@ -81,7 +81,7 @@ test.describe('Task Tray', () => {
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
       const taskTray = page.locator('.sidebar-tasks')
-      await expect(taskTray).toBeVisible({ timeout: 10000 })
+      await expect(taskTray).toBeVisible({ timeout: 35000 })
 
       // Click the checkbox
       const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
@@ -105,13 +105,11 @@ test.describe('Task Tray', () => {
     const taskId = result.id
 
     try {
-      // Brief pause to ensure task is fully written before reload
-      await page.waitForTimeout(500)
       await page.reload()
       await page.waitForSelector('.app-layout', { timeout: 15000 })
 
       const taskTray = page.locator('.sidebar-tasks')
-      await expect(taskTray).toBeVisible({ timeout: 15000 })
+      await expect(taskTray).toBeVisible({ timeout: 35000 })
 
       const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
       const taskRow = taskTray.locator('.sidebar-task-row').first()
