@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.5.0 — 2026-04-02
+
+### Features
+- **Multi-image upload** — select and send multiple images in a single message; thumbnails shown above message text
+- **Web search transparency indicator** — magnifying glass icon on messages that used web search
+- **Web search info tooltip** in settings — accurate privacy description of SearXNG routing
+- **Conversational style selector** — Casual/Balanced/Thoughtful card selector in settings
+- **Task sidebar tray** — bottom-anchored, checkbox to complete, cancel button, 30s polling, internal scroll
+- **Task tray behavior** — done tasks persist today with strikethrough, cancelled tasks removed immediately
+- **Guided first-run tour** — Shepherd.js, 6 steps, triggers once via preferences API, keyboard accessible, Ember-themed
+- **Restore active conversation on refresh** — localStorage persistence of active session
+- **Regenerate button** on assistant messages — re-sends preceding user message through pipeline
+- **PIN/passphrase lock screen** — idle timeout, recovery passphrase entry, setup in onboarding flow
+
+### Bug Fixes
+- Timestamp parsing — hyphenated vault timestamps now parsed correctly, no more Invalid Date
+- SearchBar crash — dangling component reference after inline migration fixed
+
+### Tests
+- Playwright: 40 passing, 3 skipped (up from 36 at v0.4.0)
+- 4 new task tray tests: hidden when empty, appears on create, check shows strikethrough, uncheck removes it
+
 ## v0.3.0 — 2026-03-27
 - Streaming responses via streamChat() — real-time token rendering
 - PWA manifest — installable as home screen app
