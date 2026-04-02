@@ -102,7 +102,7 @@ export default function App() {
       try { localStorage.setItem('ember_active_session', sessionId) } catch {}
     }
   }, [messages.length, sessionId, activeConversation])
-  const { theme, setTheme, themes } = useTheme()
+  const { theme, setTheme, themes, customColors, setCustomColors } = useTheme()
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -309,6 +309,8 @@ export default function App() {
         theme={theme}
         setTheme={setTheme}
         themes={themes}
+        customColors={customColors}
+        setCustomColors={setCustomColors}
       />
 
       <BugReport

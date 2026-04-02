@@ -57,6 +57,7 @@
 .settings-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -310,10 +311,10 @@
 /* ── Theme picker ─────────────────────────────────────────────── */
 
 .theme-picker {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.6rem;
   padding: 0.25rem 0 0.5rem;
-  flex-wrap: wrap;
 }
 
 .theme-swatch {
@@ -366,6 +367,54 @@
 
 .theme-swatch-active .theme-swatch-name {
   color: var(--accent);
+}
+
+/* ── Custom theme color pickers ──────────────────────────────── */
+
+.custom-theme-pickers {
+  display: flex;
+  gap: 1.2rem;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.custom-theme-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.custom-theme-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  min-width: 5rem;
+}
+
+.custom-theme-input {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+
+.custom-theme-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.custom-theme-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.custom-theme-hex {
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: var(--text-muted);
 }
 
 /* ── Section labels ───────────────────────────────────────────── */

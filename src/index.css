@@ -142,6 +142,34 @@
   --user-bubble-text: var(--text-primary);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Theme: Custom — user-defined accent & background
+   Variables are applied inline by useTheme; this block is a
+   fallback so the selector exists before JS hydrates.
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="custom"] {
+  --bg-primary: #0d0520;
+  --bg-surface: #110828;
+  --bg-surface-hover: #1a0e35;
+  --bg-input: #150a25;
+  --accent: #ff8c00;
+  --accent-hover: #ff9f2e;
+  --accent-dim: rgba(255, 140, 0, 0.15);
+  --text-primary: #f5e6d0;
+  --text-secondary: #b8a89c;
+  --text-muted: #9a8a7e;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-focus: #ff8c00;
+  --ember-glow: 0 0 20px rgba(255, 140, 0, 0.3);
+  --ember-glow-strong: 0 0 30px rgba(255, 140, 0, 0.45);
+  --code-bg: rgba(255, 140, 0, 0.1);
+  --code-block-bg: #0a0318;
+  --error: #e85d5d;
+  --user-bubble-bg: var(--bg-surface);
+  --user-bubble-border: var(--border);
+  --user-bubble-text: var(--text-primary);
+}
+
 *,
 *::before,
 *::after {

@@ -32,7 +32,7 @@ const PROVIDERS = [
   { id: 'openai', name: 'OpenAI' },
 ]
 
-export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes }) {
+export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
   const modalRef = useModal(isOpen, onClose)
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
@@ -216,6 +216,33 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
               </button>
             ))}
           </div>
+
+          {theme === 'custom' && (
+            <div className="custom-theme-pickers">
+              <label className="custom-theme-field">
+                <span className="custom-theme-label">Accent</span>
+                <input
+                  type="color"
+                  value={customColors.accent}
+                  onChange={(e) => setCustomColors({ accent: e.target.value })}
+                  className="custom-theme-input"
+                  aria-label="Custom accent color"
+                />
+                <span className="custom-theme-hex">{customColors.accent}</span>
+              </label>
+              <label className="custom-theme-field">
+                <span className="custom-theme-label">Background</span>
+                <input
+                  type="color"
+                  value={customColors.bg}
+                  onChange={(e) => setCustomColors({ bg: e.target.value })}
+                  className="custom-theme-input"
+                  aria-label="Custom background color"
+                />
+                <span className="custom-theme-hex">{customColors.bg}</span>
+              </label>
+            </div>
+          )}
 
           <hr className="settings-divider" />
 
