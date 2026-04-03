@@ -6,7 +6,7 @@
  */
 
 const API_URL = import.meta.env.VITE_EMBER_API_URL || 'http://localhost:8000/v1'
-const API_KEY = import.meta.env.VITE_EMBER_API_KEY || ''
+const API_KEY = window.__EMBER_API_KEY__ || import.meta.env.VITE_EMBER_API_KEY || ''
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN || ''
 
 if (!API_KEY) {
