@@ -66,8 +66,10 @@ Playwright tests must be run manually in PowerShell. The bash runner does not su
 - [ ] Mobile tested
 - [ ] No uncommitted changes
 - [ ] CHANGELOG.md updated
-- [ ] version bumped in package.json
+- [ ] Version bumped in package.json before build
 - [ ] Git tag created
+- [ ] GitHub Release published (not just git tag) -- electron-updater and the installer workflow both require published releases; tags alone are invisible
+- [ ] Built dist committed or attached -- the installer workflow must be able to pull a pre-built dist from this repo's release, or build it from the tagged source; document which approach is used
 
 ---
 
