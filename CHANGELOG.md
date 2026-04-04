@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.1 — 2026-04-04
+
+### Bug Fixes
+- Version display — filter "vunknown" and "unknown" values from backend health endpoint; sidebar shows loading state instead of bad version string
+
 ## v0.6.0 — 2026-04-04
 
 ### Features
