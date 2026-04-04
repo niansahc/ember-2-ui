@@ -106,7 +106,10 @@ export async function getVersion() {
     })
     if (!res.ok) return ''
     const data = await res.json()
-    return data.version || ''
+    const v = data.version || ''
+    // Filter out placeholder values from backend
+    if (!v || v === 'unknown' || v === 'vunknown') return ''
+    return v
   } catch {
     return ''
   }
