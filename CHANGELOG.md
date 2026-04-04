@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.6.0 — 2026-04-04
+
+### Features
+- Nature constellation in About panel — 13 facets from nature.yaml v0.1, collapsible toggle below ethos
+- Web search before indicator — "Searching the web..." status shown immediately when web search triggers, before results arrive
+- Grounding check activity signals — "Verifying..." and "Refining..." status indicators during grounding check and revision pass
+- Inline source citations — compact linked sources block below web search responses (max 5)
+- Custom theme with color picker — user-defined accent and background colors, persists in localStorage
+- Copyright footer — © 2026 M. Chastain Flournoy. All rights reserved.
+
+### Bug Fixes
+- Version display — no longer shows "vunknown" when API is unreachable; displays loading state or hides
+- Restored index.html source entry — had been overwritten by dist output during deploy
+- Runtime API key injection — `window.__EMBER_API_KEY__` preferred over build-time env var
+- API key splash instructions — fresh install users see setup guidance instead of generic error
+
+### Docs
+- Release workflow documentation (docs/RELEASE_WORKFLOW.md)
+- Release checklist hardened — CC owns full release process end to end
+
+### Tests
+65 Playwright tests (58 passing, 4 skipped, 3 pre-existing flaky)
+- Edge case test suite: input handling, layout stability, localStorage resilience, mobile layout
+- Streaming signals and sources tests
+- About nature constellation tests
+
 ## v0.12.0 — 2026-04-02
 
 ### Features
