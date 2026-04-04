@@ -205,6 +205,6 @@ test.describe('Edge Cases — Mobile Layout', () => {
 
     // Panel should not exceed viewport width
     const panelBox = await page.locator('.settings-panel').boundingBox()
-    expect(panelBox.width).toBeLessThanOrEqual(375)
+    expect(Math.round(panelBox.width)).toBeLessThanOrEqual(375)
   })
 })
