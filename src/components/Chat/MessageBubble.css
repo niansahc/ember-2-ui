@@ -85,6 +85,34 @@
   flex-shrink: 0;
 }
 
+/* ── Inline source citations ──────────────────────────────────── */
+
+.bubble-sources {
+  padding: 0.25rem 0.25rem 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.bubble-sources-label {
+  margin-right: 0.3rem;
+}
+
+.bubble-sources-sep {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.bubble-source-link {
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.bubble-source-link:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 /* ── Actions bar (copy, regenerate, timestamp) ────────────────── */
 
 .bubble-actions {

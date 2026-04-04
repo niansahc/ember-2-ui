@@ -126,6 +126,26 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
           </div>
         )}
 
+        {/* Inline source citations */}
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div className="bubble-sources" aria-label="Sources">
+            <span className="bubble-sources-label">Sources:</span>
+            {message.sources.slice(0, 5).map((src, i) => (
+              <span key={i}>
+                {i > 0 && <span className="bubble-sources-sep"> · </span>}
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bubble-source-link"
+                >
+                  {src.title}
+                </a>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Actions bar — visible on hover */}
         {!editing && (
           <div className="bubble-actions">

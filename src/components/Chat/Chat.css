@@ -94,6 +94,18 @@
   }
 }
 
+.chat-status-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.4rem;
+  animation: status-fade-in 0.2s ease;
+}
+
+@keyframes status-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ── Scroll to bottom ──────────────────────────────────────────── */
 
 .chat-scroll-btn {

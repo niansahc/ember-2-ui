@@ -69,6 +69,19 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
 
         try {
           const parsed = JSON.parse(data)
+
+          // Status events: searching, verifying, refining
+          if (parsed.type === 'status') {
+            yield { type: 'status', content: parsed.content }
+            continue
+          }
+
+          // Sources event: inline citations from web search
+          if (parsed.sources) {
+            yield { type: 'sources', sources: parsed.sources }
+            continue
+          }
+
           const content = parsed.choices?.[0]?.delta?.content
           if (content) yield content
         } catch {

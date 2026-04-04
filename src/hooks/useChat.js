@@ -29,6 +29,7 @@ function fileToDataUrl(file) {
 export function useChat() {
   const [messages, setMessages] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
+  const [streamingStatus, setStreamingStatus] = useState(null)
   const [sessionId, setSessionId] = useState(() => generateSessionId())
   const abortRef = useRef(false)
   const apiAvailableRef = useRef(true)
@@ -144,19 +145,35 @@ export function useChat() {
           // streamChat returns { stream, usedWebSearch } so we can read
           // the web search transparency header before consuming chunks.
           const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
-          for await (const chunk of stream) {
-            if (abortRef.current) break
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
-              ),
-            )
-          }
-          // Set web search flag on the assistant message after streaming completes
           if (usedWebSearch) {
+            setStreamingStatus('searching')
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedWebSearch: true } : m,
+              ),
+            )
+          }
+          for await (const chunk of stream) {
+            if (abortRef.current) break
+            // Status events: searching, verifying, refining
+            if (chunk && typeof chunk === 'object' && chunk.type === 'status') {
+              setStreamingStatus(chunk.content)
+              continue
+            }
+            // Sources event: inline citations
+            if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, sources: chunk.sources } : m,
+                ),
+              )
+              continue
+            }
+            // Clear status once real content starts flowing
+            setStreamingStatus(null)
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
               ),
             )
           }
@@ -193,6 +210,7 @@ export function useChat() {
       )
     } finally {
       setIsStreaming(false)
+      setStreamingStatus(null)
     }
   }, [messages, isStreaming, sessionId])
 
@@ -313,6 +331,7 @@ export function useChat() {
   return {
     messages,
     isStreaming,
+    streamingStatus,
     sessionId,
     sendMessage,
     stopStreaming,

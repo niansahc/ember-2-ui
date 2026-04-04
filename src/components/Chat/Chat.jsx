@@ -4,7 +4,13 @@ import InputBar from './InputBar.jsx'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Chat.css'
 
-export default function Chat({ messages, isStreaming, onSend, onStop, onRegenerate, onEdit }) {
+const STATUS_LABELS = {
+  searching: 'Searching the web\u2026',
+  verifying: 'Verifying\u2026',
+  refining: 'Refining\u2026',
+}
+
+export default function Chat({ messages, isStreaming, streamingStatus, onSend, onStop, onRegenerate, onEdit }) {
   const scrollRef = useRef(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
 
@@ -64,10 +70,13 @@ export default function Chat({ messages, isStreaming, onSend, onStop, onRegenera
           />
         ))}
         {isStreaming && (
-          <div className="chat-typing" aria-live="polite" aria-label="Ember is typing">
+          <div className="chat-typing" aria-live="polite" aria-label={STATUS_LABELS[streamingStatus] || 'Ember is typing'}>
             <span className="typing-dot" />
             <span className="typing-dot" />
             <span className="typing-dot" />
+            {streamingStatus && STATUS_LABELS[streamingStatus] && (
+              <span className="chat-status-label">{STATUS_LABELS[streamingStatus]}</span>
+            )}
           </div>
         )}
       </div>

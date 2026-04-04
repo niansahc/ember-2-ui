@@ -48,7 +48,7 @@ export default function App() {
   const [pinIsSet, setPinIsSet] = useState(false)
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
 
-  const { messages, isStreaming, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
+  const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
 
   // Guided first-run tour — shows once for new users, only when not locked
   useTour(view === 'chat' && !isLocked && !showPinSetup)
@@ -292,6 +292,7 @@ export default function App() {
         <Chat
           messages={messages}
           isStreaming={isStreaming}
+          streamingStatus={streamingStatus}
           onSend={sendMessage}
           onStop={stopStreaming}
           onRegenerate={regenerate}
