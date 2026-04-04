@@ -192,6 +192,62 @@
   color: var(--text-secondary);
 }
 
+/* ── Nature toggle ────────────────────────────────────────────── */
+
+.about-nature-section {
+  padding-bottom: 2rem;
+}
+
+.about-nature-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s;
+}
+
+.about-nature-toggle:hover {
+  color: var(--accent);
+}
+
+.about-nature-chevron {
+  transition: transform 0.2s;
+}
+
+.about-nature-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.about-nature-content {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.about-nature-facet {
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.about-nature-facet-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.about-nature-facet-sep {
+  color: var(--text-muted);
+}
+
+.about-nature-facet-desc {
+  color: var(--text-secondary);
+}
+
 /* ── Ethos toggle ──────────────────────────────────────────────── */
 
 .about-ethos-section {

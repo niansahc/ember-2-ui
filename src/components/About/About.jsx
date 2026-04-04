@@ -46,9 +46,26 @@ The LLM is a reasoning engine. It is not the system of record, the memory store,
 
 Ember is open source. She is built in public. She is licensed to protect community ownership and prevent corporate capture. She is not a product. She is a tool for living.`
 
+const NATURE_FACETS = [
+  { name: 'Sincerity', desc: 'genuine interest and care; does not perform either' },
+  { name: 'Directness', desc: 'says what she thinks; does not hedge to manage comfort' },
+  { name: 'Warmth without softness', desc: 'warm but not soft; does not trade care for clarity' },
+  { name: 'Intellectual seriousness', desc: 'thinks with people, not at them; has her own responses' },
+  { name: 'Relational presence', desc: 'reads the room; knows when to listen vs. when to answer' },
+  { name: 'Honesty about hard things', desc: 'does not flinch or make things clinical; can sit in difficulty' },
+  { name: 'Orientation toward dignity', desc: 'reduces the cost of asking for help; not pity' },
+  { name: 'Aversion to cruelty', desc: 'clear-eyed about cruelty\'s existence; does not participate' },
+  { name: 'Curiosity by disposition', desc: 'genuinely interested; not a feature, a disposition' },
+  { name: 'Wry without cruelty', desc: 'sees absurdity; humor does not punch down' },
+  { name: 'Comfortable with not-knowing', desc: 'names gaps directly; moves toward knowing by asking; curious not anxious' },
+  { name: 'Economy', desc: 'uses only the words the thought requires' },
+  { name: 'Restraint', desc: 'knows when not to respond; does not confuse presence with output' },
+]
+
 export default function About({ isOpen, onClose, onOpenBugReport }) {
   const modalRef = useModal(isOpen, onClose)
   const [ethosExpanded, setEthosExpanded] = useState(false)
+  const [natureExpanded, setNatureExpanded] = useState(false)
   const [version, setVersion] = useState('')
 
   useEffect(() => {
@@ -170,6 +187,36 @@ export default function About({ isOpen, onClose, onOpenBugReport }) {
             )}
           </section>
 
+          {/* ── Ember's Nature ──────────────────────────────── */}
+          <section className="about-nature-section">
+            <button
+              className="about-nature-toggle"
+              onClick={() => setNatureExpanded(!natureExpanded)}
+              aria-expanded={natureExpanded}
+            >
+              <svg
+                className={`about-nature-chevron ${natureExpanded ? 'expanded' : ''}`}
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              Ember's nature
+            </button>
+            {natureExpanded && (
+              <div className="about-nature-content">
+                {NATURE_FACETS.map((f) => (
+                  <div key={f.name} className="about-nature-facet">
+                    <span className="about-nature-facet-name">{f.name}</span>
+                    <span className="about-nature-facet-sep"> — </span>
+                    <span className="about-nature-facet-desc">{f.desc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* ── Footer ──────────────────────────────────────── */}
           <footer className="about-footer">
             <div className="about-footer-links">
@@ -196,6 +243,7 @@ export default function About({ isOpen, onClose, onOpenBugReport }) {
               </button>
             </div>
             <p className="about-footer-quiet">Ember-1 made her face.</p>
+            <p className="about-footer-quiet">&copy; 2026 M. Chastain Flournoy. All rights reserved.</p>
           </footer>
         </div>
       </aside>

@@ -91,11 +91,11 @@ export async function getVersion() {
       headers: authHeaders(),
       signal: AbortSignal.timeout(5000),
     })
-    if (!res.ok) return 'unknown'
+    if (!res.ok) return ''
     const data = await res.json()
-    return data.version || 'unknown'
+    return data.version || ''
   } catch {
-    return 'unknown'
+    return ''
   }
 }
 
