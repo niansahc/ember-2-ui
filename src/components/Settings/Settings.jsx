@@ -803,6 +803,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                             onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
                             onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
                             onCancelEdit={() => setLodestoneEditing(null)}
+                            onConfirm={!r.confirmed ? () => handleLodestoneConfirm(r.id) : undefined}
                             onDismiss={() => handleLodestoneDismiss(r.id)}
                           />
                         ))}
@@ -859,6 +860,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                               onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
                               onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
                               onCancelEdit={() => setLodestoneEditing(null)}
+                              onConfirm={!r.confirmed ? () => handleLodestoneConfirm(r.id) : undefined}
                               onDismiss={() => handleLodestoneDismiss(r.id)}
                             />
                           ))}
@@ -1079,7 +1081,7 @@ const LODESTONE_CATEGORIES = [
   { key: 'beyond', name: 'Beyond', subtitle: 'What connects you to something larger than yourself' },
 ]
 
-function LodestoneEntry({ record, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onDismiss }) {
+function LodestoneEntry({ record, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onConfirm, onDismiss }) {
   const isEditing = editing && editing.id === record.id
   const hasDifferentEvidence = record.supporting_evidence && record.supporting_evidence !== record.value
 
@@ -1110,6 +1112,9 @@ function LodestoneEntry({ record, editing, onEdit, onEditChange, onSaveEdit, onC
               {record.confirmed ? 'Confirmed' : 'Proposed'}
             </span>
             <div className="lodestone-actions">
+              {onConfirm && (
+                <button className="settings-action-btn" onClick={onConfirm}>Confirm</button>
+              )}
               <button className="settings-action-btn" onClick={onEdit}>Edit</button>
               <button className="settings-action-btn settings-action-btn-danger" onClick={onDismiss}>Dismiss</button>
             </div>
