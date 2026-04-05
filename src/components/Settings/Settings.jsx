@@ -874,12 +874,24 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
 
               <hr className="settings-divider" />
 
-              <div className="settings-section-label">Behavior</div>
+              <div className="settings-section-label">Features</div>
 
               <div className="settings-row">
                 <div className="settings-row-info">
-                  <span className="settings-row-label">Allow Ember to develop character over time</span>
-                  <span className="settings-row-hint">When on, Ember notices when she responds differently than trained and records those choices over time.</span>
+                  <span className="settings-row-label">
+                    Deviation Engine
+                    <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Deviation engine information">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      <span className="settings-info-tooltip">
+                        Ember tracks when she responds differently than her training would normally produce and records those choices to your vault. Over time, recorded deviations outweigh default patterns in retrieval. Off by default.
+                      </span>
+                    </span>
+                  </span>
+                  <span className="settings-row-hint">Ember tracks when she responds differently than her training would normally produce and records those choices to your vault. Over time, recorded deviations outweigh default patterns in retrieval. Off by default.</span>
                 </div>
                 <label className="toggle" aria-label="Toggle deviation detection">
                   <input
