@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.7.0 — 2026-04-06
+
+### Features
+- **Lodestone.** A new layer that builds a record of your values over time from your conversations and reflections. During onboarding you can answer a short survey to seed it directly. Skip it and it builds on its own. Values Ember infers show up in Settings for you to confirm, edit, or dismiss before anything is written.
+- **Lodestone panel.** The Memory tab now shows your lodestone records organized by five categories: Character, Relational, Directional, Ground, and Beyond. Each category shows confirmed and proposed records with edit and dismiss controls. You can add records manually, add custom categories, and delete records you don't want. Lodestone seed values and categories can also be edited directly in config/lodestone.yaml and config/lodestone_taxonomy.yaml.
+- **Deviation Engine.** Ember tracks when she responds differently than her training would normally produce and records those choices to your vault. Over time, recorded deviations outweigh default patterns in retrieval. Off by default. Enable it in Settings under Features.
+- **Automated releases.** Release Please now manages versioning and changelogs.
+
+### Bug Fixes
+- Duplicate API calls on page load and Settings open. StrictMode-safe cleanup added to all data-loading effects.
+- Collapsed sidebar did not expand on click. Now expands on click anywhere on the sidebar strip.
+- Task delete showed no feedback on failure. Now surfaces inline error for 4 seconds.
+- Onboarding completion dropped user to blank chat. Now opens Settings to Memory tab with lodestone findings visible.
+- Onboarding restart showed empty fields. Now loads previous answers for review and editing.
+- Deviation Engine toggle showed duplicate description text. Static duplicate removed.
+- Lodestone Confirm button returned 400. Root cause was record cap. UI now surfaces the actual error.
+- Settings toggles had no hover feedback. Added dynamic title attributes.
+- Web search indicator appeared before response finished. Now shows "Searching..." during generation, badge only after completion.
+- Source citation overflow on mobile at 375px/390px. Fixed.
+
+### Known Issues
+- Lodestone "Add category" is UI-only. Custom categories are not persisted to the backend and exist only for the current session.
+- Onboarding inference quality varies. Some lodestone records may contain raw survey answers instead of inferred value statements if Ollama was unavailable during the POST.
+- Mac/Linux installer not yet tested on real hardware. Windows is the only fully validated platform.
+- Harness conversations appear in the sidebar. Deviation harness no longer sends X-Test-Session header (required for detection to run), so test conversations are visible.
+
+### Tests
+67 Playwright tests (63 passing, 4 skipped)
+
 ## v0.6.3 — 2026-04-05
 
 ### Bug Fixes
