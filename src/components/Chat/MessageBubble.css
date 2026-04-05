@@ -92,6 +92,8 @@
   font-size: 0.7rem;
   color: var(--text-muted);
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .bubble-sources-label {
