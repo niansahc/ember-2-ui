@@ -196,9 +196,13 @@ test.describe('Settings', () => {
     await expect(copyBtn).toBeVisible()
   })
 
-  test('vision toggle is visible in Settings', async ({ page }) => {
+  test('vision toggle is visible in Features tab', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
+
+    // Navigate to Features tab where vision now lives
+    const featuresTab = page.locator('.settings-tab', { hasText: 'Features' })
+    await featuresTab.click()
 
     const visionToggle = page.locator('label[aria-label="Toggle vision model"]')
     await expect(visionToggle).toBeVisible()

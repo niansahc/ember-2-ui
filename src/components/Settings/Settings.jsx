@@ -35,7 +35,7 @@ const PROVIDERS = [
 const TABS = [
   { id: 'general', label: 'General', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
   { id: 'security', label: 'Security', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
-  { id: 'memory', label: 'Memory', icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6' },
+  { id: 'memory', label: 'Memory', icon: 'M21 5c0-1.1-4-2-9-2S3 3.9 3 5m18 0v14c0 1.1-4 2-9 2s-9-.9-9-2V5m18 0c0 1.1-4 2-9 2s-9-.9-9-2m18 7c0 1.1-4 2-9 2s-9-.9-9-2' },
   { id: 'features', label: 'Features', icon: 'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' },
   { id: 'about', label: 'About', icon: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 16v-4 M12 8h.01' },
 ]
@@ -415,46 +415,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                 </div>
               )}
 
-              <hr className="settings-divider" />
-
-              {/* ── Vision ──────────────────────────────────────────── */}
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Can Ember see images?</span>
-                  <span className="settings-row-hint">Enables image analysis in chat</span>
-                </div>
-                <label className="toggle" aria-label="Toggle vision model">
-                  <input
-                    type="checkbox" role="switch"
-                    checked={visionEnabled}
-                    onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
-                  />
-                  <span className="toggle-track" />
-                </label>
-              </div>
-
-              {visionEnabled && (
-                <div className="settings-row settings-row-nested">
-                  <div className="settings-row-info">
-                    <span className="settings-row-label">Vision model</span>
-                    <span className="settings-row-hint">Used when you send images</span>
-                  </div>
-                  <select
-                    className="settings-select"
-                    value={visionModel}
-                    onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
-                    aria-label="Vision model"
-                  >
-                    {visionModels.length > 0 ? (
-                      visionModels.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))
-                    ) : (
-                      <option value="">No vision models found</option>
-                    )}
-                  </select>
-                </div>
-              )}
             </div>
           )}
 
@@ -546,6 +506,25 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
               <hr className="settings-divider" />
 
+              <div className="settings-section-label">Privacy</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Should Ember remember this conversation?</span>
+                  <span className="settings-row-hint">Saves this conversation to your vault</span>
+                </div>
+                <label className="toggle" aria-label="Toggle conversation memory">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={rememberConvo}
+                    onChange={(e) => setRememberConvo(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              <hr className="settings-divider" />
+
               <div className="settings-section-label">Cloud API Keys</div>
 
               {PROVIDERS.map((provider) => {
@@ -627,21 +606,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           {activeTab === 'memory' && (
             <div id="settings-panel-memory" role="tabpanel" className="settings-tab-panel">
               <div className="settings-section-label">Vault</div>
-
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Should Ember remember this conversation?</span>
-                  <span className="settings-row-hint">Saves this conversation to your vault</span>
-                </div>
-                <label className="toggle" aria-label="Toggle conversation memory">
-                  <input
-                    type="checkbox" role="switch"
-                    checked={rememberConvo}
-                    onChange={(e) => setRememberConvo(e.target.checked)}
-                  />
-                  <span className="toggle-track" />
-                </label>
-              </div>
 
               <div className="settings-row vault-path-row">
                 <div className="settings-row-info">
@@ -734,6 +698,48 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                   <span className="toggle-track" />
                 </label>
               </div>
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Vision</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Can Ember see images?</span>
+                  <span className="settings-row-hint">Enables image analysis in chat</span>
+                </div>
+                <label className="toggle" aria-label="Toggle vision model">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={visionEnabled}
+                    onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              {visionEnabled && (
+                <div className="settings-row settings-row-nested">
+                  <div className="settings-row-info">
+                    <span className="settings-row-label">Vision model</span>
+                    <span className="settings-row-hint">Used when you send images</span>
+                  </div>
+                  <select
+                    className="settings-select"
+                    value={visionModel}
+                    onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
+                    aria-label="Vision model"
+                  >
+                    {visionModels.length > 0 ? (
+                      visionModels.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))
+                    ) : (
+                      <option value="">No vision models found</option>
+                    )}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
