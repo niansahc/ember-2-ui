@@ -147,11 +147,6 @@ export function useChat() {
           const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
           if (usedWebSearch) {
             setStreamingStatus('searching')
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
-              ),
-            )
           }
           for await (const chunk of stream) {
             if (abortRef.current) break
@@ -174,6 +169,14 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            )
+          }
+          // Mark web search indicator after stream completes
+          if (usedWebSearch) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
               ),
             )
           }
