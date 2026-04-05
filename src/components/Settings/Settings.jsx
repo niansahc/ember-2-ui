@@ -76,6 +76,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [lodestoneRecords, setLodestoneRecords] = useState([])
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
   const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
+  const [lodestoneExpanded, setLodestoneExpanded] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -715,54 +716,104 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
               <div className="settings-section-label">Lodestone</div>
 
-              {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
-
+              {/* Synthesis summary — confirmed lodestone values as a compact list */}
               {!lodestoneLoading && (() => {
                 const confirmed = lodestoneRecords.filter((r) => r.confirmed === true && !r.metadata?.flagged_as_noise)
-                const proposed = lodestoneRecords.filter((r) => r.confirmed !== true && !r.metadata?.flagged_as_noise)
-
+                if (confirmed.length === 0) return <p className="lodestone-empty">No values confirmed yet. Complete the onboarding survey to get started.</p>
                 return (
-                  <>
-                    <div className="lodestone-section-label">Confirmed</div>
-                    {confirmed.length === 0 ? (
-                      <p className="lodestone-empty">No values confirmed yet.</p>
-                    ) : (
-                      confirmed.map((r) => (
-                        <LodestoneEntry
-                          key={r.id}
-                          record={r}
-                          editing={lodestoneEditing}
-                          onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
-                          onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
-                          onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
-                          onCancelEdit={() => setLodestoneEditing(null)}
-                          onDismiss={() => handleLodestoneDismiss(r.id)}
-                        />
-                      ))
-                    )}
-
-                    <div className="lodestone-section-label">Proposed</div>
-                    {proposed.length === 0 ? (
-                      <p className="lodestone-empty">No values proposed yet. Ember will suggest values as patterns emerge in your conversations.</p>
-                    ) : (
-                      proposed.map((r) => (
-                        <LodestoneEntry
-                          key={r.id}
-                          record={r}
-                          isProposed
-                          editing={lodestoneEditing}
-                          onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
-                          onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
-                          onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
-                          onCancelEdit={() => setLodestoneEditing(null)}
-                          onConfirm={() => handleLodestoneConfirm(r.id)}
-                          onDismiss={() => handleLodestoneDismiss(r.id)}
-                        />
-                      ))
-                    )}
-                  </>
+                  <div className="lodestone-summary">
+                    {confirmed.map((r) => (
+                      <div key={r.id} className="lodestone-summary-item">
+                        <span className="lodestone-summary-value">{r.value}</span>
+                        {CATEGORY_LABELS[r.metadata?.taxonomy_category] && (
+                          <span className="lodestone-summary-category">{CATEGORY_LABELS[r.metadata?.taxonomy_category]}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )
               })()}
+
+              {/* Edit Onboarding Survey button */}
+              <button
+                className="settings-action-btn lodestone-survey-btn"
+                onClick={async () => {
+                  await updatePreferences({ onboarding_complete: false })
+                  onClose()
+                  window.location.reload()
+                }}
+              >
+                Edit Onboarding Survey
+              </button>
+
+              {/* Collapsible findings detail */}
+              <button
+                className="lodestone-expand-btn"
+                onClick={() => setLodestoneExpanded(!lodestoneExpanded)}
+                aria-expanded={lodestoneExpanded}
+              >
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" aria-hidden="true"
+                  className={`lodestone-expand-icon ${lodestoneExpanded ? 'lodestone-expand-icon-open' : ''}`}
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                View Lodestone Findings
+              </button>
+
+              {lodestoneExpanded && (
+                <div className="lodestone-findings">
+                  {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
+
+                  {!lodestoneLoading && (() => {
+                    const confirmed = lodestoneRecords.filter((r) => r.confirmed === true && !r.metadata?.flagged_as_noise)
+                    const proposed = lodestoneRecords.filter((r) => r.confirmed !== true && !r.metadata?.flagged_as_noise)
+
+                    return (
+                      <>
+                        <div className="lodestone-section-label">Confirmed</div>
+                        {confirmed.length === 0 ? (
+                          <p className="lodestone-empty">No values confirmed yet.</p>
+                        ) : (
+                          confirmed.map((r) => (
+                            <LodestoneEntry
+                              key={r.id}
+                              record={r}
+                              editing={lodestoneEditing}
+                              onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                              onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                              onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                              onCancelEdit={() => setLodestoneEditing(null)}
+                              onDismiss={() => handleLodestoneDismiss(r.id)}
+                            />
+                          ))
+                        )}
+
+                        <div className="lodestone-section-label">Proposed</div>
+                        {proposed.length === 0 ? (
+                          <p className="lodestone-empty">No values proposed yet. Ember will suggest values as patterns emerge in your conversations.</p>
+                        ) : (
+                          proposed.map((r) => (
+                            <LodestoneEntry
+                              key={r.id}
+                              record={r}
+                              isProposed
+                              editing={lodestoneEditing}
+                              onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                              onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                              onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                              onCancelEdit={() => setLodestoneEditing(null)}
+                              onConfirm={() => handleLodestoneConfirm(r.id)}
+                              onDismiss={() => handleLodestoneDismiss(r.id)}
+                            />
+                          ))
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
           )}
 

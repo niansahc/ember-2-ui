@@ -795,6 +795,74 @@
 
 /* ── Lodestone panel ─────────────────────────────────────────── */
 
+/* ── Lodestone summary (compact confirmed values) ────────────── */
+
+.lodestone-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+}
+
+.lodestone-summary-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.lodestone-summary-value {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.lodestone-summary-category {
+  font-size: 0.68rem;
+  color: var(--accent);
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.lodestone-survey-btn {
+  margin: 0.5rem 0;
+}
+
+/* ── Collapsible findings toggle ─────────────────────────────── */
+
+.lodestone-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  transition: color 0.15s;
+  cursor: pointer;
+}
+
+.lodestone-expand-btn:hover {
+  color: var(--text-primary);
+}
+
+.lodestone-expand-icon {
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.lodestone-expand-icon-open {
+  transform: rotate(90deg);
+}
+
+.lodestone-findings {
+  padding: 0.25rem 0 0.5rem;
+  animation: lodestone-findings-in 0.15s ease;
+}
+
+@keyframes lodestone-findings-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .lodestone-section-label {
   font-size: 0.72rem;
   font-weight: 600;
