@@ -57,9 +57,10 @@ export default function Sidebar({
 
   // Load conversations — try real API, fall back to mock
   const loadConversationsRef = useRef(null)
-  loadConversationsRef.current = async function loadConversations() {
+  loadConversationsRef.current = async function loadConversations(ignore) {
     try {
       const convos = await realGetConversations(100)
+      if (ignore?.current) return
       setConversations(
         convos.map((c) => ({
           id: c.id,
@@ -69,21 +70,26 @@ export default function Sidebar({
         })),
       )
     } catch {
+      if (ignore?.current) return
       console.warn('[Sidebar] API unreachable, using mock conversations')
-      mockGetConversations().then(setConversations)
+      mockGetConversations().then((c) => { if (!ignore?.current) setConversations(c) })
     }
   }
 
   // Initial load + refresh when active conversation changes
   useEffect(() => {
-    loadConversationsRef.current()
+    const ignore = { current: false }
+    loadConversationsRef.current(ignore)
+    return () => { ignore.current = true }
   }, [activeConversationId])
 
   // Load projects on mount
   useEffect(() => {
+    let ignore = false
     async function loadProjects() {
       try {
         const projs = await realGetProjects()
+        if (ignore) return
         setProjects(
           projs.map((p) => ({
             id: p.id,
@@ -93,11 +99,13 @@ export default function Sidebar({
           })),
         )
       } catch {
+        if (ignore) return
         console.warn('[Sidebar] Projects API unreachable, using mock')
-        mockGetProjects().then(setProjects)
+        mockGetProjects().then((p) => { if (!ignore) setProjects(p) })
       }
     }
     loadProjects()
+    return () => { ignore = true }
   }, [])
 
   // Load active/proposed tasks
@@ -114,9 +122,20 @@ export default function Sidebar({
 
   // Initial load + poll every 30 seconds
   useEffect(() => {
-    loadTasksRef.current()
+    let ignore = false
+    // Wrap initial load to skip if unmounted before completion
+    async function initialLoad() {
+      try {
+        const [active, proposed] = await Promise.all([
+          getTasks({ status: 'active' }),
+          getTasks({ status: 'proposed' }),
+        ])
+        if (!ignore) setTasks([...active, ...proposed])
+      } catch {}
+    }
+    initialLoad()
     const interval = setInterval(() => loadTasksRef.current(), 30000)
-    return () => clearInterval(interval)
+    return () => { ignore = true; clearInterval(interval) }
   }, [])
 
   // Refresh tasks and conversations when streaming ends (new items may have been created)
@@ -718,7 +737,9 @@ function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, 
   const [version, setVersion] = useState('')
 
   useEffect(() => {
-    getVersion().then(setVersion).catch(() => {})
+    let ignore = false
+    getVersion().then((v) => { if (!ignore) setVersion(v) }).catch(() => {})
+    return () => { ignore = true }
   }, [])
 
   if (collapsed) return null
