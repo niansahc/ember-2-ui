@@ -219,7 +219,9 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
     try {
       await updateLodestone(id, { confirmed: true })
       setLodestoneRecords((prev) => prev.map((r) => r.id === id ? { ...r, confirmed: true } : r))
-    } catch { console.warn('[Settings] Failed to confirm lodestone') }
+    } catch (err) {
+      alert(err.message || 'Failed to confirm record')
+    }
   }
 
   async function handleLodestoneDismiss(id) {

@@ -479,7 +479,10 @@ export async function updateLodestone(recordId, updates) {
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(updates),
   })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `API error ${res.status}`)
+  }
   return await res.json()
 }
 
