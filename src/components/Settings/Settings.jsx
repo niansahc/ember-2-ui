@@ -785,19 +785,19 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                           {CATEGORY_LABELS[cat] || cat}
                         </div>
                         {grouped[cat].map((r) => {
-                          const fromOnboarding = r.source === 'onboarding'
+                          const needsConfirm = r.source !== 'onboarding' && r.confirmed !== true
                           return (
                             <LodestoneEntry
                               key={r.id}
                               record={r}
-                              isProposed={!fromOnboarding && r.confirmed !== true}
+                              isProposed={needsConfirm}
                               editing={lodestoneEditing}
                               onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
                               onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
                               onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
                               onCancelEdit={() => setLodestoneEditing(null)}
-                              onConfirm={!fromOnboarding && r.confirmed !== true ? () => handleLodestoneConfirm(r.id) : undefined}
-                              onDismiss={!fromOnboarding ? () => handleLodestoneDismiss(r.id) : undefined}
+                              onConfirm={needsConfirm ? () => handleLodestoneConfirm(r.id) : undefined}
+                              onDismiss={() => handleLodestoneDismiss(r.id)}
                             />
                           )
                         })}
