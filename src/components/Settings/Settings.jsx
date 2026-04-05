@@ -721,24 +721,6 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
 
               <div className="settings-section-label">Lodestone</div>
 
-              {/* Synthesis summary — confirmed lodestone values as a compact list */}
-              {!lodestoneLoading && (() => {
-                const confirmed = lodestoneRecords.filter((r) => r.confirmed === true && !r.metadata?.flagged_as_noise)
-                if (confirmed.length === 0) return <p className="lodestone-empty">No values confirmed yet. Complete the onboarding survey to get started.</p>
-                return (
-                  <div className="lodestone-summary">
-                    {confirmed.map((r) => (
-                      <div key={r.id} className="lodestone-summary-item">
-                        <span className="lodestone-summary-value">{r.value}</span>
-                        {CATEGORY_LABELS[r.metadata?.taxonomy_category] && (
-                          <span className="lodestone-summary-category">{CATEGORY_LABELS[r.metadata?.taxonomy_category]}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
-
               {/* Edit Onboarding Survey button */}
               <button
                 className="settings-action-btn lodestone-survey-btn"
@@ -751,7 +733,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 Edit Onboarding Survey
               </button>
 
-              {/* Collapsible findings detail */}
+              {/* Collapsible findings — everything lives inside here */}
               <button
                 className="lodestone-expand-btn"
                 onClick={() => setLodestoneExpanded(!lodestoneExpanded)}
@@ -772,50 +754,44 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
 
                   {!lodestoneLoading && (() => {
-                    const confirmed = lodestoneRecords.filter((r) => r.confirmed === true && !r.metadata?.flagged_as_noise)
-                    const proposed = lodestoneRecords.filter((r) => r.confirmed !== true && !r.metadata?.flagged_as_noise)
+                    const active = lodestoneRecords.filter((r) => !r.metadata?.flagged_as_noise)
+                    if (active.length === 0) {
+                      return <p className="lodestone-empty">No findings yet. Complete the onboarding survey to get started.</p>
+                    }
 
-                    return (
-                      <>
-                        <div className="lodestone-section-label">Confirmed</div>
-                        {confirmed.length === 0 ? (
-                          <p className="lodestone-empty">No values confirmed yet.</p>
-                        ) : (
-                          confirmed.map((r) => (
-                            <LodestoneEntry
-                              key={r.id}
-                              record={r}
-                              editing={lodestoneEditing}
-                              onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
-                              onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
-                              onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
-                              onCancelEdit={() => setLodestoneEditing(null)}
-                              onDismiss={() => handleLodestoneDismiss(r.id)}
-                            />
-                          ))
-                        )}
+                    // Group by category, deduplicate values within each category
+                    const categoryOrder = ['character', 'ground', 'directional', 'relational', 'beyond']
+                    const grouped = {}
+                    for (const r of active) {
+                      const cat = r.metadata?.taxonomy_category || 'other'
+                      if (!grouped[cat]) grouped[cat] = []
+                      // Deduplicate by value text within category
+                      if (!grouped[cat].some((existing) => existing.value === r.value)) {
+                        grouped[cat].push(r)
+                      }
+                    }
 
-                        <div className="lodestone-section-label">Proposed</div>
-                        {proposed.length === 0 ? (
-                          <p className="lodestone-empty">No values proposed yet. Ember will suggest values as patterns emerge in your conversations.</p>
-                        ) : (
-                          proposed.map((r) => (
-                            <LodestoneEntry
-                              key={r.id}
-                              record={r}
-                              isProposed
-                              editing={lodestoneEditing}
-                              onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
-                              onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
-                              onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
-                              onCancelEdit={() => setLodestoneEditing(null)}
-                              onConfirm={() => handleLodestoneConfirm(r.id)}
-                              onDismiss={() => handleLodestoneDismiss(r.id)}
-                            />
-                          ))
-                        )}
-                      </>
-                    )
+                    return categoryOrder.filter((cat) => grouped[cat]?.length > 0).map((cat) => (
+                      <div key={cat} className="lodestone-category-group">
+                        <div className="lodestone-category-header">
+                          {CATEGORY_LABELS[cat] || cat}
+                        </div>
+                        {grouped[cat].map((r) => (
+                          <LodestoneEntry
+                            key={r.id}
+                            record={r}
+                            isProposed={r.confirmed !== true}
+                            editing={lodestoneEditing}
+                            onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                            onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                            onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                            onCancelEdit={() => setLodestoneEditing(null)}
+                            onConfirm={r.confirmed !== true ? () => handleLodestoneConfirm(r.id) : undefined}
+                            onDismiss={() => handleLodestoneDismiss(r.id)}
+                          />
+                        ))}
+                      </div>
+                    ))
                   })()}
                 </div>
               )}

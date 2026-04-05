@@ -863,6 +863,20 @@
   to { opacity: 1; }
 }
 
+.lodestone-category-group {
+  margin-bottom: 0.75rem;
+}
+
+.lodestone-category-header {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: capitalize;
+  padding: 0.5rem 0 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.4rem;
+}
+
 .lodestone-section-label {
   font-size: 0.72rem;
   font-weight: 600;
