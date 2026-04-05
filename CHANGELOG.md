@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.3 — 2026-04-05
+
+### Bug Fixes
+- Duplicate API calls on load — StrictMode-safe cleanup flags on all data-loading useEffects (conversations, projects, tasks, version) prevent 4-6 rapid-fire calls per endpoint on page load
+- Task delete error handling — delete now waits for API confirmation before removing from UI; shows inline error on failure (auto-clears after 4s)
+- Source citation overflow — overflow-wrap on .bubble-sources prevents long titles from breaking layout on narrow mobile viewports (375px/390px)
+
+### Tests
+65 Playwright tests (58 passing, 4 skipped, 3 pre-existing backend-dependent)
+
 ## v0.6.2 — 2026-04-04
 
 ### Bug Fixes
