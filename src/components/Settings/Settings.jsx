@@ -842,21 +842,22 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                             </div>
                           </div>
                         ) : (
-                          <button
-                            className="lodestone-add-btn"
-                            onClick={() => { setLodestoneAdding(cat.key); setLodestoneAddValue('') }}
-                          >
-                            + Add value
-                          </button>
-                        )}
-
-                        {(grouped[cat.key] || []).length > 0 && (
-                          <button
-                            className="lodestone-delete-cat-btn"
-                            onClick={() => handleLodestoneDeleteCategory(cat.key)}
-                          >
-                            Delete all in this category
-                          </button>
+                          <div className="lodestone-category-actions">
+                            <button
+                              className="lodestone-add-btn"
+                              onClick={() => { setLodestoneAdding(cat.key); setLodestoneAddValue('') }}
+                            >
+                              + Add value
+                            </button>
+                            {(grouped[cat.key] || []).length > 0 && (
+                              <button
+                                className="lodestone-delete-cat-btn"
+                                onClick={() => handleLodestoneDeleteCategory(cat.key)}
+                              >
+                                Delete all in this category
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}

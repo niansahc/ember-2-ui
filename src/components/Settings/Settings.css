@@ -929,10 +929,17 @@
   margin-bottom: 0.4rem;
 }
 
+.lodestone-category-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+
 .lodestone-add-btn {
   font-size: 0.78rem;
   color: var(--text-muted);
-  padding: 0.25rem 0;
+  padding: 0.2rem 0;
   text-align: left;
   transition: color 0.15s;
 }
@@ -948,15 +955,14 @@
 
 .lodestone-delete-cat-btn {
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: var(--error, #e85d5d);
   padding: 0.2rem 0;
-  text-align: left;
-  transition: color 0.15s;
+  text-align: right;
+  transition: opacity 0.15s;
   opacity: 0.6;
 }
 
 .lodestone-delete-cat-btn:hover {
-  color: var(--error, #e85d5d);
   opacity: 1;
 }
 
