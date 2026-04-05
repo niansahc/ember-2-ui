@@ -422,7 +422,11 @@ export default function Sidebar({
     return (
       <>
         {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
-        <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Project conversations">
+        <nav
+          className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}
+          aria-label="Project conversations"
+          onClick={collapsed ? (e) => { if (e.target.closest('.sidebar-icon-row-btn')) return; toggleCollapse() } : undefined}
+        >
           <div className="sidebar-icon-row">
             {collapsed && (
               <button onClick={toggleCollapse} className="sidebar-icon-row-btn" aria-label="Expand sidebar" title="Expand sidebar">
@@ -538,7 +542,11 @@ export default function Sidebar({
   return (
     <>
       {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
-      <nav className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Conversation history">
+      <nav
+        className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}
+        aria-label="Conversation history"
+        onClick={collapsed ? (e) => { if (e.target.closest('.sidebar-icon-row-btn')) return; toggleCollapse() } : undefined}
+      >
         <div className="sidebar-icon-row">
           {collapsed && (
             <button onClick={toggleCollapse} className="sidebar-icon-row-btn" aria-label="Expand sidebar" title="Expand sidebar">

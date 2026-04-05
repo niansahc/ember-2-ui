@@ -520,7 +520,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <span className="settings-row-label">Lock on launch</span>
                   <span className="settings-row-hint">Require PIN when Ember opens</span>
                 </div>
-                <label className="toggle" aria-label="Toggle lock on launch">
+                <label className="toggle" aria-label="Toggle lock on launch" title={lockOnLaunch ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={lockOnLaunch}
@@ -538,7 +538,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <span className="settings-row-label">Lock after idle</span>
                   <span className="settings-row-hint">Auto-lock after inactivity</span>
                 </div>
-                <label className="toggle" aria-label="Toggle idle lock">
+                <label className="toggle" aria-label="Toggle idle lock" title={idleLockEnabled ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={idleLockEnabled}
@@ -605,7 +605,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <span className="settings-row-label">Should Ember remember this conversation?</span>
                   <span className="settings-row-hint">Saves this conversation to your vault</span>
                 </div>
-                <label className="toggle" aria-label="Toggle conversation memory">
+                <label className="toggle" aria-label="Toggle conversation memory" title={rememberConvo ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={rememberConvo}
@@ -772,6 +772,24 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 Edit Onboarding Survey
               </button>
 
+              <button
+                className="lodestone-expand-btn"
+                onClick={() => setLodestoneExpanded(!lodestoneExpanded)}
+                aria-expanded={lodestoneExpanded}
+              >
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" aria-hidden="true"
+                  className={`lodestone-expand-icon ${lodestoneExpanded ? 'lodestone-expand-icon-open' : ''}`}
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                View Lodestone Values
+              </button>
+
+              {lodestoneExpanded && (
+              <div className="lodestone-findings">
+
               {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
 
               {!lodestoneLoading && (() => {
@@ -922,6 +940,9 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 <code>config/lodestone_taxonomy.yaml</code>.
                 Changes take effect on next restart.
               </p>
+
+              </div>
+              )}
             </div>
           )}
 
@@ -947,7 +968,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   </span>
                   <span className="settings-row-hint">Enables live web results via SearXNG</span>
                 </div>
-                <label className="toggle" aria-label="Toggle web search">
+                <label className="toggle" aria-label="Toggle web search" title={webSearch ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={webSearch}
@@ -966,7 +987,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <span className="settings-row-label">Can Ember see images?</span>
                   <span className="settings-row-hint">Enables image analysis in chat</span>
                 </div>
-                <label className="toggle" aria-label="Toggle vision model">
+                <label className="toggle" aria-label="Toggle vision model" title={visionEnabled ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={visionEnabled}
@@ -1019,7 +1040,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                     </span>
                   </span>
                 </div>
-                <label className="toggle" aria-label="Toggle deviation detection">
+                <label className="toggle" aria-label="Toggle deviation detection" title={deviationEnabled ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={deviationEnabled}
