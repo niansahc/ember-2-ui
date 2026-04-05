@@ -47,6 +47,7 @@ export default function App() {
   const [isLocked, setIsLocked] = useState(false)
   const [showPinSetup, setShowPinSetup] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingInitial, setOnboardingInitial] = useState({ profile: {}, lodestone: {} })
   const [pinIsSet, setPinIsSet] = useState(false)
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
 
@@ -76,6 +77,10 @@ export default function App() {
 
         // Show onboarding for new users who haven't completed it
         if (!prefs.onboarding_complete) {
+          setOnboardingInitial({
+            profile: prefs.onboarding_profile_answers || {},
+            lodestone: prefs.onboarding_lodestone_answers || {},
+          })
           setShowOnboarding(true)
         }
 
@@ -209,6 +214,8 @@ export default function App() {
   if (showOnboarding) {
     return (
       <Onboarding
+        initialProfile={onboardingInitial.profile}
+        initialLodestone={onboardingInitial.lodestone}
         onComplete={(lodestoneData) => {
           setShowOnboarding(false)
           // lodestoneData is passed to Step 4 (lodestone review) when implemented

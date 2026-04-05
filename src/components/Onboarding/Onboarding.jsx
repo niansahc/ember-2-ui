@@ -150,10 +150,18 @@ const LODESTONE_SECTIONS = [
   },
 ]
 
-export default function Onboarding({ onComplete }) {
+/**
+ * Onboarding flow — Steps 1-3.
+ *
+ * Props:
+ *   onComplete(lodestoneData | null) — called when onboarding finishes
+ *   initialProfile — { key: answer } from previous onboarding (preferences)
+ *   initialLodestone — { key: answer } from previous onboarding (preferences)
+ */
+export default function Onboarding({ onComplete, initialProfile, initialLodestone }) {
   const [step, setStep] = useState(1)
-  const [profileAnswers, setProfileAnswers] = useState({})
-  const [lodestoneAnswers, setLodestoneAnswers] = useState({})
+  const [profileAnswers, setProfileAnswers] = useState(initialProfile || {})
+  const [lodestoneAnswers, setLodestoneAnswers] = useState(initialLodestone || {})
   const [saving, setSaving] = useState(false)
   const [expandedHelp, setExpandedHelp] = useState(null)
 
@@ -175,6 +183,8 @@ export default function Onboarding({ onComplete }) {
           await writeMemory(answer, 'profile')
         }
       }
+      // Persist raw answers in preferences for re-editing
+      await updatePreferences({ onboarding_profile_answers: profileAnswers })
     } catch (err) {
       console.warn('[Onboarding] Failed to save some profile answers:', err)
     }
@@ -193,8 +203,10 @@ export default function Onboarding({ onComplete }) {
 
     setSaving(true)
     try {
-      // Store lodestone answers — backend will process via POST /v1/lodestone
-      // For now, pass answers to the completion handler for Step 4 processing
+      // Persist raw lodestone answers in preferences for re-editing
+      await updatePreferences({ onboarding_lodestone_answers: lodestoneAnswers })
+
+      // Pass answered questions to completion handler for Step 4 processing
       await finishOnboarding(answered.map((q) => ({
         key: q.key,
         label: q.label,
@@ -222,6 +234,8 @@ export default function Onboarding({ onComplete }) {
 
   // ── Step 1: Profile ──────────────────────────────────────────
   if (step === 1) {
+    const hasAnyAnswer = PROFILE_QUESTIONS.some((q) => (profileAnswers[q.key] || '').trim())
+
     return (
       <div className="onboarding">
         <div className="onboarding-card">
@@ -229,9 +243,13 @@ export default function Onboarding({ onComplete }) {
 
           <div className="onboarding-welcome">
             <img src={emberMascot} alt="Ember" className="onboarding-logo" />
-            <h1 className="onboarding-title">Welcome to Ember</h1>
+            <h1 className="onboarding-title">
+              {hasAnyAnswer ? 'Review your profile' : 'Welcome to Ember'}
+            </h1>
             <p className="onboarding-subtitle">
-              A few optional questions to help Ember understand who you are. Skip anything you like.
+              {hasAnyAnswer
+                ? 'Your previous answers are loaded. Update anything you like.'
+                : 'A few optional questions to help Ember understand who you are. Skip anything you like.'}
             </p>
           </div>
 
@@ -272,24 +290,35 @@ export default function Onboarding({ onComplete }) {
 
   // ── Step 2: Lodestone gate ───────────────────────────────────
   if (step === 2) {
+    const hasAnyLodestone = LODESTONE_SECTIONS.flatMap((s) => s.questions)
+      .some((q) => (lodestoneAnswers[q.key] || '').trim())
+
     return (
       <div className="onboarding">
         <div className="onboarding-card onboarding-card-centered">
           <div className="onboarding-progress">Step 2 of 4</div>
 
-          <h1 className="onboarding-title">One more optional step — Lodestone.</h1>
+          <h1 className="onboarding-title">
+            {hasAnyLodestone ? 'Review your Lodestone answers' : 'One more optional step \u2014 Lodestone.'}
+          </h1>
 
           <div className="onboarding-body-text">
-            <p>
-              Lodestone is how Ember learns what you value over time. The more Ember
-              understands what matters to you, the better she can orient her responses
-              toward what's actually useful for your life.
-            </p>
-            <p>
-              You can skip this now and Ember will figure it out gradually through
-              your conversations. Or you can answer a few questions to give her a head start.
-            </p>
-            <p>You can always update this in Settings.</p>
+            {hasAnyLodestone ? (
+              <p>Your previous Lodestone answers are loaded. You can review and update them.</p>
+            ) : (
+              <>
+                <p>
+                  Lodestone is how Ember learns what you value over time. The more Ember
+                  understands what matters to you, the better she can orient her responses
+                  toward what's actually useful for your life.
+                </p>
+                <p>
+                  You can skip this now and Ember will figure it out gradually through
+                  your conversations. Or you can answer a few questions to give her a head start.
+                </p>
+                <p>You can always update this in Settings.</p>
+              </>
+            )}
           </div>
 
           <div className="onboarding-actions onboarding-actions-centered">
@@ -297,7 +326,7 @@ export default function Onboarding({ onComplete }) {
               className="onboarding-btn onboarding-btn-primary"
               onClick={() => setStep(3)}
             >
-              Set up Lodestone
+              {hasAnyLodestone ? 'Review Lodestone' : 'Set up Lodestone'}
             </button>
             <button
               className="onboarding-btn onboarding-btn-skip"
@@ -362,7 +391,7 @@ export default function Onboarding({ onComplete }) {
               onClick={handleLodestoneSubmit}
               disabled={saving}
             >
-              {saving ? 'Saving...' : "Done — show me what Ember noticed"}
+              {saving ? 'Saving...' : "Done \u2014 show me what Ember noticed"}
             </button>
             <button
               className="onboarding-btn onboarding-btn-skip"
