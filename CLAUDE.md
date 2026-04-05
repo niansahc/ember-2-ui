@@ -53,6 +53,22 @@ When a flaky or condition-dependent test is identified during a release cycle, i
 
 ---
 
+## UI Design Gates
+
+**Internal fields never reach the user directly.**
+Database field names, taxonomy category keys, acquisition path values, source tags, and any other internal classification terms must never be rendered as user-facing labels. All user-facing display strings must be explicitly defined before UI implementation begins.
+
+**Taxonomy display names must be approved before UI work starts.**
+If a feature introduces taxonomy categories, types, or classifications, the user-facing display name and description for each must be documented and approved in the ADR or feature spec before M writes any UI code. Internal key names (e.g. "ground", "character", "onboarding") are not display names.
+
+**UI must be built against clean data.**
+Do not build or review UI against broken, partial, or pre-inference data. If the backend is not ready, M mocks clean data to spec. Real data is only connected after it meets the expected schema.
+
+**Design before implementation.**
+For any panel or view that surfaces user data, the information architecture (what the user sees, in what order, what each element means) must be described and approved in this chat before M builds it. Prompts that skip this step will be sent back.
+
+---
+
 ## Working Conventions
 
 - Small, frequent commits with clear messages
