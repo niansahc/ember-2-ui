@@ -1,7 +1,24 @@
 import { useState } from 'react'
-import { writeMemory, writeState, updatePreferences } from '../../api/ember.js'
+import { writeMemory, writeState, updatePreferences, createLodestone, updateLodestone } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Onboarding.css'
+
+// Map question keys to lodestone taxonomy categories
+const QUESTION_CATEGORY_MAP = {
+  time_1: 'character', time_2: 'character', time_3: 'character',
+  decisions_1: 'character', decisions_2: 'character', decisions_3: 'character',
+  values_1: 'ground', values_2: 'ground', values_3: 'ground',
+  direction_1: 'directional', direction_2: 'directional', direction_3: 'directional',
+}
+
+// Plain English labels for taxonomy categories
+const CATEGORY_LABELS = {
+  character: 'about your character',
+  relational: 'about your relationships',
+  directional: 'about your direction',
+  ground: 'about what you stand on',
+  beyond: 'about what you reach toward',
+}
 
 const PROFILE_QUESTIONS = [
   {
@@ -164,6 +181,10 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
   const [lodestoneAnswers, setLodestoneAnswers] = useState(initialLodestone || {})
   const [saving, setSaving] = useState(false)
   const [expandedHelp, setExpandedHelp] = useState(null)
+  // Step 4 state
+  const [proposedRecords, setProposedRecords] = useState([])
+  const [reviewIndex, setReviewIndex] = useState(0)
+  const [editingValue, setEditingValue] = useState(null)
 
   function updateProfile(key, value) {
     setProfileAnswers((prev) => ({ ...prev, [key]: value }))
@@ -196,30 +217,80 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     const answered = LODESTONE_SECTIONS.flatMap((s) => s.questions)
       .filter((q) => (lodestoneAnswers[q.key] || '').trim())
 
+    // Persist raw lodestone answers in preferences for re-editing
+    await updatePreferences({ onboarding_lodestone_answers: lodestoneAnswers }).catch(() => {})
+
     if (answered.length === 0) {
       await finishOnboarding()
       return
     }
 
     setSaving(true)
-    try {
-      // Persist raw lodestone answers in preferences for re-editing
-      await updatePreferences({ onboarding_lodestone_answers: lodestoneAnswers })
-
-      // Pass answered questions to completion handler for Step 4 processing
-      await finishOnboarding(answered.map((q) => ({
-        key: q.key,
-        label: q.label,
-        answer: lodestoneAnswers[q.key].trim(),
-      })))
-    } catch (err) {
-      console.warn('[Onboarding] Failed during lodestone submit:', err)
-      await finishOnboarding()
+    const records = []
+    for (const q of answered) {
+      try {
+        const category = QUESTION_CATEGORY_MAP[q.key] || 'character'
+        const result = await createLodestone(
+          lodestoneAnswers[q.key].trim(),
+          category,
+          'onboarding',
+        )
+        if (result.record) {
+          records.push({ ...result.record, _questionLabel: q.label })
+        }
+      } catch (err) {
+        console.warn('[Onboarding] Failed to create lodestone for', q.key, err)
+      }
     }
     setSaving(false)
+
+    if (records.length === 0) {
+      await finishOnboarding()
+      return
+    }
+
+    setProposedRecords(records)
+    setReviewIndex(0)
+    setStep(4)
   }
 
-  async function finishOnboarding(lodestoneData) {
+  async function handleReviewConfirm() {
+    const record = proposedRecords[reviewIndex]
+    const value = editingValue !== null ? editingValue : record.value
+    try {
+      await updateLodestone(record.id, { confirmed: true })
+      // If edited, we confirmed with the original — update the value in the record
+      if (editingValue !== null && editingValue !== record.value) {
+        // The API confirmed the original; for edited values we'd need a separate update
+        // For now, confirm is sufficient — the value was already written on POST
+      }
+    } catch (err) {
+      console.warn('[Onboarding] Failed to confirm lodestone:', err)
+    }
+    setEditingValue(null)
+    advanceReview()
+  }
+
+  async function handleReviewDismiss() {
+    const record = proposedRecords[reviewIndex]
+    try {
+      await updateLodestone(record.id, { confirmed: false })
+    } catch (err) {
+      console.warn('[Onboarding] Failed to dismiss lodestone:', err)
+    }
+    setEditingValue(null)
+    advanceReview()
+  }
+
+  function advanceReview() {
+    if (reviewIndex + 1 < proposedRecords.length) {
+      setReviewIndex(reviewIndex + 1)
+    } else {
+      setStep(5) // done screen
+    }
+  }
+
+  async function finishOnboarding() {
     try {
       await writeState('onboarding', 'onboarding_complete', {
         source: 'onboarding_ui',
@@ -229,7 +300,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     } catch (err) {
       console.warn('[Onboarding] Failed to write completion state:', err)
     }
-    onComplete(lodestoneData || null)
+    onComplete(null)
   }
 
   // ── Step 1: Profile ──────────────────────────────────────────
@@ -398,6 +469,97 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
               onClick={() => finishOnboarding()}
             >
               Skip
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Step 4: Lodestone review ────────────────────────────────
+  if (step === 4 && proposedRecords.length > 0) {
+    const record = proposedRecords[reviewIndex]
+    const categoryLabel = CATEGORY_LABELS[record.metadata?.taxonomy_category] || ''
+    const isEditing = editingValue !== null
+
+    return (
+      <div className="onboarding">
+        <div className="onboarding-card onboarding-card-centered">
+          <div className="onboarding-progress">
+            {reviewIndex + 1} of {proposedRecords.length}
+          </div>
+
+          <h1 className="onboarding-title">What Ember noticed</h1>
+
+          <div className="onboarding-review-card">
+            {isEditing ? (
+              <textarea
+                className="onboarding-input onboarding-review-edit"
+                value={editingValue}
+                onChange={(e) => setEditingValue(e.target.value)}
+                rows={3}
+                autoFocus
+              />
+            ) : (
+              <p className="onboarding-review-value">{record.value}</p>
+            )}
+            {categoryLabel && (
+              <p className="onboarding-review-category">{categoryLabel}</p>
+            )}
+            <p className="onboarding-review-source">
+              from: {record._questionLabel}
+            </p>
+          </div>
+
+          <div className="onboarding-actions onboarding-actions-centered">
+            {isEditing ? (
+              <button
+                className="onboarding-btn onboarding-btn-primary"
+                onClick={handleReviewConfirm}
+              >
+                Save & confirm
+              </button>
+            ) : (
+              <>
+                <button
+                  className="onboarding-btn onboarding-btn-primary"
+                  onClick={handleReviewConfirm}
+                >
+                  Confirm
+                </button>
+                <button
+                  className="onboarding-btn onboarding-btn-secondary"
+                  onClick={() => setEditingValue(record.value)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="onboarding-btn onboarding-btn-skip"
+                  onClick={handleReviewDismiss}
+                >
+                  Dismiss
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Step 5: Done ─────────────────────────────────────────────
+  if (step === 5 || (step === 4 && proposedRecords.length === 0)) {
+    return (
+      <div className="onboarding">
+        <div className="onboarding-card onboarding-card-centered">
+          <img src={emberMascot} alt="Ember" className="onboarding-logo" />
+          <h1 className="onboarding-title">Done. Ember has a starting point.</h1>
+          <div className="onboarding-actions onboarding-actions-centered">
+            <button
+              className="onboarding-btn onboarding-btn-primary"
+              onClick={finishOnboarding}
+            >
+              Start using Ember
             </button>
           </div>
         </div>

@@ -459,6 +459,36 @@ export async function sendChat(messages, { sessionId } = {}) {
 // Memory / State writes (used by onboarding)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Lodestone
+// ---------------------------------------------------------------------------
+
+export async function createLodestone(value, taxonomyCategory, source = 'onboarding') {
+  const res = await fetch(`${API_URL}/lodestone`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ value, taxonomy_category: taxonomyCategory, source }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function updateLodestone(recordId, updates) {
+  const res = await fetch(`${API_URL}/lodestone/${recordId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function getLodestone() {
+  const res = await fetch(`${API_URL}/lodestone`, { headers: authHeaders() })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
 export async function writeMemory(text, memoryType = 'profile') {
   const res = await fetch('/write-memory', {
     method: 'POST',
