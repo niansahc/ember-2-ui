@@ -31,7 +31,7 @@ test.describe('Model Indicator', () => {
     const indicator = page.locator('.app-model-indicator')
     await indicator.click()
 
-    const panel = page.locator('.settings-panel')
+    const panel = page.locator('.settings-page')
     await expect(panel).toBeVisible()
   })
 

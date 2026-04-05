@@ -10,7 +10,7 @@ test.describe('Custom Theme', () => {
     // Open settings
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     // Check that "Custom" swatch exists in the theme picker
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
@@ -22,7 +22,7 @@ test.describe('Custom Theme', () => {
     // Open settings and select custom theme
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
     await customSwatch.click()
@@ -59,7 +59,7 @@ test.describe('Custom Theme', () => {
     // Open settings and select custom theme
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
     await customSwatch.click()

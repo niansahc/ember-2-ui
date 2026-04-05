@@ -32,8 +32,17 @@ const PROVIDERS = [
   { id: 'openai', name: 'OpenAI' },
 ]
 
+const TABS = [
+  { id: 'general', label: 'General', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
+  { id: 'security', label: 'Security', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+  { id: 'memory', label: 'Memory', icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6' },
+  { id: 'features', label: 'Features', icon: 'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' },
+  { id: 'about', label: 'About', icon: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 16v-4 M12 8h.01' },
+]
+
 export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
   const modalRef = useModal(isOpen, onClose)
+  const [activeTab, setActiveTab] = useState('general')
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
   const [tone, setTone] = useState('balanced')
@@ -64,11 +73,13 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
 
   useEffect(() => {
     if (!isOpen) return
+    let ignore = false
 
     setLoadingModels(true)
     async function loadModels() {
       try {
         const data = await realGetModel()
+        if (ignore) return
         if (data.model) {
           setCurrentModel(data.model)
           // Set tab based on current model
@@ -87,11 +98,12 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           setVisionModel(data.vision_model)
         }
       } catch {
+        if (ignore) return
         console.warn('[Settings] Model API unreachable, using mock')
         const list = await mockGetOllamaModels()
-        setLocalModels(list)
+        if (!ignore) setLocalModels(list)
       } finally {
-        setLoadingModels(false)
+        if (!ignore) setLoadingModels(false)
       }
     }
     loadModels()
@@ -107,7 +119,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           status[p.id] = { configured: false }
         }
       }
-      setProviderStatus(status)
+      if (!ignore) setProviderStatus(status)
     }
     checkProviders()
 
@@ -115,6 +127,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
     async function loadPreferences() {
       try {
         const [prefs, pinStatus] = await Promise.all([getPreferences(), getPinStatus()])
+        if (ignore) return
         if (prefs.conversational_style) setTone(prefs.conversational_style)
         setLockOnLaunch(prefs.lock_on_launch || false)
         setIdleLockEnabled(prefs.idle_lock_enabled || false)
@@ -123,6 +136,8 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
       } catch {}
     }
     loadPreferences()
+
+    return () => { ignore = true }
   }, [isOpen])
 
   async function handleSelectModel(modelId) {
@@ -172,7 +187,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   return (
     <>
       <div className="settings-overlay" onClick={onClose} aria-hidden="true" />
-      <aside ref={modalRef} className="settings-panel" role="dialog" aria-label="Settings" aria-modal="true">
+      <div ref={modalRef} className="settings-page" role="dialog" aria-label="Settings" aria-modal="true">
         <div className="settings-header">
           <h2 className="settings-title">Settings</h2>
           <button
@@ -187,196 +202,354 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
           </button>
         </div>
 
-        <div className="settings-body">
-          {/* ── Appearance ───────────────────────────────────── */}
-          <div className="settings-section-label">Appearance</div>
+        {/* Tab bar — horizontal on mobile, left rail on desktop */}
+        <nav className="settings-tabs" role="tablist" aria-label="Settings sections">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`settings-tab ${activeTab === tab.id ? 'settings-tab-active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`settings-panel-${tab.id}`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={tab.icon} />
+              </svg>
+              <span className="settings-tab-label">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
 
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Theme</span>
-            </div>
-          </div>
-          <div className="theme-picker" role="radiogroup" aria-label="Choose a theme">
-            {themes?.map((t) => (
-              <button
-                key={t.id}
-                className={`theme-swatch ${theme === t.id ? 'theme-swatch-active' : ''}`}
-                onClick={() => setTheme(t.id)}
-                role="radio"
-                aria-checked={theme === t.id}
-                aria-label={t.name}
-                title={t.name}
-              >
-                <div className="theme-swatch-colors">
-                  <span className="theme-swatch-bg" style={{ background: t.preview[0] }} />
-                  <span className="theme-swatch-accent" style={{ background: t.preview[1] }} />
-                  <span className="theme-swatch-text" style={{ background: t.preview[2] }} />
+        <div className="settings-content">
+          {/* ── General tab ───────────────────────────────────── */}
+          {activeTab === 'general' && (
+            <div id="settings-panel-general" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">Appearance</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Theme</span>
                 </div>
-                <span className="theme-swatch-name">{t.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {theme === 'custom' && (
-            <div className="custom-theme-pickers">
-              <label className="custom-theme-field">
-                <span className="custom-theme-label">Accent</span>
-                <input
-                  type="color"
-                  value={customColors.accent}
-                  onChange={(e) => setCustomColors({ accent: e.target.value })}
-                  className="custom-theme-input"
-                  aria-label="Custom accent color"
-                />
-                <span className="custom-theme-hex">{customColors.accent}</span>
-              </label>
-              <label className="custom-theme-field">
-                <span className="custom-theme-label">Background</span>
-                <input
-                  type="color"
-                  value={customColors.bg}
-                  onChange={(e) => setCustomColors({ bg: e.target.value })}
-                  className="custom-theme-input"
-                  aria-label="Custom background color"
-                />
-                <span className="custom-theme-hex">{customColors.bg}</span>
-              </label>
-            </div>
-          )}
-
-          <hr className="settings-divider" />
-
-          {/* ── Conversation ──────────────────────────────────── */}
-          <div className="settings-section-label">Conversation</div>
-
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">
-                Can Ember search the web?
-                <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Web search privacy information">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                  <span className="settings-info-tooltip">
-                    Web search queries are sent through a local SearXNG instance running on your machine. SearXNG forwards queries to external search engines without exposing your IP address or identity. Your queries are not stored. Disable web search here to keep all processing fully local.
-                  </span>
-                </span>
-              </span>
-              <span className="settings-row-hint">Enables live web results via SearXNG</span>
-            </div>
-            <label className="toggle" aria-label="Toggle web search">
-              <input
-                type="checkbox" role="switch"
-                checked={webSearch}
-                onChange={(e) => setWebSearch(e.target.checked)}
-              />
-              <span className="toggle-track" />
-            </label>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Should Ember remember this conversation?</span>
-              <span className="settings-row-hint">Saves this conversation to your vault</span>
-            </div>
-            <label className="toggle" aria-label="Toggle conversation memory">
-              <input
-                type="checkbox" role="switch"
-                checked={rememberConvo}
-                onChange={(e) => setRememberConvo(e.target.checked)}
-              />
-              <span className="toggle-track" />
-            </label>
-          </div>
-
-          <div className="settings-style-section">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Conversational Style</span>
-              <span className="settings-row-hint">Controls how Ember responds</span>
-            </div>
-            <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
-              {[
-                { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
-                { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
-                { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
-              ].map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="conversational_style"
-                    value={opt.value}
-                    checked={tone === opt.value}
-                    onChange={() => {
-                      setTone(opt.value)
-                      updatePreferences({ conversational_style: opt.value })
-                    }}
-                    className="sr-only"
-                  />
-                  <span className="settings-style-label">{opt.label}</span>
-                  <span className="settings-style-desc">{opt.desc}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <hr className="settings-divider" />
-
-          {/* ── Models ────────────────────────────────────────── */}
-          <div className="settings-section-label">Models</div>
-
-          {/* Tab selector */}
-          <div className="model-tabs" role="tablist">
-            <button
-              className={`model-tab ${modelTab === 'local' ? 'model-tab-active' : ''}`}
-              onClick={() => setModelTab('local')}
-              role="tab"
-              aria-selected={modelTab === 'local'}
-            >
-              Local
-            </button>
-            <button
-              className={`model-tab ${modelTab === 'cloud' ? 'model-tab-active' : ''}`}
-              onClick={() => setModelTab('cloud')}
-              role="tab"
-              aria-selected={modelTab === 'cloud'}
-            >
-              Cloud
-            </button>
-          </div>
-
-          {/* Local tab */}
-          {modelTab === 'local' && (
-            <div className="model-list" role="tabpanel">
-              {loadingModels ? (
-                <p className="model-list-empty">Loading models...</p>
-              ) : textModels.length === 0 ? (
-                <p className="model-list-empty">No local models found. Install one with <code>ollama pull qwen3:8b</code></p>
-              ) : (
-                textModels.map((m) => (
+              </div>
+              <div className="theme-picker" role="radiogroup" aria-label="Choose a theme">
+                {themes?.map((t) => (
                   <button
-                    key={m}
-                    className={`model-list-item ${m === currentModel ? 'model-list-item-active' : ''}`}
-                    onClick={() => handleSelectModel(m)}
+                    key={t.id}
+                    className={`theme-swatch ${theme === t.id ? 'theme-swatch-active' : ''}`}
+                    onClick={() => setTheme(t.id)}
+                    role="radio"
+                    aria-checked={theme === t.id}
+                    aria-label={t.name}
+                    title={t.name}
                   >
-                    <span className="model-list-item-name">{m}</span>
-                    {m === currentModel && <span className="model-list-item-check">Active</span>}
+                    <div className="theme-swatch-colors">
+                      <span className="theme-swatch-bg" style={{ background: t.preview[0] }} />
+                      <span className="theme-swatch-accent" style={{ background: t.preview[1] }} />
+                      <span className="theme-swatch-text" style={{ background: t.preview[2] }} />
+                    </div>
+                    <span className="theme-swatch-name">{t.name}</span>
                   </button>
-                ))
+                ))}
+              </div>
+
+              {theme === 'custom' && (
+                <div className="custom-theme-pickers">
+                  <label className="custom-theme-field">
+                    <span className="custom-theme-label">Accent</span>
+                    <input
+                      type="color"
+                      value={customColors.accent}
+                      onChange={(e) => setCustomColors({ accent: e.target.value })}
+                      className="custom-theme-input"
+                      aria-label="Custom accent color"
+                    />
+                    <span className="custom-theme-hex">{customColors.accent}</span>
+                  </label>
+                  <label className="custom-theme-field">
+                    <span className="custom-theme-label">Background</span>
+                    <input
+                      type="color"
+                      value={customColors.bg}
+                      onChange={(e) => setCustomColors({ bg: e.target.value })}
+                      className="custom-theme-input"
+                      aria-label="Custom background color"
+                    />
+                    <span className="custom-theme-hex">{customColors.bg}</span>
+                  </label>
+                </div>
+              )}
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Conversation</div>
+
+              <div className="settings-style-section">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Conversational Style</span>
+                  <span className="settings-row-hint">Controls how Ember responds</span>
+                </div>
+                <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
+                  {[
+                    { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
+                    { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
+                    { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="conversational_style"
+                        value={opt.value}
+                        checked={tone === opt.value}
+                        onChange={() => {
+                          setTone(opt.value)
+                          updatePreferences({ conversational_style: opt.value })
+                        }}
+                        className="sr-only"
+                      />
+                      <span className="settings-style-label">{opt.label}</span>
+                      <span className="settings-style-desc">{opt.desc}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Models</div>
+
+              {/* Tab selector */}
+              <div className="model-tabs" role="tablist">
+                <button
+                  className={`model-tab ${modelTab === 'local' ? 'model-tab-active' : ''}`}
+                  onClick={() => setModelTab('local')}
+                  role="tab"
+                  aria-selected={modelTab === 'local'}
+                >
+                  Local
+                </button>
+                <button
+                  className={`model-tab ${modelTab === 'cloud' ? 'model-tab-active' : ''}`}
+                  onClick={() => setModelTab('cloud')}
+                  role="tab"
+                  aria-selected={modelTab === 'cloud'}
+                >
+                  Cloud
+                </button>
+              </div>
+
+              {/* Local tab */}
+              {modelTab === 'local' && (
+                <div className="model-list" role="tabpanel">
+                  {loadingModels ? (
+                    <p className="model-list-empty">Loading models...</p>
+                  ) : textModels.length === 0 ? (
+                    <p className="model-list-empty">No local models found. Install one with <code>ollama pull qwen3:8b</code></p>
+                  ) : (
+                    textModels.map((m) => (
+                      <button
+                        key={m}
+                        className={`model-list-item ${m === currentModel ? 'model-list-item-active' : ''}`}
+                        onClick={() => handleSelectModel(m)}
+                      >
+                        <span className="model-list-item-name">{m}</span>
+                        {m === currentModel && <span className="model-list-item-check">Active</span>}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Cloud tab */}
+              {modelTab === 'cloud' && (
+                <div className="model-list" role="tabpanel">
+                  {PROVIDERS.map((provider) => {
+                    const configured = providerStatus[provider.id]?.configured
+                    const models = CLOUD_MODELS[provider.id] || []
+
+                    return (
+                      <div key={provider.id} className="cloud-provider-section">
+                        <div className="cloud-provider-header">
+                          <span className="cloud-provider-name">{provider.name}</span>
+                          {configured ? (
+                            <span className="cloud-provider-status cloud-provider-configured">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              Configured
+                            </span>
+                          ) : (
+                            <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
+                          )}
+                        </div>
+
+                        {configured && models.map((m) => (
+                          <button
+                            key={m.id}
+                            className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
+                            onClick={() => handleSelectModel(m.id)}
+                          >
+                            <div className="model-list-item-info">
+                              <span className="model-list-item-name">{m.name}</span>
+                              <span className="model-list-item-desc">{m.desc}</span>
+                            </div>
+                            {m.id === currentModel && <span className="model-list-item-check">Active</span>}
+                          </button>
+                        ))}
+
+                        {!configured && (
+                          <button className="cloud-configure-link" onClick={() => setActiveTab('security')}>
+                            Add API key in Security
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  <div className="cloud-disclosure">
+                    When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device.
+                  </div>
+                </div>
+              )}
+
+              <hr className="settings-divider" />
+
+              {/* ── Vision ──────────────────────────────────────────── */}
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Can Ember see images?</span>
+                  <span className="settings-row-hint">Enables image analysis in chat</span>
+                </div>
+                <label className="toggle" aria-label="Toggle vision model">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={visionEnabled}
+                    onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              {visionEnabled && (
+                <div className="settings-row settings-row-nested">
+                  <div className="settings-row-info">
+                    <span className="settings-row-label">Vision model</span>
+                    <span className="settings-row-hint">Used when you send images</span>
+                  </div>
+                  <select
+                    className="settings-select"
+                    value={visionModel}
+                    onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
+                    aria-label="Vision model"
+                  >
+                    {visionModels.length > 0 ? (
+                      visionModels.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))
+                    ) : (
+                      <option value="">No vision models found</option>
+                    )}
+                  </select>
+                </div>
               )}
             </div>
           )}
 
-          {/* Cloud tab */}
-          {modelTab === 'cloud' && (
-            <div className="model-list" role="tabpanel">
+          {/* ── Security tab ──────────────────────────────────── */}
+          {activeTab === 'security' && (
+            <div id="settings-panel-security" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">PIN Lock</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Lock on launch</span>
+                  <span className="settings-row-hint">Require PIN when Ember opens</span>
+                </div>
+                <label className="toggle" aria-label="Toggle lock on launch">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={lockOnLaunch}
+                    onChange={(e) => {
+                      setLockOnLaunch(e.target.checked)
+                      updatePreferences({ lock_on_launch: e.target.checked })
+                    }}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Lock after idle</span>
+                  <span className="settings-row-hint">Auto-lock after inactivity</span>
+                </div>
+                <label className="toggle" aria-label="Toggle idle lock">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={idleLockEnabled}
+                    onChange={(e) => {
+                      setIdleLockEnabled(e.target.checked)
+                      updatePreferences({ idle_lock_enabled: e.target.checked })
+                    }}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              {idleLockEnabled && (
+                <div className="settings-row settings-row-nested">
+                  <div className="settings-row-info">
+                    <span className="settings-row-label">Idle timeout</span>
+                    <span className="settings-row-hint">Minutes before auto-lock</span>
+                  </div>
+                  <select
+                    className="settings-select"
+                    value={idleTimeout}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setIdleTimeout(val)
+                      updatePreferences({ idle_timeout: val })
+                    }}
+                    aria-label="Idle timeout minutes"
+                  >
+                    <option value={5}>5 min</option>
+                    <option value={10}>10 min</option>
+                    <option value={15}>15 min</option>
+                    <option value={30}>30 min</option>
+                    <option value={60}>60 min</option>
+                  </select>
+                </div>
+              )}
+
+              {!securityPinSet && (
+                <button
+                  className="settings-action-btn"
+                  onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-setup')) }}
+                >
+                  Set up PIN
+                </button>
+              )}
+
+              {securityPinSet && (
+                <button
+                  className="settings-action-btn settings-action-btn-danger"
+                  onClick={() => {
+                    alert('To remove your PIN, use the recovery passphrase flow or contact support.')
+                  }}
+                >
+                  Remove PIN
+                </button>
+              )}
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Cloud API Keys</div>
+
               {PROVIDERS.map((provider) => {
                 const configured = providerStatus[provider.id]?.configured
-                const models = CLOUD_MODELS[provider.id] || []
                 const isAdding = addingKeyFor === provider.id
 
                 return (
@@ -394,20 +567,6 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                         <span className="cloud-provider-status cloud-provider-not-configured">Not configured</span>
                       )}
                     </div>
-
-                    {configured && models.map((m) => (
-                      <button
-                        key={m.id}
-                        className={`model-list-item ${m.id === currentModel ? 'model-list-item-active' : ''}`}
-                        onClick={() => handleSelectModel(m.id)}
-                      >
-                        <div className="model-list-item-info">
-                          <span className="model-list-item-name">{m.name}</span>
-                          <span className="model-list-item-desc">{m.desc}</span>
-                        </div>
-                        {m.id === currentModel && <span className="model-list-item-check">Active</span>}
-                      </button>
-                    ))}
 
                     {configured && confirmingRemove !== provider.id && (
                       <button className="cloud-remove-key-btn" onClick={() => setConfirmingRemove(provider.id)}>
@@ -461,231 +620,157 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                   </div>
                 )
               })}
+            </div>
+          )}
 
-              <div className="cloud-disclosure">
-                When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device.
+          {/* ── Memory tab ────────────────────────────────────── */}
+          {activeTab === 'memory' && (
+            <div id="settings-panel-memory" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">Vault</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Should Ember remember this conversation?</span>
+                  <span className="settings-row-hint">Saves this conversation to your vault</span>
+                </div>
+                <label className="toggle" aria-label="Toggle conversation memory">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={rememberConvo}
+                    onChange={(e) => setRememberConvo(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              <div className="settings-row vault-path-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Where is my vault?</span>
+                  <span className="settings-row-hint settings-row-path">
+                    {vaultPathRevealed ? 'C:\\EmberVault' : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
+                  </span>
+                </div>
+                <div className="vault-path-actions">
+                  <button
+                    className="vault-path-icon-btn"
+                    onClick={() => {
+                      setVaultPathRevealed(true)
+                      setTimeout(() => setVaultPathRevealed(false), 10000)
+                    }}
+                    aria-label={vaultPathRevealed ? 'Path visible' : 'Reveal vault path'}
+                    title={vaultPathRevealed ? 'Hiding in 10s' : 'Reveal path'}
+                  >
+                    {vaultPathRevealed ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    className="vault-path-icon-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText('C:\\EmberVault').then(() => {
+                        setVaultCopied(true)
+                        setTimeout(() => setVaultCopied(false), 2000)
+                      })
+                    }}
+                    aria-label="Copy vault path"
+                    title={vaultCopied ? 'Copied!' : 'Copy path'}
+                  >
+                    {vaultCopied ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                    )}
+                  </button>
+                  <button className="settings-action-btn" aria-label="Open vault folder">
+                    Open
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          <hr className="settings-divider" />
+          {/* ── Features tab ──────────────────────────────────── */}
+          {activeTab === 'features' && (
+            <div id="settings-panel-features" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">Search</div>
 
-          {/* ── Vision ──────────────────────────────────────────── */}
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Can Ember see images?</span>
-              <span className="settings-row-hint">Enables image analysis in chat</span>
-            </div>
-            <label className="toggle" aria-label="Toggle vision model">
-              <input
-                type="checkbox" role="switch"
-                checked={visionEnabled}
-                onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
-              />
-              <span className="toggle-track" />
-            </label>
-          </div>
-
-          {visionEnabled && (
-            <div className="settings-row settings-row-nested">
-              <div className="settings-row-info">
-                <span className="settings-row-label">Vision model</span>
-                <span className="settings-row-hint">Used when you send images</span>
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">
+                    Can Ember search the web?
+                    <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Web search privacy information">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      <span className="settings-info-tooltip">
+                        Web search queries are sent through a local SearXNG instance running on your machine. SearXNG forwards queries to external search engines without exposing your IP address or identity. Your queries are not stored. Disable web search here to keep all processing fully local.
+                      </span>
+                    </span>
+                  </span>
+                  <span className="settings-row-hint">Enables live web results via SearXNG</span>
+                </div>
+                <label className="toggle" aria-label="Toggle web search">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={webSearch}
+                    onChange={(e) => setWebSearch(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
               </div>
-              <select
-                className="settings-select"
-                value={visionModel}
-                onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
-                aria-label="Vision model"
-              >
-                {visionModels.length > 0 ? (
-                  visionModels.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))
-                ) : (
-                  <option value="">No vision models found</option>
-                )}
-              </select>
             </div>
           )}
 
-          <hr className="settings-divider" />
+          {/* ── About tab ─────────────────────────────────────── */}
+          {activeTab === 'about' && (
+            <div id="settings-panel-about" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">Ember</div>
 
-          {/* ── Security ───────────────────────────────────────── */}
-          <div className="settings-section-label">Security</div>
-
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Lock on launch</span>
-              <span className="settings-row-hint">Require PIN when Ember opens</span>
-            </div>
-            <label className="toggle" aria-label="Toggle lock on launch">
-              <input
-                type="checkbox" role="switch"
-                checked={lockOnLaunch}
-                onChange={(e) => {
-                  setLockOnLaunch(e.target.checked)
-                  updatePreferences({ lock_on_launch: e.target.checked })
-                }}
-              />
-              <span className="toggle-track" />
-            </label>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Lock after idle</span>
-              <span className="settings-row-hint">Auto-lock after inactivity</span>
-            </div>
-            <label className="toggle" aria-label="Toggle idle lock">
-              <input
-                type="checkbox" role="switch"
-                checked={idleLockEnabled}
-                onChange={(e) => {
-                  setIdleLockEnabled(e.target.checked)
-                  updatePreferences({ idle_lock_enabled: e.target.checked })
-                }}
-              />
-              <span className="toggle-track" />
-            </label>
-          </div>
-
-          {idleLockEnabled && (
-            <div className="settings-row settings-row-nested">
-              <div className="settings-row-info">
-                <span className="settings-row-label">Idle timeout</span>
-                <span className="settings-row-hint">Minutes before auto-lock</span>
-              </div>
-              <select
-                className="settings-select"
-                value={idleTimeout}
-                onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setIdleTimeout(val)
-                  updatePreferences({ idle_timeout: val })
-                }}
-                aria-label="Idle timeout minutes"
-              >
-                <option value={5}>5 min</option>
-                <option value={10}>10 min</option>
-                <option value={15}>15 min</option>
-                <option value={30}>30 min</option>
-                <option value={60}>60 min</option>
-              </select>
-            </div>
-          )}
-
-          {!securityPinSet && (
-            <button
-              className="settings-action-btn"
-              onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-setup')) }}
-            >
-              Set up PIN
-            </button>
-          )}
-
-          {securityPinSet && (
-            <button
-              className="settings-action-btn settings-action-btn-danger"
-              onClick={() => {
-                // PIN removal is a sensitive operation — for MVP, direct to settings
-                alert('To remove your PIN, use the recovery passphrase flow or contact support.')
-              }}
-            >
-              Remove PIN
-            </button>
-          )}
-
-          <hr className="settings-divider" />
-
-          {/* ── System ────────────────────────────────────────── */}
-          <div className="settings-section-label">System</div>
-
-          <div className="settings-row vault-path-row">
-            <div className="settings-row-info">
-              <span className="settings-row-label">Where is my vault?</span>
-              <span className="settings-row-hint settings-row-path">
-                {vaultPathRevealed ? 'C:\\EmberVault' : '••••••••••••'}
-              </span>
-            </div>
-            <div className="vault-path-actions">
-              <button
-                className="vault-path-icon-btn"
-                onClick={() => {
-                  setVaultPathRevealed(true)
-                  setTimeout(() => setVaultPathRevealed(false), 10000)
-                }}
-                aria-label={vaultPathRevealed ? 'Path visible' : 'Reveal vault path'}
-                title={vaultPathRevealed ? 'Hiding in 10s' : 'Reveal path'}
-              >
-                {vaultPathRevealed ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                )}
+              <button className="settings-link-btn" onClick={() => { onClose(); onOpenAbout() }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                  <path d="M12 16v-4" />
+                  <path d="M12 8h.01" />
+                </svg>
+                About Ember
               </button>
-              <button
-                className="vault-path-icon-btn"
-                onClick={() => {
-                  navigator.clipboard.writeText('C:\\EmberVault').then(() => {
-                    setVaultCopied(true)
-                    setTimeout(() => setVaultCopied(false), 2000)
-                  })
-                }}
-                aria-label="Copy vault path"
-                title={vaultCopied ? 'Copied!' : 'Copy path'}
-              >
-                {vaultCopied ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                  </svg>
-                )}
+
+              <button className="settings-link-btn" onClick={() => { onClose(); onOpenUpdates() }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 105.26-11.49L1 10" />
+                </svg>
+                Check for updates
               </button>
-              <button className="settings-action-btn" aria-label="Open vault folder">
-                Open
+
+              <button className="settings-link-btn" onClick={() => { onClose(); onOpenBugReport() }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Report a bug
               </button>
             </div>
-          </div>
-
-          <button className="settings-link-btn" onClick={onOpenUpdates}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 105.26-11.49L1 10" />
-            </svg>
-            Check for updates
-          </button>
-
-          <button className="settings-link-btn" onClick={onOpenBugReport}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            Report a bug
-          </button>
-
-          <button className="settings-link-btn" onClick={onOpenAbout}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-              <path d="M12 16v-4" />
-              <path d="M12 8h.01" />
-            </svg>
-            About Ember
-          </button>
+          )}
         </div>
-      </aside>
+      </div>
     </>
   )
 }

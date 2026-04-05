@@ -57,11 +57,11 @@ test.describe('Edge Cases — Layout Stability', () => {
     // Open settings
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     // Close settings first — the overlay blocks sidebar clicks by design
     await page.keyboard.press('Escape')
-    await expect(page.locator('.settings-panel')).not.toBeVisible({ timeout: 3000 })
+    await expect(page.locator('.settings-page')).not.toBeVisible({ timeout: 3000 })
 
     // Collapse sidebar
     const collapseBtn = page.locator('[aria-label="Collapse sidebar"]')
@@ -71,7 +71,7 @@ test.describe('Edge Cases — Layout Stability', () => {
     // Re-open settings while collapsed
     const headerSettings = page.locator('.app-header-btn[aria-label="Open settings"]')
     await headerSettings.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     // Close and expand sidebar
     await page.keyboard.press('Escape')
@@ -88,7 +88,7 @@ test.describe('Edge Cases — Layout Stability', () => {
 
     // Open settings, then rapidly close/open via Escape and button
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Escape')
@@ -113,7 +113,7 @@ test.describe('Edge Cases — Layout Stability', () => {
   test('rapid theme switching does not break UI', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     const themes = ['Midnight', 'Forest', 'Ocean', 'Bloom', 'Ember']
     for (const name of themes) {
@@ -201,10 +201,10 @@ test.describe('Edge Cases — Mobile Layout', () => {
     // Use the header settings button — sidebar footer may be offscreen on mobile
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
-    await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     // Panel should not exceed viewport width
-    const panelBox = await page.locator('.settings-panel').boundingBox()
+    const panelBox = await page.locator('.settings-page').boundingBox()
     expect(Math.round(panelBox.width)).toBeLessThanOrEqual(375)
   })
 })

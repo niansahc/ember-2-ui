@@ -13,8 +13,19 @@ test.describe('Settings', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    const panel = page.locator('.settings-panel')
+    const panel = page.locator('.settings-page')
     await expect(panel).toBeVisible()
+  })
+
+  test('shows tab navigation with General active by default', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const tabs = page.locator('.settings-tabs')
+    await expect(tabs).toBeVisible()
+
+    const generalTab = page.locator('.settings-tab-active', { hasText: 'General' })
+    await expect(generalTab).toBeVisible()
   })
 
   test('shows Local and Cloud tabs in Models section', async ({ page }) => {
@@ -67,12 +78,32 @@ test.describe('Settings', () => {
     await expect(providers.first()).toBeVisible()
   })
 
-  test('Cloud tab shows Add API key button for unconfigured provider', async ({ page }) => {
+  test('Cloud tab shows configure link or models for each provider', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
     const cloudTab = page.locator('.model-tab', { hasText: 'Cloud' })
     await cloudTab.click()
+
+    // Each provider should have "Add API key in Security" link or be configured with models
+    const configureLink = page.locator('.cloud-configure-link')
+    const configuredStatus = page.locator('.cloud-provider-configured')
+    const hasLink = await configureLink.count()
+    const hasConfigured = await configuredStatus.count()
+    expect(hasLink + hasConfigured).toBeGreaterThan(0)
+  })
+
+  test('Security tab shows API key management', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    // Navigate to Security tab
+    const securityTab = page.locator('.settings-tab', { hasText: 'Security' })
+    await securityTab.click()
+
+    // Should show Cloud API Keys section
+    const apiKeysLabel = page.locator('.settings-section-label', { hasText: 'Cloud API Keys' })
+    await expect(apiKeysLabel).toBeVisible()
 
     // At least one provider should have "Add API key" or be configured
     const addBtn = page.locator('.cloud-add-key-btn')
@@ -82,12 +113,13 @@ test.describe('Settings', () => {
     expect(hasAdd + hasConfigured).toBeGreaterThan(0)
   })
 
-  test('Cloud tab Add API key button opens masked input form', async ({ page }) => {
+  test('Security tab Add API key button opens masked input form', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    const cloudTab = page.locator('.model-tab', { hasText: 'Cloud' })
-    await cloudTab.click()
+    // Navigate to Security tab
+    const securityTab = page.locator('.settings-tab', { hasText: 'Security' })
+    await securityTab.click()
 
     const addBtn = page.locator('.cloud-add-key-btn').first()
     if (await addBtn.isVisible()) {
@@ -122,13 +154,16 @@ test.describe('Settings', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    // Scroll to System section
+    // Navigate to Memory tab where vault path now lives
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
     const vaultHint = page.locator('.settings-row-path')
     await expect(vaultHint).toBeVisible()
 
     // Should show dots, not a real path
     const text = await vaultHint.textContent()
-    expect(text).toContain('••••')
+    expect(text).toContain('\u2022\u2022\u2022\u2022')
     expect(text).not.toMatch(/[A-Z]:\\/) // should not show a Windows path
   })
 
@@ -136,18 +171,26 @@ test.describe('Settings', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
+    // Navigate to Memory tab
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
     const vaultHint = page.locator('.settings-row-path')
     const eyeBtn = page.locator('.vault-path-icon-btn').first()
     await eyeBtn.click()
 
     // Should now show a real path
     const revealedText = await vaultHint.textContent()
-    expect(revealedText).not.toContain('••••')
+    expect(revealedText).not.toContain('\u2022\u2022\u2022\u2022')
   })
 
   test('vault path copy button exists', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
+
+    // Navigate to Memory tab
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
 
     const copyBtn = page.locator('.vault-path-icon-btn[aria-label="Copy vault path"]')
     await expect(copyBtn).toBeVisible()

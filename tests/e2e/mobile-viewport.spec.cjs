@@ -46,7 +46,7 @@ test.describe('Mobile Viewport', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    const panel = page.locator('.settings-panel')
+    const panel = page.locator('.settings-page')
     await expect(panel).toBeVisible()
 
     // Panel should be full width on mobile
