@@ -476,6 +476,12 @@
   text-decoration: line-through;
 }
 
+.sidebar-task-error .sidebar-task-title {
+  color: var(--error, #e85d5d);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
 .sidebar-task-delete {
   flex-shrink: 0;
   width: 20px;

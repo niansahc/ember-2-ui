@@ -41,6 +41,8 @@ export default function Sidebar({
   const [showAllTasks, setShowAllTasks] = useState(false)
   // Track tasks toggled done in this session (visual state, not removed)
   const [doneTasks, setDoneTasks] = useState(new Set())
+  // Track per-task error states (task id -> error message)
+  const [taskErrors, setTaskErrors] = useState({})
 
   // Collapse state — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
@@ -167,9 +169,17 @@ export default function Sidebar({
     updateTaskStatus(taskId, newStatus).catch(() => {})
   }
 
-  function handleTaskDelete(taskId) {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId))
-    deleteTask(taskId).catch(() => {})
+  async function handleTaskDelete(taskId) {
+    // Clear any previous error for this task
+    setTaskErrors((prev) => { const next = { ...prev }; delete next[taskId]; return next })
+    try {
+      await deleteTask(taskId)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    } catch {
+      setTaskErrors((prev) => ({ ...prev, [taskId]: 'Failed to delete' }))
+      // Auto-clear error after 4 seconds
+      setTimeout(() => setTaskErrors((prev) => { const next = { ...prev }; delete next[taskId]; return next }), 4000)
+    }
   }
 
   // Close context menu on click outside
@@ -668,8 +678,9 @@ export default function Sidebar({
             <ul className="sidebar-convo-list" role="list">
               {(showAllTasks ? tasks : tasks.slice(0, 5)).map((task) => {
                 const isDone = doneTasks.has(task.id)
+                const taskError = taskErrors[task.id]
                 return (
-                  <li key={task.id} className={`sidebar-task-row ${isDone ? 'sidebar-task-done' : ''}`}>
+                  <li key={task.id} className={`sidebar-task-row ${isDone ? 'sidebar-task-done' : ''} ${taskError ? 'sidebar-task-error' : ''}`}>
                     <input
                       type="checkbox"
                       className="sidebar-task-checkbox"
@@ -683,9 +694,9 @@ export default function Sidebar({
                         const sessionId = task.metadata?.session_id
                         if (sessionId) onSelectConversation(sessionId)
                       }}
-                      title={task.title}
+                      title={taskError || task.title}
                     >
-                      {task.title}
+                      {taskError || task.title}
                     </button>
                     <button
                       className="sidebar-task-delete"
