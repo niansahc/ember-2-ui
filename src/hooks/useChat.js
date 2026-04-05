@@ -3,7 +3,7 @@ import { uuid } from '../utils/uuid.js'
 import { mockStreamChat, mockGetMessages } from '../api/mock.js'
 import {
   streamChat as realStreamChat,
-  getConversation as realGetConversation,
+  getConversationTurns as realGetConversationTurns,
   uploadDocument as realUploadDocument,
   moveConversationToProject as realMoveToProject,
 } from '../api/ember.js'
@@ -232,14 +232,14 @@ export function useChat() {
 
   const loadConversation = useCallback(async (conversationId) => {
     try {
-      const data = await realGetConversation(conversationId)
-      const turns = (data.turns || []).map((t) => ({
+      const turns = await realGetConversationTurns(conversationId)
+      const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
         id: t.id || uuid(),
         role: t.role,
         content: t.content,
         timestamp: t.timestamp,
       }))
-      setMessages(turns)
+      setMessages(mapped)
       setSessionId(conversationId)
       return
     } catch {

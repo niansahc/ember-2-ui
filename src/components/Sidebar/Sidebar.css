@@ -452,6 +452,8 @@
 }
 
 .sidebar-task-title {
+  flex: 1;
+  min-width: 0;
   font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
@@ -472,6 +474,29 @@
 
 .sidebar-task-done .sidebar-task-title {
   text-decoration: line-through;
+}
+
+.sidebar-task-delete {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  padding: 0;
+  background: none;
+}
+
+.sidebar-task-row:hover .sidebar-task-delete {
+  opacity: 1;
+}
+
+.sidebar-task-delete:hover {
+  color: var(--error);
 }
 
 .sidebar-tasks-more {

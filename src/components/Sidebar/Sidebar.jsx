@@ -11,6 +11,7 @@ import {
   getVersion,
   getTasks,
   updateTaskStatus,
+  deleteTask,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Sidebar.css'
@@ -138,6 +139,11 @@ export default function Sidebar({
 
     // PATCH in background
     updateTaskStatus(taskId, newStatus).catch(() => {})
+  }
+
+  function handleTaskDelete(taskId) {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    deleteTask(taskId).catch(() => {})
   }
 
   // Close context menu on click outside
@@ -654,6 +660,17 @@ export default function Sidebar({
                       title={task.title}
                     >
                       {task.title}
+                    </button>
+                    <button
+                      className="sidebar-task-delete"
+                      onClick={() => handleTaskDelete(task.id)}
+                      aria-label={`Cancel task "${task.title}"`}
+                      title="Cancel task"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
                   </li>
                 )

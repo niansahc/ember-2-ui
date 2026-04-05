@@ -208,6 +208,15 @@ export async function getConversation(sessionId) {
   return await res.json()
 }
 
+export async function getConversationTurns(sessionId) {
+  const res = await fetch(`${API_URL}/conversations/${sessionId}/turns`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  const data = await res.json()
+  return data.turns || data || []
+}
+
 export async function renameConversation(sessionId, title) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     method: 'PATCH',
@@ -360,6 +369,14 @@ export async function updateTaskStatus(taskId, status) {
   })
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return await res.json()
+}
+
+export async function deleteTask(taskId) {
+  const res = await fetch(`${API_URL}/tasks/${taskId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
 }
 
 // ---------------------------------------------------------------------------
