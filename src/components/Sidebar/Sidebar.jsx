@@ -56,25 +56,31 @@ export default function Sidebar({
   }
 
   // Load conversations — try real API, fall back to mock
-  useEffect(() => {
-    async function loadConversations() {
-      try {
-        const convos = await realGetConversations(100)
-        setConversations(
-          convos.map((c) => ({
-            id: c.id,
-            title: c.title,
-            updatedAt: c.updated_at,
-            projectId: c.project_id || null,
-          })),
-        )
-      } catch {
-        console.warn('[Sidebar] API unreachable, using mock conversations')
-        mockGetConversations().then(setConversations)
-      }
+  const loadConversationsRef = useRef(null)
+  loadConversationsRef.current = async function loadConversations() {
+    try {
+      const convos = await realGetConversations(100)
+      setConversations(
+        convos.map((c) => ({
+          id: c.id,
+          title: c.title,
+          updatedAt: c.updated_at,
+          projectId: c.project_id || null,
+        })),
+      )
+    } catch {
+      console.warn('[Sidebar] API unreachable, using mock conversations')
+      mockGetConversations().then(setConversations)
     }
-    loadConversations()
-    // Load projects — try real API, fall back to mock
+  }
+
+  // Initial load + refresh when active conversation changes
+  useEffect(() => {
+    loadConversationsRef.current()
+  }, [activeConversationId])
+
+  // Load projects on mount
+  useEffect(() => {
     async function loadProjects() {
       try {
         const projs = await realGetProjects()
@@ -113,11 +119,12 @@ export default function Sidebar({
     return () => clearInterval(interval)
   }, [])
 
-  // Refresh tasks immediately when streaming ends (new tasks may have been created)
+  // Refresh tasks and conversations when streaming ends (new items may have been created)
   const wasStreamingRef = useRef(false)
   useEffect(() => {
     if (wasStreamingRef.current && !isStreaming) {
       loadTasksRef.current()
+      loadConversationsRef.current()
     }
     wasStreamingRef.current = isStreaming
   }, [isStreaming])
