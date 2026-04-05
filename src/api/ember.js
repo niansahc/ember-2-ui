@@ -455,6 +455,30 @@ export async function sendChat(messages, { sessionId } = {}) {
   return data.choices?.[0]?.message?.content || ''
 }
 
+// ---------------------------------------------------------------------------
+// Memory / State writes (used by onboarding)
+// ---------------------------------------------------------------------------
+
+export async function writeMemory(text, memoryType = 'profile') {
+  const res = await fetch('/write-memory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ text, memory_type: memoryType }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
+export async function writeState(type, text, { source = 'ui', tags = [], metadata = {} } = {}) {
+  const res = await fetch('/write-state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ type, text, source, tags, metadata }),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return await res.json()
+}
+
 export const hasApiKey = !!API_KEY
 
 function authHeaders() {

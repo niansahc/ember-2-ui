@@ -1,0 +1,278 @@
+.onboarding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: var(--bg-primary);
+}
+
+.onboarding-card {
+  width: 100%;
+  max-width: 580px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 2rem 2.5rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+}
+
+.onboarding-card-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* ── Progress indicator ──────────────────────────────────────── */
+
+.onboarding-progress {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.onboarding-card-centered .onboarding-progress {
+  margin-bottom: 2rem;
+}
+
+/* ── Welcome header ──────────────────────────────────────────── */
+
+.onboarding-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.onboarding-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.25);
+  margin-bottom: 1rem;
+}
+
+.onboarding-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.onboarding-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 420px;
+}
+
+/* ── Body text (lodestone gate) ──────────────────────────────── */
+
+.onboarding-body-text {
+  max-width: 440px;
+  margin-bottom: 2rem;
+}
+
+.onboarding-body-text p {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0 0 1rem;
+}
+
+.onboarding-body-text p:last-child {
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Form fields ─────────────────────────────────────────────── */
+
+.onboarding-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.onboarding-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.onboarding-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin: 0.75rem 0 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.onboarding-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.onboarding-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.onboarding-help-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  background: transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.onboarding-help-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.onboarding-help-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 0.4rem 0.6rem;
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+  margin: 0;
+  animation: help-fade-in 0.15s ease;
+}
+
+@keyframes help-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.onboarding-input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+
+.onboarding-input:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.onboarding-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ── Actions ─────────────────────────────────────────────────── */
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.onboarding-actions-centered {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.onboarding-btn {
+  padding: 0.6rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.onboarding-btn-primary {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: 1px solid var(--accent);
+}
+
+.onboarding-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.onboarding-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.onboarding-btn-skip {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+
+.onboarding-btn-skip:hover {
+  color: var(--text-primary);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .onboarding {
+    padding: 1rem 0.75rem;
+  }
+
+  .onboarding-card {
+    padding: 1.5rem 1.25rem;
+    max-height: 90vh;
+  }
+
+  .onboarding-title {
+    font-size: 1.2rem;
+  }
+
+  .onboarding-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .onboarding-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

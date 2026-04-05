@@ -8,6 +8,7 @@ import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
 import LockScreen from './components/LockScreen/LockScreen.jsx'
 import PinSetup from './components/LockScreen/PinSetup.jsx'
+import Onboarding from './components/Onboarding/Onboarding.jsx'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -45,6 +46,7 @@ export default function App() {
   const [model, setModel] = useState(null)
   const [isLocked, setIsLocked] = useState(false)
   const [showPinSetup, setShowPinSetup] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [pinIsSet, setPinIsSet] = useState(false)
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
 
@@ -70,6 +72,11 @@ export default function App() {
         // Lock on launch if PIN is set and lock_on_launch is enabled
         if (pinStatus.pin_set && lp.lock_on_launch) {
           setIsLocked(true)
+        }
+
+        // Show onboarding for new users who haven't completed it
+        if (!prefs.onboarding_complete) {
+          setShowOnboarding(true)
         }
 
         // Show PIN setup prompt for new users (once, after tour)
@@ -196,6 +203,19 @@ export default function App() {
   // Lock screen — renders over everything when locked
   if (isLocked) {
     return <LockScreen onUnlock={() => setIsLocked(false)} />
+  }
+
+  // Onboarding — first-run structured flow
+  if (showOnboarding) {
+    return (
+      <Onboarding
+        onComplete={(lodestoneData) => {
+          setShowOnboarding(false)
+          // lodestoneData is passed to Step 4 (lodestone review) when implemented
+          // For now, go straight to chat
+        }}
+      />
+    )
   }
 
   // PIN setup prompt — after tour, before first use
