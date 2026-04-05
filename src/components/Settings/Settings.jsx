@@ -9,6 +9,8 @@ import {
   getPreferences,
   updatePreferences,
   getPinStatus,
+  getLodestone,
+  updateLodestone,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -71,6 +73,9 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
+  const [lodestoneRecords, setLodestoneRecords] = useState([])
+  const [lodestoneLoading, setLodestoneLoading] = useState(false)
+  const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
 
   useEffect(() => {
     if (!isOpen) return
@@ -139,6 +144,20 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
     }
     loadPreferences()
 
+    // Load lodestone records
+    async function loadLodestone() {
+      setLodestoneLoading(true)
+      try {
+        const data = await getLodestone()
+        if (!ignore) setLodestoneRecords(data.records || [])
+      } catch {
+        if (!ignore) setLodestoneRecords([])
+      } finally {
+        if (!ignore) setLodestoneLoading(false)
+      }
+    }
+    loadLodestone()
+
     return () => { ignore = true }
   }, [isOpen])
 
@@ -175,6 +194,31 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
     } catch {
       console.warn('[Settings] Failed to remove key')
     }
+  }
+
+  async function handleLodestoneConfirm(id) {
+    try {
+      await updateLodestone(id, { confirmed: true })
+      setLodestoneRecords((prev) => prev.map((r) => r.id === id ? { ...r, confirmed: true } : r))
+    } catch { console.warn('[Settings] Failed to confirm lodestone') }
+  }
+
+  async function handleLodestoneDismiss(id) {
+    try {
+      await updateLodestone(id, { flagged_as_noise: true })
+      setLodestoneRecords((prev) => prev.filter((r) => r.id !== id))
+    } catch { console.warn('[Settings] Failed to dismiss lodestone') }
+  }
+
+  async function handleLodestoneSaveEdit(id) {
+    if (!lodestoneEditing || lodestoneEditing.id !== id) return
+    try {
+      await updateLodestone(id, { user_note: lodestoneEditing.value })
+      setLodestoneRecords((prev) => prev.map((r) =>
+        r.id === id ? { ...r, value: lodestoneEditing.value } : r,
+      ))
+      setLodestoneEditing(null)
+    } catch { console.warn('[Settings] Failed to edit lodestone') }
   }
 
   if (!isOpen) return null
@@ -666,6 +710,59 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                   </button>
                 </div>
               </div>
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Lodestone</div>
+
+              {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
+
+              {!lodestoneLoading && (() => {
+                const confirmed = lodestoneRecords.filter((r) => r.confirmed === true && !r.metadata?.flagged_as_noise)
+                const proposed = lodestoneRecords.filter((r) => r.confirmed !== true && !r.metadata?.flagged_as_noise)
+
+                return (
+                  <>
+                    <div className="lodestone-section-label">Confirmed</div>
+                    {confirmed.length === 0 ? (
+                      <p className="lodestone-empty">No values confirmed yet.</p>
+                    ) : (
+                      confirmed.map((r) => (
+                        <LodestoneEntry
+                          key={r.id}
+                          record={r}
+                          editing={lodestoneEditing}
+                          onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                          onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                          onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                          onCancelEdit={() => setLodestoneEditing(null)}
+                          onDismiss={() => handleLodestoneDismiss(r.id)}
+                        />
+                      ))
+                    )}
+
+                    <div className="lodestone-section-label">Proposed</div>
+                    {proposed.length === 0 ? (
+                      <p className="lodestone-empty">No values proposed yet. Ember will suggest values as patterns emerge in your conversations.</p>
+                    ) : (
+                      proposed.map((r) => (
+                        <LodestoneEntry
+                          key={r.id}
+                          record={r}
+                          isProposed
+                          editing={lodestoneEditing}
+                          onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                          onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                          onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                          onCancelEdit={() => setLodestoneEditing(null)}
+                          onConfirm={() => handleLodestoneConfirm(r.id)}
+                          onDismiss={() => handleLodestoneDismiss(r.id)}
+                        />
+                      ))
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
 
@@ -816,5 +913,59 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
         </div>
       </div>
     </>
+  )
+}
+
+const CATEGORY_LABELS = {
+  character: 'about your character',
+  relational: 'about your relationships',
+  directional: 'about your direction',
+  ground: 'about what you stand on',
+  beyond: 'about what you reach toward',
+}
+
+function LodestoneEntry({ record, isProposed, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onConfirm, onDismiss }) {
+  const isEditing = editing && editing.id === record.id
+  const categoryLabel = CATEGORY_LABELS[record.metadata?.taxonomy_category] || ''
+  const hasDifferentEvidence = record.supporting_evidence && record.supporting_evidence !== record.value
+
+  return (
+    <div className="lodestone-entry">
+      {isEditing ? (
+        <div className="lodestone-edit">
+          <textarea
+            className="lodestone-edit-input"
+            value={editing.value}
+            onChange={(e) => onEditChange(e.target.value)}
+            rows={2}
+            autoFocus
+          />
+          <div className="lodestone-edit-actions">
+            <button className="settings-action-btn" onClick={onSaveEdit}>Save</button>
+            <button className="settings-action-btn" onClick={onCancelEdit}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="lodestone-value">{record.value}</p>
+          {hasDifferentEvidence && (
+            <p className="lodestone-evidence">{record.supporting_evidence}</p>
+          )}
+          {categoryLabel && (
+            <span className="lodestone-category">{categoryLabel}</span>
+          )}
+          {record.source && (
+            <span className="lodestone-source">{record.source}</span>
+          )}
+          <div className="lodestone-actions">
+            {isProposed && onConfirm && (
+              <button className="settings-action-btn" onClick={onConfirm}>Confirm</button>
+            )}
+            <button className="settings-action-btn" onClick={onEdit}>Edit</button>
+            <button className="settings-action-btn settings-action-btn-danger" onClick={onDismiss}>Dismiss</button>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
