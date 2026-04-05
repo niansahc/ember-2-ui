@@ -14,6 +14,43 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ---
 
+## Current State
+
+Version: v0.6.3 (published). 63 Playwright tests passing, 4 skipped. v0.14.0 UI work is in progress (Settings redesign, onboarding flow, lodestone panel). This repo produces the static build served by the ember-2 FastAPI backend.
+
+---
+
+## Key Components
+
+These exist and must not be re-implemented:
+
+- Streaming chat with markdown rendering (ReactMarkdown + remark-gfm)
+- Shepherd.js guided first-run tour (6 steps, triggers once via preferences API)
+- Task sidebar tray (bottom-anchored, checkbox to complete, 30s polling)
+- Conversational style selector (Casual/Balanced/Thoughtful card selector in Settings)
+- PIN/passphrase lock screen with idle timeout and recovery
+- Multi-image upload — select and send multiple images in a single message
+- Web search transparency indicator (magnifying glass icon on messages that used web search)
+- Session restore on page refresh via localStorage
+- PWA manifest for Android/iOS home screen installation
+- Full-page tabbed Settings (General, Security, Memory, Features, About)
+- Onboarding flow (4-step: profile, lodestone gate, lodestone questionnaire, lodestone review)
+- Lodestone panel in Memory tab (5 taxonomy categories, per-record edit/dismiss/confirm)
+- Deviation Engine toggle in Features tab
+
+---
+
+## Do Not
+
+- Do not edit files in ember-2/ui/ directly — always build from source
+- Do not use localStorage for anything beyond session IDs and UI preferences
+- Do not hardcode API URLs — use the Vite proxy config
+- Do not break mobile layout — test viewport for any UI changes
+- Do not use axios — use native fetch
+- Do not use the word "shape" in any output
+
+---
+
 ## Core Rules
 
 - Do not hardcode API URLs — use the Vite proxy config
@@ -34,9 +71,15 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 ---
 
 ## Test Commands
+
+**WARNING: Playwright MUST be run in PowerShell — NOT bash. The bash runner does not support the browser environment. This is the most common source of test failures.**
+
 ```bash
 # Run e2e tests (must be run in PowerShell, not bash)
 npx playwright test
+
+# Run with reduced workers to avoid crashing the API
+npx playwright test --workers=2
 
 # Build for production
 npm run build
@@ -44,8 +87,6 @@ npm run build
 # Dev server
 npm run dev
 ```
-
-Playwright tests must be run manually in PowerShell. The bash runner does not support the browser environment required.
 
 ### Testing Discipline
 
@@ -103,8 +144,8 @@ A release is not complete at commit. A release is not complete at tag. A release
 - [ ] Constitution, nature, and Lodestone layers reviewed for coherence
 - [ ] Research review: any watch items ready to graduate to roadmap?
 
-**ember-2-ui (frontend):**
-- [ ] All Playwright tests passing: npm run test:e2e
+**ember-2-ui (frontend, current: v0.6.3):**
+- [ ] All Playwright tests passing: npx playwright test --workers=2
 - [ ] CHANGELOG.md updated
 - [ ] package.json version bumped
 - [ ] All changes committed and pushed to main: git push origin main
