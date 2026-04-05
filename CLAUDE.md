@@ -47,6 +47,10 @@ npm run dev
 
 Playwright tests must be run manually in PowerShell. The bash runner does not support the browser environment required.
 
+### Testing Discipline
+
+When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or marked skip-with-condition before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
+
 ---
 
 ## Working Conventions
