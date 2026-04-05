@@ -902,7 +902,6 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                       </span>
                     </span>
                   </span>
-                  <span className="settings-row-hint">Ember tracks when she responds differently than her training would normally produce and records those choices to your vault. Over time, recorded deviations outweigh default patterns in retrieval. Off by default.</span>
                 </div>
                 <label className="toggle" aria-label="Toggle deviation detection">
                   <input
