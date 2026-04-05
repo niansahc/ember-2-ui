@@ -70,6 +70,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [lockOnLaunch, setLockOnLaunch] = useState(false)
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
+  const [deviationEnabled, setDeviationEnabled] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -132,6 +133,7 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
         setLockOnLaunch(prefs.lock_on_launch || false)
         setIdleLockEnabled(prefs.idle_lock_enabled || false)
         setIdleTimeout(prefs.idle_timeout || 15)
+        setDeviationEnabled(prefs.deviation_enabled || false)
         setSecurityPinSet(pinStatus.pin_set)
       } catch {}
     }
@@ -740,6 +742,28 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                   </select>
                 </div>
               )}
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Behavior</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Allow Ember to develop character over time</span>
+                  <span className="settings-row-hint">When on, Ember notices when she responds differently than trained and records those choices over time.</span>
+                </div>
+                <label className="toggle" aria-label="Toggle deviation detection">
+                  <input
+                    type="checkbox" role="switch"
+                    checked={deviationEnabled}
+                    onChange={(e) => {
+                      setDeviationEnabled(e.target.checked)
+                      updatePreferences({ deviation_enabled: e.target.checked })
+                    }}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
             </div>
           )}
 
