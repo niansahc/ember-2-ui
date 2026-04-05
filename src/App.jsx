@@ -38,6 +38,7 @@ export default function App() {
   const [view, setView] = useState('splash')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsInitialTab, setSettingsInitialTab] = useState(null)
   const [bugReportOpen, setBugReportOpen] = useState(false)
   const [updatesOpen, setUpdatesOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
@@ -218,8 +219,9 @@ export default function App() {
         initialLodestone={onboardingInitial.lodestone}
         onComplete={(lodestoneData) => {
           setShowOnboarding(false)
-          // lodestoneData is passed to Step 4 (lodestone review) when implemented
-          // For now, go straight to chat
+          // Open Settings to Memory tab so user sees their lodestone summary
+          setSettingsOpen(true)
+          setSettingsInitialTab('memory')
         }}
       />
     )
@@ -329,7 +331,8 @@ export default function App() {
 
       <Settings
         isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        initialTab={settingsInitialTab}
+        onClose={() => { setSettingsOpen(false); setSettingsInitialTab(null) }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}

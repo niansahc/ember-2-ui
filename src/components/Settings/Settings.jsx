@@ -42,9 +42,9 @@ const TABS = [
   { id: 'about', label: 'About', icon: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 16v-4 M12 8h.01' },
 ]
 
-export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
+export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
   const modalRef = useModal(isOpen, onClose)
-  const [activeTab, setActiveTab] = useState('general')
+  const [activeTab, setActiveTab] = useState(initialTab || 'general')
   const [webSearch, setWebSearch] = useState(true)
   const [rememberConvo, setRememberConvo] = useState(true)
   const [tone, setTone] = useState('balanced')
@@ -77,6 +77,11 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
   const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
   const [lodestoneExpanded, setLodestoneExpanded] = useState(false)
+
+  // Switch to requested tab when Settings opens with initialTab
+  useEffect(() => {
+    if (isOpen && initialTab) setActiveTab(initialTab)
+  }, [isOpen, initialTab])
 
   useEffect(() => {
     if (!isOpen) return
