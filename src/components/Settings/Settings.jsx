@@ -784,20 +784,23 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                         <div className="lodestone-category-header">
                           {CATEGORY_LABELS[cat] || cat}
                         </div>
-                        {grouped[cat].map((r) => (
-                          <LodestoneEntry
-                            key={r.id}
-                            record={r}
-                            isProposed={r.confirmed !== true}
-                            editing={lodestoneEditing}
-                            onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
-                            onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
-                            onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
-                            onCancelEdit={() => setLodestoneEditing(null)}
-                            onConfirm={r.confirmed !== true ? () => handleLodestoneConfirm(r.id) : undefined}
-                            onDismiss={() => handleLodestoneDismiss(r.id)}
-                          />
-                        ))}
+                        {grouped[cat].map((r) => {
+                          const fromOnboarding = r.source === 'onboarding'
+                          return (
+                            <LodestoneEntry
+                              key={r.id}
+                              record={r}
+                              isProposed={!fromOnboarding && r.confirmed !== true}
+                              editing={lodestoneEditing}
+                              onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                              onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                              onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                              onCancelEdit={() => setLodestoneEditing(null)}
+                              onConfirm={!fromOnboarding && r.confirmed !== true ? () => handleLodestoneConfirm(r.id) : undefined}
+                              onDismiss={!fromOnboarding ? () => handleLodestoneDismiss(r.id) : undefined}
+                            />
+                          )
+                        })}
                       </div>
                     ))
                   })()}
@@ -1001,7 +1004,9 @@ function LodestoneEntry({ record, isProposed, editing, onEdit, onEditChange, onS
               <button className="settings-action-btn" onClick={onConfirm}>Confirm</button>
             )}
             <button className="settings-action-btn" onClick={onEdit}>Edit</button>
-            <button className="settings-action-btn settings-action-btn-danger" onClick={onDismiss}>Dismiss</button>
+            {onDismiss && (
+              <button className="settings-action-btn settings-action-btn-danger" onClick={onDismiss}>Dismiss</button>
+            )}
           </div>
         </>
       )}
