@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.2 — 2026-04-04
+
+### Bug Fixes
+- Conversation navigation — sidebar click now loads conversation history via /turns endpoint instead of empty metadata response
+- Task click navigation — clicking a task navigates to its originating conversation using metadata.session_id
+- Task delete button — cancel (X) button on each task, calls DELETE /v1/tasks/{id}, optimistic removal from sidebar
+
+### Features
+- Chat response links open in new tab — custom react-markdown renderer adds target="_blank" rel="noopener noreferrer"
+
 ## v0.6.1 — 2026-04-04
 
 ### Bug Fixes
