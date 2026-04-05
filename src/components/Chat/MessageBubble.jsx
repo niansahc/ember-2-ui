@@ -108,7 +108,14 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
             </>
           ) : (
             <div className="bubble-markdown">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                  ),
+                }}
+              >
                 {message.content || '\u200B'}
               </ReactMarkdown>
             </div>
