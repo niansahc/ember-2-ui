@@ -80,7 +80,15 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
 
   // Switch to requested tab when Settings opens with initialTab
   useEffect(() => {
-    if (isOpen && initialTab) setActiveTab(initialTab)
+    if (isOpen && initialTab) {
+      // Support 'memory:expanded' to auto-expand lodestone findings
+      if (initialTab === 'memory:expanded') {
+        setActiveTab('memory')
+        setLodestoneExpanded(true)
+      } else {
+        setActiveTab(initialTab)
+      }
+    }
   }, [isOpen, initialTab])
 
   useEffect(() => {

@@ -219,9 +219,9 @@ export default function App() {
         initialLodestone={onboardingInitial.lodestone}
         onComplete={(lodestoneData) => {
           setShowOnboarding(false)
-          // Open Settings to Memory tab so user sees their lodestone summary
+          // Open Settings to Memory tab with findings expanded
           setSettingsOpen(true)
-          setSettingsInitialTab('memory')
+          setSettingsInitialTab('memory:expanded')
         }}
       />
     )

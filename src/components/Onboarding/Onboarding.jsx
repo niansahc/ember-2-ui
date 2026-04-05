@@ -214,6 +214,8 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
   }
 
   async function handleLodestoneSubmit() {
+    setSaving(true)
+
     const answered = LODESTONE_SECTIONS.flatMap((s) => s.questions)
       .filter((q) => (lodestoneAnswers[q.key] || '').trim())
 
@@ -221,11 +223,10 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     await updatePreferences({ onboarding_lodestone_answers: lodestoneAnswers }).catch(() => {})
 
     if (answered.length === 0) {
+      setSaving(false)
       await finishOnboarding()
       return
     }
-
-    setSaving(true)
     const records = []
     for (const q of answered) {
       try {
