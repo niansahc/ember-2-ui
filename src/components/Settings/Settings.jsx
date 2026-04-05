@@ -77,6 +77,11 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
   const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
   const [lodestoneExpanded, setLodestoneExpanded] = useState(false)
+  const [lodestoneAdding, setLodestoneAdding] = useState(null) // category key or null
+  const [lodestoneAddValue, setLodestoneAddValue] = useState('')
+  const [lodestoneCustomCat, setLodestoneCustomCat] = useState(false)
+  const [lodestoneCustomName, setLodestoneCustomName] = useState('')
+  const [lodestoneCustomQuestion, setLodestoneCustomQuestion] = useState('')
 
   // Switch to requested tab when Settings opens with initialTab
   useEffect(() => {
@@ -233,6 +238,33 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
       ))
       setLodestoneEditing(null)
     } catch { console.warn('[Settings] Failed to edit lodestone') }
+  }
+
+  async function handleLodestoneAdd(category) {
+    const value = lodestoneAddValue.trim()
+    if (!value) return
+    try {
+      const result = await createLodestone(value, category, 'user_input')
+      if (result.record) {
+        setLodestoneRecords((prev) => [...prev, result.record])
+      }
+      setLodestoneAdding(null)
+      setLodestoneAddValue('')
+    } catch { console.warn('[Settings] Failed to add lodestone record') }
+  }
+
+  async function handleLodestoneDeleteCategory(category) {
+    const toDelete = lodestoneRecords.filter(
+      (r) => r.metadata?.taxonomy_category === category && !r.metadata?.flagged_as_noise,
+    )
+    for (const r of toDelete) {
+      try {
+        await updateLodestone(r.id, { flagged_as_noise: true })
+      } catch {}
+    }
+    setLodestoneRecords((prev) => prev.filter(
+      (r) => r.metadata?.taxonomy_category !== category || r.metadata?.flagged_as_noise,
+    ))
   }
 
   if (!isOpen) return null
@@ -729,7 +761,6 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
 
               <div className="settings-section-label">Lodestone</div>
 
-              {/* Edit Onboarding Survey button */}
               <button
                 className="settings-action-btn lodestone-survey-btn"
                 onClick={async () => {
@@ -741,71 +772,154 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 Edit Onboarding Survey
               </button>
 
-              {/* Collapsible findings — everything lives inside here */}
-              <button
-                className="lodestone-expand-btn"
-                onClick={() => setLodestoneExpanded(!lodestoneExpanded)}
-                aria-expanded={lodestoneExpanded}
-              >
-                <svg
-                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" aria-hidden="true"
-                  className={`lodestone-expand-icon ${lodestoneExpanded ? 'lodestone-expand-icon-open' : ''}`}
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-                View Lodestone Findings
-              </button>
+              {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
 
-              {lodestoneExpanded && (
-                <div className="lodestone-findings">
-                  {lodestoneLoading && <p className="lodestone-empty">Loading...</p>}
+              {!lodestoneLoading && (() => {
+                const active = lodestoneRecords.filter((r) => !r.metadata?.flagged_as_noise)
+                const grouped = {}
+                for (const r of active) {
+                  const cat = r.metadata?.taxonomy_category || 'other'
+                  if (!grouped[cat]) grouped[cat] = []
+                  if (!grouped[cat].some((existing) => existing.value === r.value)) {
+                    grouped[cat].push(r)
+                  }
+                }
 
-                  {!lodestoneLoading && (() => {
-                    const active = lodestoneRecords.filter((r) => !r.metadata?.flagged_as_noise)
-                    if (active.length === 0) {
-                      return <p className="lodestone-empty">No findings yet. Complete the onboarding survey to get started.</p>
-                    }
-
-                    // Group by category, deduplicate values within each category
-                    const categoryOrder = ['character', 'ground', 'directional', 'relational', 'beyond']
-                    const grouped = {}
-                    for (const r of active) {
-                      const cat = r.metadata?.taxonomy_category || 'other'
-                      if (!grouped[cat]) grouped[cat] = []
-                      // Deduplicate by value text within category
-                      if (!grouped[cat].some((existing) => existing.value === r.value)) {
-                        grouped[cat].push(r)
-                      }
-                    }
-
-                    return categoryOrder.filter((cat) => grouped[cat]?.length > 0).map((cat) => (
-                      <div key={cat} className="lodestone-category-group">
+                return (
+                  <>
+                    {LODESTONE_CATEGORIES.map((cat) => (
+                      <div key={cat.key} className="lodestone-category-group">
                         <div className="lodestone-category-header">
-                          {CATEGORY_LABELS[cat] || cat}
+                          <div className="lodestone-category-title">{cat.name}</div>
+                          <div className="lodestone-category-subtitle">{cat.subtitle}</div>
                         </div>
-                        {grouped[cat].map((r) => {
-                          const needsConfirm = r.source !== 'onboarding' && r.confirmed !== true
-                          return (
+
+                        {(grouped[cat.key] || []).map((r) => (
+                          <LodestoneEntry
+                            key={r.id}
+                            record={r}
+                            editing={lodestoneEditing}
+                            onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
+                            onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
+                            onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
+                            onCancelEdit={() => setLodestoneEditing(null)}
+                            onDismiss={() => handleLodestoneDismiss(r.id)}
+                          />
+                        ))}
+
+                        {lodestoneAdding === cat.key ? (
+                          <div className="lodestone-add-form">
+                            <textarea
+                              className="lodestone-edit-input"
+                              placeholder="Write a value statement..."
+                              value={lodestoneAddValue}
+                              onChange={(e) => setLodestoneAddValue(e.target.value)}
+                              rows={2}
+                              autoFocus
+                            />
+                            <div className="lodestone-edit-actions">
+                              <button className="settings-action-btn" onClick={() => handleLodestoneAdd(cat.key)}>Save</button>
+                              <button className="settings-action-btn" onClick={() => { setLodestoneAdding(null); setLodestoneAddValue('') }}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            className="lodestone-add-btn"
+                            onClick={() => { setLodestoneAdding(cat.key); setLodestoneAddValue('') }}
+                          >
+                            + Add value
+                          </button>
+                        )}
+
+                        {(grouped[cat.key] || []).length > 0 && (
+                          <button
+                            className="lodestone-delete-cat-btn"
+                            onClick={() => handleLodestoneDeleteCategory(cat.key)}
+                          >
+                            Delete all in this category
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Custom categories from data */}
+                    {Object.keys(grouped)
+                      .filter((k) => !LODESTONE_CATEGORIES.some((c) => c.key === k))
+                      .map((k) => (
+                        <div key={k} className="lodestone-category-group">
+                          <div className="lodestone-category-header">
+                            <div className="lodestone-category-title">{k}</div>
+                          </div>
+                          {grouped[k].map((r) => (
                             <LodestoneEntry
                               key={r.id}
                               record={r}
-                              isProposed={needsConfirm}
                               editing={lodestoneEditing}
                               onEdit={() => setLodestoneEditing({ id: r.id, value: r.value })}
                               onEditChange={(val) => setLodestoneEditing({ id: r.id, value: val })}
                               onSaveEdit={() => handleLodestoneSaveEdit(r.id)}
                               onCancelEdit={() => setLodestoneEditing(null)}
-                              onConfirm={needsConfirm ? () => handleLodestoneConfirm(r.id) : undefined}
                               onDismiss={() => handleLodestoneDismiss(r.id)}
                             />
-                          )
-                        })}
+                          ))}
+                          <button
+                            className="lodestone-delete-cat-btn"
+                            onClick={() => handleLodestoneDeleteCategory(k)}
+                          >
+                            Delete all in this category
+                          </button>
+                        </div>
+                      ))
+                    }
+
+                    {/* Add custom category */}
+                    {lodestoneCustomCat ? (
+                      <div className="lodestone-custom-cat-form">
+                        <input
+                          className="lodestone-edit-input"
+                          placeholder="Category name"
+                          value={lodestoneCustomName}
+                          onChange={(e) => setLodestoneCustomName(e.target.value)}
+                          autoFocus
+                        />
+                        <input
+                          className="lodestone-edit-input"
+                          placeholder="What question does this category answer?"
+                          value={lodestoneCustomQuestion}
+                          onChange={(e) => setLodestoneCustomQuestion(e.target.value)}
+                        />
+                        <div className="lodestone-edit-actions">
+                          <button className="settings-action-btn" onClick={() => {
+                            // Custom categories are stored as records — the category key is the name lowercased
+                            setLodestoneCustomCat(false)
+                            setLodestoneCustomName('')
+                            setLodestoneCustomQuestion('')
+                          }}>Save</button>
+                          <button className="settings-action-btn" onClick={() => {
+                            setLodestoneCustomCat(false)
+                            setLodestoneCustomName('')
+                            setLodestoneCustomQuestion('')
+                          }}>Cancel</button>
+                        </div>
                       </div>
-                    ))
-                  })()}
-                </div>
-              )}
+                    ) : (
+                      <button
+                        className="lodestone-add-btn lodestone-add-cat-btn"
+                        onClick={() => setLodestoneCustomCat(true)}
+                      >
+                        + Add category
+                      </button>
+                    )}
+                  </>
+                )
+              })()}
+
+              <p className="lodestone-footer-note">
+                Lodestone categories and seed values can also be edited directly in{' '}
+                <code>config/lodestone.yaml</code> and{' '}
+                <code>config/lodestone_taxonomy.yaml</code>.
+                Changes take effect on next restart.
+              </p>
             </div>
           )}
 
@@ -957,17 +1071,16 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   )
 }
 
-const CATEGORY_LABELS = {
-  character: 'about your character',
-  relational: 'about your relationships',
-  directional: 'about your direction',
-  ground: 'about what you stand on',
-  beyond: 'about what you reach toward',
-}
+const LODESTONE_CATEGORIES = [
+  { key: 'character', name: 'Character', subtitle: 'Who you are and how you see yourself' },
+  { key: 'relational', name: 'Relational', subtitle: 'How you interact with people and things in your world' },
+  { key: 'directional', name: 'Directional', subtitle: "What you're moving toward and what you're protecting" },
+  { key: 'ground', name: 'Ground', subtitle: 'What you draw from when everything else is uncertain' },
+  { key: 'beyond', name: 'Beyond', subtitle: 'What connects you to something larger than yourself' },
+]
 
-function LodestoneEntry({ record, isProposed, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onConfirm, onDismiss }) {
+function LodestoneEntry({ record, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onDismiss }) {
   const isEditing = editing && editing.id === record.id
-  const categoryLabel = CATEGORY_LABELS[record.metadata?.taxonomy_category] || ''
   const hasDifferentEvidence = record.supporting_evidence && record.supporting_evidence !== record.value
 
   return (
@@ -992,20 +1105,14 @@ function LodestoneEntry({ record, isProposed, editing, onEdit, onEditChange, onS
           {hasDifferentEvidence && (
             <p className="lodestone-evidence">{record.supporting_evidence}</p>
           )}
-          {categoryLabel && (
-            <span className="lodestone-category">{categoryLabel}</span>
-          )}
-          {record.source && (
-            <span className="lodestone-source">{record.source}</span>
-          )}
-          <div className="lodestone-actions">
-            {isProposed && onConfirm && (
-              <button className="settings-action-btn" onClick={onConfirm}>Confirm</button>
-            )}
-            <button className="settings-action-btn" onClick={onEdit}>Edit</button>
-            {onDismiss && (
+          <div className="lodestone-entry-footer">
+            <span className={`lodestone-badge ${record.confirmed ? 'lodestone-badge-confirmed' : 'lodestone-badge-proposed'}`}>
+              {record.confirmed ? 'Confirmed' : 'Proposed'}
+            </span>
+            <div className="lodestone-actions">
+              <button className="settings-action-btn" onClick={onEdit}>Edit</button>
               <button className="settings-action-btn settings-action-btn-danger" onClick={onDismiss}>Dismiss</button>
-            )}
+            </div>
           </div>
         </>
       )}

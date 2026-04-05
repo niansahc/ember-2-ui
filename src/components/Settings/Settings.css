@@ -795,95 +795,8 @@
 
 /* ── Lodestone panel ─────────────────────────────────────────── */
 
-/* ── Lodestone summary (compact confirmed values) ────────────── */
-
-.lodestone-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0;
-}
-
-.lodestone-summary-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.lodestone-summary-value {
-  font-size: 0.88rem;
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.lodestone-summary-category {
-  font-size: 0.68rem;
-  color: var(--accent);
-  flex-shrink: 0;
-  opacity: 0.8;
-}
-
 .lodestone-survey-btn {
   margin: 0.5rem 0;
-}
-
-/* ── Collapsible findings toggle ─────────────────────────────── */
-
-.lodestone-expand-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  transition: color 0.15s;
-  cursor: pointer;
-}
-
-.lodestone-expand-btn:hover {
-  color: var(--text-primary);
-}
-
-.lodestone-expand-icon {
-  transition: transform 0.15s;
-  flex-shrink: 0;
-}
-
-.lodestone-expand-icon-open {
-  transform: rotate(90deg);
-}
-
-.lodestone-findings {
-  padding: 0.25rem 0 0.5rem;
-  animation: lodestone-findings-in 0.15s ease;
-}
-
-@keyframes lodestone-findings-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.lodestone-category-group {
-  margin-bottom: 0.75rem;
-}
-
-.lodestone-category-header {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--accent);
-  text-transform: capitalize;
-  padding: 0.5rem 0 0.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.4rem;
-}
-
-.lodestone-section-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-  padding: 0.6rem 0 0.2rem;
 }
 
 .lodestone-empty {
@@ -893,18 +806,45 @@
   line-height: 1.5;
 }
 
+/* ── Category sections ───────────────────────────────────────── */
+
+.lodestone-category-group {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.lodestone-category-header {
+  padding: 0.5rem 0 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.lodestone-category-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.lodestone-category-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+/* ── Record cards ────────────────────────────────────────────── */
+
 .lodestone-entry {
-  padding: 0.6rem 0.5rem;
+  padding: 0.6rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .lodestone-value {
   font-size: 0.88rem;
   color: var(--text-primary);
   line-height: 1.5;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.2rem;
 }
 
 .lodestone-evidence {
@@ -915,27 +855,43 @@
   margin: 0 0 0.35rem;
 }
 
-.lodestone-category {
-  font-size: 0.7rem;
-  color: var(--accent);
-  margin-right: 0.6rem;
+.lodestone-entry-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.35rem;
 }
 
-.lodestone-source {
-  font-size: 0.7rem;
+.lodestone-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+}
+
+.lodestone-badge-confirmed {
+  color: #6bcb8b;
+  background: rgba(107, 203, 139, 0.1);
+}
+
+.lodestone-badge-proposed {
   color: var(--text-muted);
+  background: var(--bg-surface-hover);
 }
 
 .lodestone-actions {
   display: flex;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.35rem;
 }
 
 .lodestone-actions .settings-action-btn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.72rem;
 }
+
+/* ── Edit / Add forms ────────────────────────────────────────── */
 
 .lodestone-edit {
   display: flex;
@@ -964,6 +920,73 @@
 .lodestone-edit-actions {
   display: flex;
   gap: 0.4rem;
+}
+
+.lodestone-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.lodestone-add-btn {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 0.25rem 0;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.lodestone-add-btn:hover {
+  color: var(--accent);
+}
+
+.lodestone-add-cat-btn {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.lodestone-delete-cat-btn {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding: 0.2rem 0;
+  text-align: left;
+  transition: color 0.15s;
+  opacity: 0.6;
+}
+
+.lodestone-delete-cat-btn:hover {
+  color: var(--error, #e85d5d);
+  opacity: 1;
+}
+
+.lodestone-custom-cat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Footer note ─────────────────────────────────────────────── */
+
+.lodestone-footer-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.lodestone-footer-note code {
+  background: var(--code-bg);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
 }
 
 /* ── Mobile responsive ───────────────────────────────────────── */
