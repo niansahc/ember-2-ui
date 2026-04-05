@@ -797,6 +797,20 @@ export default function Settings({ isOpen, onClose, onOpenBugReport, onOpenUpdat
                 </svg>
                 Report a bug
               </button>
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Dev Tools</div>
+
+              <button
+                className="settings-action-btn"
+                onClick={async () => {
+                  await updatePreferences({ onboarding_complete: false })
+                  window.location.reload()
+                }}
+              >
+                Restart onboarding (dev tool — temporary)
+              </button>
             </div>
           )}
         </div>
