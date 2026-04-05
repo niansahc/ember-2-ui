@@ -503,6 +503,9 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
             ) : (
               <p className="onboarding-review-value">{record.value}</p>
             )}
+            {!isEditing && record.supporting_evidence && record.supporting_evidence !== record.value && (
+              <p className="onboarding-review-evidence">{record.supporting_evidence}</p>
+            )}
             {categoryLabel && (
               <p className="onboarding-review-category">{categoryLabel}</p>
             )}

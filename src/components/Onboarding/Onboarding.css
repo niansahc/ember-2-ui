@@ -281,6 +281,14 @@
   margin: 0 0 0.75rem;
 }
 
+.onboarding-review-evidence {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+  font-style: italic;
+}
+
 .onboarding-review-edit {
   margin-bottom: 0.75rem;
 }
