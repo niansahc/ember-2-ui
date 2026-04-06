@@ -254,7 +254,6 @@ export default function App() {
         activeProjectId={activeProject}
         onSelectConversation={handleSelectConversation}
         onSelectProject={setActiveProject}
-        onRenameConversation={(id, name) => console.log('rename', id, name)}
         onDeleteConversation={(id) => { if (activeConversation === id) clearMessages(); }}
         onOpenSettings={() => { setSettingsOpen(true); setSidebarOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSidebarOpen(false) }}
