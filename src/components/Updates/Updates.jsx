@@ -99,9 +99,6 @@ export default function Updates({ isOpen, onClose }) {
                 </div>
               )}
 
-              <button className="updates-update-btn">
-                Update Ember
-              </button>
             </div>
           )}
 
