@@ -587,16 +587,6 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 </button>
               )}
 
-              {securityPinSet && (
-                <button
-                  className="settings-action-btn settings-action-btn-danger"
-                  onClick={() => {
-                    alert('To remove your PIN, use the recovery passphrase flow or contact support.')
-                  }}
-                >
-                  Remove PIN
-                </button>
-              )}
 
               <hr className="settings-divider" />
 
