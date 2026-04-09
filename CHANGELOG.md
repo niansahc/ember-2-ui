@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.1 — 2026-04-09
+
+### Bug Fixes
+- getConversationTurns now calls correct endpoint (BUG-001) — was calling non-existent /turns sub-route, now calls GET /v1/conversations/{id} and extracts turns from response
+- Playwright regression test added for sidebar conversation loading
+
+---
+
 ## v0.7.0 — 2026-04-06
 
 ### Features
