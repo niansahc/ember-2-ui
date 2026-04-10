@@ -1,3 +1,10 @@
+/**
+ * App — root component and global state orchestrator.
+ *
+ * Manages view routing (splash → chat), lock screen, onboarding,
+ * PIN setup, sidebar/settings modals, keyboard shortcuts, and
+ * session restore from localStorage.
+ */
 import { useState, useCallback, useEffect } from 'react'
 import Splash from './components/Splash/Splash.jsx'
 import Sidebar from './components/Sidebar/Sidebar.jsx'
@@ -18,10 +25,12 @@ import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
 
+// Detect cloud-hosted models to show a "cloud" badge in the header.
 function isCloudModelName(name) {
   return name && (name.startsWith('claude-') || name.startsWith('gpt-'))
 }
 
+// Abbreviate model IDs for the header pill (e.g. "claude-3-haiku-..." → "Claude Haiku").
 function displayModelName(name) {
   if (!name) return ''
   if (name.startsWith('claude-')) {
@@ -108,7 +117,9 @@ export default function App() {
     pinIsSet && lockPrefs.idle_lock_enabled && !isLocked,
   )
 
-  // Sync active conversation to localStorage when messages arrive in a new session
+  // Persist new session ID to localStorage so the conversation survives a page refresh.
+  // Only fires once per session — when the first message arrives and no conversation is
+  // tracked yet. Subsequent messages in the same session are a no-op.
   useEffect(() => {
     if (messages.length > 0 && sessionId && !activeConversation) {
       setActiveConversation(sessionId)
