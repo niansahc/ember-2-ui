@@ -1,3 +1,10 @@
+/**
+ * Sidebar — conversation list, project navigation, and task tray.
+ *
+ * Data loading uses a real-API-first, mock-fallback pattern (same as useChat).
+ * Conversations and tasks are loaded into refs so polling callbacks always
+ * call the latest version without re-registering the interval.
+ */
 import { useEffect, useState, useRef } from 'react'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
 import { mockGetConversations, mockGetProjects } from '../../api/mock.js'
@@ -57,7 +64,9 @@ export default function Sidebar({
     })
   }
 
-  // Load conversations — try real API, fall back to mock
+  // Load conversations — try real API, fall back to mock.
+  // Stored in a ref so the polling interval and post-stream refresh always
+  // call the current closure without needing to re-register the interval.
   const loadConversationsRef = useRef(null)
   loadConversationsRef.current = async function loadConversations(ignore) {
     try {
@@ -110,7 +119,7 @@ export default function Sidebar({
     return () => { ignore = true }
   }, [])
 
-  // Load active/proposed tasks
+  // Load active/proposed tasks — ref for the same reason as loadConversationsRef.
   const loadTasksRef = useRef(null)
   loadTasksRef.current = async function loadTasks() {
     try {
@@ -223,6 +232,7 @@ export default function Sidebar({
     ? filteredConvos.filter((c) => c.projectId === viewingProject)
     : []
 
+  // Group conversations into recency buckets for the sidebar list headers.
   function getTimeBucket(iso) {
     const d = parseEmberTimestamp(iso) || new Date(0)
     const now = new Date()
@@ -357,12 +367,11 @@ export default function Sidebar({
     )
   }
 
-  // Search bar component
-  // SearchBar was previously a nested function component here. Moved to inline
-  // JSX to prevent React from unmounting/remounting the input on every keystroke
-  // (nested function components create a new type on each render, destroying focus).
+  // Search bar is inline JSX, not a nested component — a nested function component
+  // would create a new type on every render, causing React to unmount/remount the
+  // input on each keystroke and destroy focus.
 
-  // ── Context menu ──────────────────────────────────────────────
+  // ── Context menu (right-click on conversation items) ────────────────
   function ContextMenuPopup() {
     if (!contextMenu) return null
     return (
