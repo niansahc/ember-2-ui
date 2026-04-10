@@ -1,3 +1,10 @@
+/**
+ * PinSetup — first-run PIN + recovery passphrase creation flow.
+ *
+ * Three-step wizard: intro → form → done. Shown once for new users after the
+ * guided tour completes. Can be dismissed ("Set up later") and re-triggered
+ * from Settings.
+ */
 import { useState } from 'react'
 import { setPin as apiSetPin } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
@@ -12,6 +19,10 @@ export default function PinSetup({ onComplete, onSkip }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Passphrase strength meter — thresholds encourage multi-word phrases:
+  //   strong: 30+ chars AND 5+ words (a real passphrase, not a long password)
+  //   ok:     20+ chars (meets minimum, but may be a single long string)
+  //   weak:   anything shorter
   function passphraseStrength(p) {
     if (!p) return null
     const words = p.trim().split(/\s+/).length
