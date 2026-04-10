@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.6.3 (published). 63 Playwright tests passing, 4 skipped. v0.14.0 UI work is in progress (Settings redesign, onboarding flow, lodestone panel). This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.7.1 (published). 62 Playwright tests passing, 5 skipped, 1 flaky (task-tray strikethrough timeout). BUG-001 (sidebar conversation links) fixed in v0.7.1. Settings redesign, onboarding flow, and lodestone panel shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -144,7 +144,7 @@ A release is not complete at commit. A release is not complete at tag. A release
 - [ ] Constitution, nature, and Lodestone layers reviewed for coherence
 - [ ] Research review: any watch items ready to graduate to roadmap?
 
-**ember-2-ui (frontend, current: v0.6.3):**
+**ember-2-ui (frontend, current: v0.7.1):**
 - [ ] All Playwright tests passing: npx playwright test --workers=2
 - [ ] CHANGELOG.md updated
 - [ ] package.json version bumped
