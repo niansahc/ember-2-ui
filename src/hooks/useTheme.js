@@ -1,3 +1,11 @@
+/**
+ * useTheme — manages theme selection and custom color generation.
+ *
+ * Preset themes are applied via a data-theme attribute on <html> that activates
+ * CSS variable sets defined in index.css. The "custom" theme works differently:
+ * it computes a full set of CSS variables from a user-chosen accent + background
+ * pair and injects them as inline styles on the root element.
+ */
 import { useState, useEffect, useCallback } from 'react'
 
 const THEMES = [
@@ -14,23 +22,32 @@ const CUSTOM_COLORS_KEY = 'ember-theme-custom'
 
 const DEFAULT_CUSTOM = { accent: '#ff8c00', bg: '#0d0520' }
 
+// --- Color math utilities ---
+// These convert and manipulate hex colors to derive a full palette from
+// a single accent + background pair. Used only by the "custom" theme.
+
+// Parse "#rrggbb" to [r, g, b] integers via bitwise extraction.
 function hexToRgb(hex) {
   const n = parseInt(hex.slice(1), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
+// Linear interpolation toward white. amount 0 = unchanged, 1 = pure white.
 function lighten(hex, amount) {
   const [r, g, b] = hexToRgb(hex)
   const f = (c) => Math.min(255, Math.round(c + (255 - c) * amount))
   return `#${[f(r), f(g), f(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`
 }
 
+// Linear interpolation toward black. amount 0 = unchanged, 1 = pure black.
 function darken(hex, amount) {
   const [r, g, b] = hexToRgb(hex)
   const f = (c) => Math.max(0, Math.round(c * (1 - amount)))
   return `#${[f(r), f(g), f(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`
 }
 
+// WCAG 2.1 relative luminance (0 = black, 1 = white).
+// Uses the sRGB linearization formula from the spec.
 function luminance(hex) {
   const [r, g, b] = hexToRgb(hex).map((c) => {
     const s = c / 255
@@ -39,10 +56,14 @@ function luminance(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+// Threshold of 0.3 chosen to flip text/surface contrast for light vs dark backgrounds.
 function isLightColor(hex) {
   return luminance(hex) > 0.3
 }
 
+// Derives a complete CSS variable set from an accent + background pair.
+// Surfaces, text, borders, and glow effects are all computed so the
+// custom theme stays internally consistent regardless of input colors.
 function buildCustomVars(colors) {
   const { accent, bg } = colors
   const light = isLightColor(bg)
