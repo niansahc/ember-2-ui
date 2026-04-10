@@ -180,7 +180,9 @@ export function useChat() {
               ),
             )
           }
-          // Assign to project after first message creates the session
+          // If this conversation was started from a project view, assign it to
+          // that project now. Deferred to after streaming because the session ID
+          // isn't created on the backend until the first message is sent.
           if (pendingProjectRef.current && !projectAssignedRef.current) {
             try {
               await realMoveToProject(sessionId, pendingProjectRef.current)
@@ -253,6 +255,9 @@ export function useChat() {
     setSessionId(conversationId)
   }, [])
 
+  // Regenerate the last assistant response: trim messages back to the last user
+  // message (discarding the old response), then re-stream a new response from
+  // the same conversation history. Uses the same API-first/mock-fallback pattern.
   const regenerate = useCallback(async () => {
     if (isStreaming) return
     const lastUserIdx = messages.findLastIndex((m) => m.role === 'user')
