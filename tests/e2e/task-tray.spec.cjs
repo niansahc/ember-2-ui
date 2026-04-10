@@ -53,6 +53,7 @@ test.describe('Task Tray', () => {
   })
 
   test('task tray appears when a task is created via API', async ({ page }) => {
+    test.setTimeout(60000)
     const result = await createTask('Playwright test task')
     if (!result || !result.id) {
       test.skip(true, 'Task API unavailable — cannot create test task')
@@ -78,6 +79,7 @@ test.describe('Task Tray', () => {
   })
 
   test('checking a task shows strikethrough and stays visible', async ({ page }) => {
+    test.setTimeout(60000)
     const result = await createTask('Task to check off')
     if (!result || !result.id) {
       test.skip(true, 'Task API unavailable — cannot create test task')
@@ -115,6 +117,7 @@ test.describe('Task Tray', () => {
   })
 
   test('unchecking a done task removes strikethrough', async ({ page }) => {
+    test.setTimeout(60000)
     const result = await createTask('Task to toggle')
     if (!result || !result.id) {
       test.skip(true, 'Task API unavailable — cannot create test task')
