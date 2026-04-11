@@ -73,6 +73,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
+  const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
   const [lodestoneRecords, setLodestoneRecords] = useState([])
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
   const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
@@ -158,6 +159,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
         setIdleLockEnabled(prefs.idle_lock_enabled || false)
         setIdleTimeout(prefs.idle_timeout || 15)
         setDeviationEnabled(prefs.deviation_enabled || false)
+        setWebSearchAutonomous(prefs.web_search_autonomous || false)
         setSecurityPinSet(pinStatus.pin_set)
       } catch {}
     }
@@ -966,6 +968,24 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                     type="checkbox" role="switch"
                     checked={webSearch}
                     onChange={(e) => setWebSearch(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+
+              <div className="settings-row settings-row-nested">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Search automatically when uncertain</span>
+                  <span className="settings-row-hint">Off by default — Ember will ask before searching</span>
+                </div>
+                <label className="toggle" aria-label="Toggle autonomous web search" title={webSearchAutonomous ? 'Click to disable' : 'Click to enable'}>
+                  <input
+                    type="checkbox" role="switch"
+                    checked={webSearchAutonomous}
+                    onChange={(e) => {
+                      setWebSearchAutonomous(e.target.checked)
+                      updatePreferences({ web_search_autonomous: e.target.checked })
+                    }}
                   />
                   <span className="toggle-track" />
                 </label>
