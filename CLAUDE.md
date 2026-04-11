@@ -114,6 +114,7 @@ Vault contents — including names, conversation text, and record IDs — must n
 - Component changes should not break mobile
 - If the human says PAUSE — stop and reorient
 - If the human says STOP — drop the topic entirely
+- Use TodoWrite and TodoRead tools to maintain a visible task list for every multi-step task. Update it as work completes.
 
 ---
 
