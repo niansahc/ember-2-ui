@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.7.1 (published). 62 Playwright tests passing, 5 skipped, 1 flaky (task-tray strikethrough timeout). BUG-001 (sidebar conversation links) fixed in v0.7.1. Settings redesign, onboarding flow, and lodestone panel shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.7.1 (published). 62 Playwright tests passing, 3 skipped. BUG-001 (sidebar conversation links) fixed in v0.7.1. Settings redesign, onboarding flow, and lodestone panel shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
