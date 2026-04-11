@@ -46,7 +46,19 @@ export default function BugReport({ isOpen, onClose }) {
       <div className="bugreport-overlay" onClick={handleClose} aria-hidden="true" />
       <div ref={modalRef} className="bugreport-modal" role="dialog" aria-label="Report a bug" aria-modal="true">
         <div className="bugreport-header">
-          <h2 className="bugreport-title">Report a Bug</h2>
+          <h2 className="bugreport-title">
+            Report a Bug
+            <span className="bugreport-info-icon" tabIndex={0} role="button" aria-label="Privacy information">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span className="bugreport-info-tooltip">
+                Your report is sent to Ember's backend, which posts it as a GitHub issue. Only the title and description you write are included — no device info, no session data, no conversation history, and no personal identifiers are attached.
+              </span>
+            </span>
+          </h2>
           <button
             className="bugreport-close"
             onClick={handleClose}

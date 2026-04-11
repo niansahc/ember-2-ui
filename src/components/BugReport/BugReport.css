@@ -37,6 +37,41 @@
   font-weight: 600;
 }
 
+.bugreport-info-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  color: var(--text-muted);
+  cursor: help;
+  vertical-align: middle;
+}
+
+.bugreport-info-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  width: 280px;
+  white-space: normal;
+  z-index: 400;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bugreport-info-icon:hover .bugreport-info-tooltip,
+.bugreport-info-icon:focus .bugreport-info-tooltip {
+  display: block;
+}
+
 .bugreport-close {
   width: 32px;
   height: 32px;
