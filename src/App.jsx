@@ -15,6 +15,7 @@ import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
 import LockScreen from './components/LockScreen/LockScreen.jsx'
 import PinSetup from './components/LockScreen/PinSetup.jsx'
+import PinChange from './components/LockScreen/PinChange.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
@@ -56,6 +57,7 @@ export default function App() {
   const [model, setModel] = useState(null)
   const [isLocked, setIsLocked] = useState(false)
   const [showPinSetup, setShowPinSetup] = useState(false)
+  const [showPinChange, setShowPinChange] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingInitial, setOnboardingInitial] = useState({ profile: {}, lodestone: {} })
   const [pinIsSet, setPinIsSet] = useState(false)
@@ -108,6 +110,13 @@ export default function App() {
     function handlePinSetup() { setShowPinSetup(true) }
     window.addEventListener('ember-show-pin-setup', handlePinSetup)
     return () => window.removeEventListener('ember-show-pin-setup', handlePinSetup)
+  }, [])
+
+  // Listen for PIN change request from Settings
+  useEffect(() => {
+    function handlePinChange() { setShowPinChange(true) }
+    window.addEventListener('ember-show-pin-change', handlePinChange)
+    return () => window.removeEventListener('ember-show-pin-change', handlePinChange)
   }, [])
 
   // Idle timeout — lock after N minutes of inactivity
@@ -250,6 +259,16 @@ export default function App() {
           setShowPinSetup(false)
           updatePreferences({ pin_setup_dismissed: true }).catch(() => {})
         }}
+      />
+    )
+  }
+
+  // PIN change flow — triggered from Settings when a PIN already exists
+  if (showPinChange) {
+    return (
+      <PinChange
+        onDone={() => setShowPinChange(false)}
+        onCancel={() => setShowPinChange(false)}
       />
     )
   }

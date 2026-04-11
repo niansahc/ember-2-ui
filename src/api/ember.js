@@ -344,6 +344,27 @@ export async function recoverPin(recoveryPassphrase, newPin) {
   return await res.json()
 }
 
+/**
+ * Change an existing PIN. Requires the current PIN for re-auth.
+ * Backend endpoint POST /v1/security/pin/change is implemented by G — wired
+ * behind the same rate limiter as /pin/verify. Until that ships, Playwright
+ * intercepts this route via page.route() to mock the response.
+ */
+export async function changePin(currentPin, newPin) {
+  const res = await fetch(`${API_URL}/security/pin/change`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }),
+  })
+  if (res.status === 429) throw new Error('Too many attempts. Try again in 5 minutes.')
+  if (res.status === 403) throw new Error('Current PIN is incorrect')
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Error ${res.status}`)
+  }
+  return await res.json()
+}
+
 // ---------------------------------------------------------------------------
 // Tasks
 // ---------------------------------------------------------------------------

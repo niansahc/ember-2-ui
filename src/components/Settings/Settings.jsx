@@ -592,6 +592,16 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 </button>
               )}
 
+              {securityPinSet && (
+                <button
+                  className="settings-action-btn"
+                  data-testid="settings-change-pin"
+                  onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-change')) }}
+                >
+                  Change PIN
+                </button>
+              )}
+
 
               <hr className="settings-divider" />
 
