@@ -40,24 +40,14 @@ These exist and must not be re-implemented:
 
 ---
 
-## Do Not
+## Rules
 
-- Do not edit files in ember-2/ui/ directly — always build from source
-- Do not use localStorage for anything beyond session IDs and UI preferences
-- Do not hardcode API URLs — use the Vite proxy config
-- Do not break mobile layout — test viewport for any UI changes
-- Do not use axios — use native fetch
-- Do not use the word "shape" in any output
-
----
-
-## Core Rules
-
-- Do not hardcode API URLs — use the Vite proxy config
-- Do not use axios — use native fetch
-- Do not store sensitive data in localStorage beyond session IDs and UI preferences
 - Do not modify the build output in ember-2/ui/ directly — always build from source
+- Do not store sensitive data in localStorage beyond session IDs and UI preferences
+- Do not hardcode API URLs — use the Vite proxy config
+- Do not use axios — use native fetch
 - Mobile must work — test viewport behavior for any UI changes
+- Do not use the word "shape" in any output
 
 ---
 
