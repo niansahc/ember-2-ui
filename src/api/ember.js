@@ -7,7 +7,6 @@
 
 const API_URL = import.meta.env.VITE_EMBER_API_URL || 'http://localhost:8000/v1'
 const API_KEY = window.__EMBER_API_KEY__ || import.meta.env.VITE_EMBER_API_KEY || ''
-const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN || ''
 
 if (!API_KEY) {
   console.warn(
@@ -519,32 +518,20 @@ function authHeaders() {
 }
 
 // ---------------------------------------------------------------------------
-// Bug reports — GitHub Issues API
+// Bug reports — proxied through backend to avoid exposing GitHub token
 // ---------------------------------------------------------------------------
 
 export async function submitBug(title, description) {
-  if (!GITHUB_TOKEN) {
-    return { ok: false, error: 'No GitHub token configured' }
-  }
-
   try {
-    const res = await fetch('https://api.github.com/repos/niansahc/ember-2/issues', {
+    const res = await fetch(`${API_URL}/bug-report`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title,
-        body: description + '\n\n---\n*Submitted from Ember UI*',
-        labels: ['bug', 'from-ui'],
-      }),
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ title, body: description }),
     })
 
-    if (!res.ok) throw new Error(`GitHub API ${res.status}`)
+    if (!res.ok) throw new Error(`Bug report API ${res.status}`)
     const data = await res.json()
-    return { ok: true, url: data.html_url, number: data.number }
+    return { ok: true, url: data.url, number: data.number }
   } catch (err) {
     return { ok: false, error: err.message }
   }
