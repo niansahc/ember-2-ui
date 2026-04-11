@@ -100,6 +100,12 @@ For any panel or view that surfaces user data, the information architecture (wha
 
 ---
 
+## Vault Privacy Rule
+
+Vault contents — including names, conversation text, and record IDs — must never appear in code, tests, commits, scripts, or docs. This rule has no exceptions. If a test requires memory data, use synthetic fixture data only.
+
+---
+
 ## Working Conventions
 
 - Small, frequent commits with clear messages
