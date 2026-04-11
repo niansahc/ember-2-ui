@@ -185,8 +185,11 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   async function handleSelectModel(modelId) {
     try {
       await realSetModel(modelId)
-      setCurrentModel(modelId)
-      onModelChange?.(modelId)
+      // Re-fetch to confirm what the backend is actually running
+      const confirmed = await realGetModel()
+      const confirmedModel = confirmed.model || modelId
+      setCurrentModel(confirmedModel)
+      onModelChange?.(confirmedModel)
     } catch {
       console.warn('[Settings] Failed to switch model')
     }

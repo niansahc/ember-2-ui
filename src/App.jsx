@@ -342,7 +342,12 @@ export default function App() {
       <Settings
         isOpen={settingsOpen}
         initialTab={settingsInitialTab}
-        onClose={() => { setSettingsOpen(false); setSettingsInitialTab(null) }}
+        onClose={() => {
+          setSettingsOpen(false)
+          setSettingsInitialTab(null)
+          // Re-fetch model in case it changed externally or via settings
+          realGetModel().then((data) => { if (data.model) setModel(data.model) }).catch(() => {})
+        }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
