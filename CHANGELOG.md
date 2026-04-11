@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.2 — 2026-04-10
+
+### Security
+- Remove GitHub token from frontend build
+
+### Features
+- Replace bug report form with direct GitHub Issues link — simpler, no token required, works on any machine
+- Privacy disclosure tooltip on bug report modal
+
+### Bug Fixes
+- Bump task-tray backend-dependent test timeouts
+
+### Documentation
+- Update CLAUDE.md to v0.7.1 state
+- Consolidate duplicate sections in CLAUDE.md
+
+---
+
 ## v0.7.1 — 2026-04-09
 
 ### Bug Fixes
