@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const p=JSON.parse(d).tool_input.file_path||'';if(/(\\\\|\\/|^)\\.env/.test(p)){console.log(JSON.stringify({decision:'block',reason:'Edits to .env files are blocked by hook policy.'}))}else{console.log(JSON.stringify({continue:true}))}})\"",
+            "timeout": 5,
+            "statusMessage": "Checking file policy..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const p=JSON.parse(d).tool_input.file_path||'';if(/\\.(jsx|js|css)$/.test(p)&&/^src[\\\\\\/]/.test(p)){process.exit(0)}else{process.exit(1)}})\" && powershell.exe -Command \"npx playwright test --workers=2\" 2>/dev/null || true",
+            "timeout": 300,
+            "async": true,
+            "statusMessage": "Running Playwright tests..."
+          }
+        ]
+      }
+    ]
+  }
+}

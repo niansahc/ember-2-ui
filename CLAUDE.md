@@ -181,6 +181,18 @@ Patch releases follow the same checklist. There are no shortcuts for patches. A 
 
 ---
 
+## Hooks
+
+Configured in `.claude/settings.json` (project-level, committed to repo).
+
+**PreToolUse — .env file protection:**
+Blocks any Edit or Write to files matching `.env*`. Returns a `decision: block` response. No exceptions — secrets stay out of version control artifacts.
+
+**PostToolUse — Playwright test runner:**
+After any Edit or Write to `src/**/*.{jsx,js,css}`, runs `npx playwright test --workers=2` via PowerShell asynchronously in the background. Does not block editing. Skips non-source files (docs, config, tests). Timeout: 5 minutes.
+
+---
+
 ## Claude Code Efficiency Rules
 
 **Parallel subagents — use them.**
