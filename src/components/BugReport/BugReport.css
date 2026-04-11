@@ -87,114 +87,38 @@
   color: var(--text-primary);
 }
 
-.bugreport-form {
-  padding: 1.25rem;
+/* ── Body ────────────────────────────────────────────────────── */
+
+.bugreport-body {
+  padding: 1.5rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
 }
 
-.bugreport-label {
-  font-size: 0.85rem;
-  font-weight: 500;
+.bugreport-text {
+  font-size: 0.95rem;
   color: var(--text-secondary);
-  margin-top: 0.25rem;
-}
-
-.bugreport-input,
-.bugreport-textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.bugreport-textarea {
-  resize: vertical;
-  min-height: 80px;
   line-height: 1.5;
 }
 
-.bugreport-error {
-  color: #e85d5d;
-  font-size: 0.85rem;
-}
-
-.bugreport-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.bugreport-cancel {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-}
-
-.bugreport-cancel:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-primary);
-}
-
-.bugreport-submit {
-  padding: 0.5rem 1.25rem;
+.bugreport-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
   background: var(--accent);
   color: #1a0a2e;
   font-weight: 600;
   font-size: 0.9rem;
   border-radius: var(--radius-sm);
+  text-decoration: none;
   transition: background 0.2s;
 }
 
-.bugreport-submit:hover:not(:disabled) {
+.bugreport-github-link:hover {
   background: var(--accent-hover);
   box-shadow: var(--ember-glow);
-}
-
-.bugreport-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Success state ────────────────────────────────────────────── */
-
-.bugreport-success {
-  padding: 2rem 1.25rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.bugreport-success p {
-  font-size: 1.05rem;
-  color: var(--text-primary);
-}
-
-.bugreport-link {
-  color: var(--accent);
-  font-size: 0.9rem;
-}
-
-.bugreport-done-btn {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  background: var(--bg-surface-hover);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.bugreport-done-btn:hover {
-  background: var(--accent-dim);
-  color: var(--accent);
-  border-color: var(--accent);
 }

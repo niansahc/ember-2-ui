@@ -135,17 +135,6 @@ export async function mockGetMessages(conversationId) {
   return MOCK_HISTORIES[conversationId] || []
 }
 
-/**
- * Submit a bug report. Returns a mock issue URL.
- */
-export async function mockSubmitBug(title, description) {
-  await sleep(800)
-  return {
-    ok: true,
-    url: 'https://github.com/niansahc/ember-2/issues/1',
-    number: 1,
-  }
-}
 
 /**
  * Check for updates against GitHub releases.

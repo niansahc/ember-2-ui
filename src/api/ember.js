@@ -517,25 +517,6 @@ function authHeaders() {
   return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
 }
 
-// ---------------------------------------------------------------------------
-// Bug reports — proxied through backend to avoid exposing GitHub token
-// ---------------------------------------------------------------------------
-
-export async function submitBug(title, description) {
-  try {
-    const res = await fetch(`${API_URL}/bug-report`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ title, body: description }),
-    })
-
-    if (!res.ok) throw new Error(`Bug report API ${res.status}`)
-    const data = await res.json()
-    return { ok: true, url: data.url, number: data.number }
-  } catch (err) {
-    return { ok: false, error: err.message }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Updates — GitHub Releases API
