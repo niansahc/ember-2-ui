@@ -762,8 +762,8 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
 
               <div className="settings-row">
                 <div className="settings-row-info">
-                  <span className="settings-row-label">Should Ember remember this conversation?</span>
-                  <span className="settings-row-hint">Saves this conversation to your vault</span>
+                  <span className="settings-row-label">Should Ember remember conversations?</span>
+                  <span className="settings-row-hint">Saves all conversations to your vault. Per-conversation control coming in a future release.</span>
                 </div>
                 <label className="toggle" aria-label="Toggle conversation memory" title={rememberConvo ? 'Click to disable' : 'Click to enable'}>
                   <input

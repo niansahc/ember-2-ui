@@ -232,4 +232,22 @@ test.describe('Settings', () => {
     expect(text).not.toBe('v0.9.1')
     expect(text.length).toBeGreaterThan(0)
   })
+
+  test('conversation memory toggle uses global label, not per-conversation', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const securityTab = page.locator('.settings-tab', { hasText: 'Security' })
+    await securityTab.click()
+
+    // Label should say "conversations" (global), not "this conversation" (per-convo)
+    const label = page.locator('.settings-row-label', { hasText: 'remember conversations' })
+    await expect(label).toBeVisible()
+    await expect(label).toContainText('Should Ember remember conversations?')
+
+    // Hint should clarify this is a global setting
+    const hint = page.locator('.settings-row-hint', { hasText: 'Saves all conversations' })
+    await expect(hint).toBeVisible()
+    await expect(hint).toContainText('Per-conversation control coming in a future release')
+  })
 })
