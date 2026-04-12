@@ -1090,6 +1090,13 @@
   outline-offset: 2px;
 }
 
+.dev-vault-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.4rem 0;
+  margin: 0;
+}
+
 .dev-vault-option-label {
   font-size: 0.85rem;
   font-weight: 500;

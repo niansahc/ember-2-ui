@@ -1269,38 +1269,40 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 </div>
               )}
 
-              {devAvailableVaults.length > 0 && (
-                <div className="dev-vault-switcher" data-testid="dev-vault-switcher">
-                  <div className="settings-section-label">Switch Vault</div>
-                  {devAvailableVaults
-                    .filter((v) => !devActiveVault || v.label !== devActiveVault.label)
-                    .map((vault) => (
-                      <button
-                        key={vault.label}
-                        className="dev-vault-option"
-                        data-testid={`dev-vault-option-${vault.label}`}
-                        disabled={devSwapping}
-                        onClick={async () => {
-                          setDevSwapping(true)
-                          try {
-                            const result = await swapVault(vault.label)
-                            setDevActiveVault(vault)
-                            setDevVaultPathRevealed(false)
-                            if (result.rebuilding) {
-                              setDevRebuilding(true)
-                              setTimeout(() => setDevRebuilding(false), 60000)
-                            }
-                          } catch { /* next poll will correct state */ }
-                          finally { setDevSwapping(false) }
-                        }}
-                      >
-                        <span className="dev-vault-option-label">{vault.label}</span>
-                        <span className="dev-vault-option-path">{vault.path}</span>
-                      </button>
-                    ))
-                  }
-                </div>
-              )}
+              <div className="dev-vault-switcher" data-testid="dev-vault-switcher">
+                <div className="settings-section-label">Switch Vault</div>
+                {devAvailableVaults
+                  .filter((v) => !devActiveVault || v.label !== devActiveVault.label)
+                  .length > 0
+                  ? devAvailableVaults
+                      .filter((v) => !devActiveVault || v.label !== devActiveVault.label)
+                      .map((vault) => (
+                        <button
+                          key={vault.label}
+                          className="dev-vault-option"
+                          data-testid={`dev-vault-option-${vault.label}`}
+                          disabled={devSwapping}
+                          onClick={async () => {
+                            setDevSwapping(true)
+                            try {
+                              const result = await swapVault(vault.label)
+                              setDevActiveVault(vault)
+                              setDevVaultPathRevealed(false)
+                              if (result.rebuilding) {
+                                setDevRebuilding(true)
+                                setTimeout(() => setDevRebuilding(false), 60000)
+                              }
+                            } catch { /* next poll will correct state */ }
+                            finally { setDevSwapping(false) }
+                          }}
+                        >
+                          <span className="dev-vault-option-label">{vault.label}</span>
+                          <span className="dev-vault-option-path">{vault.path}</span>
+                        </button>
+                      ))
+                  : <p className="dev-vault-empty" data-testid="dev-vault-empty">No alternate vaults configured.</p>
+                }
+              </div>
             </div>
           )}
         </div>

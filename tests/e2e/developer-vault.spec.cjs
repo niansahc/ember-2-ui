@@ -117,14 +117,55 @@ test.describe('Developer Vault Switcher', () => {
     await expect(note).toContainText('Indexes rebuilding')
   })
 
-  test('Developer tab not shown when dev mode inactive (no external badges)', async ({ page }) => {
+  test('header badge shows vault label when dev mode active', async ({ page }) => {
+    await mockBootstrap(page)
+    await mockDevMode(page, DEV_STATUS_ACTIVE)
+    await loadApp(page)
+
+    const headerBadge = page.locator('[data-testid="dev-vault-header-badge"]')
+    await expect(headerBadge).toBeVisible()
+    await expect(headerBadge).toContainText('live')
+  })
+
+  test('sidebar badge shows vault label when dev mode active', async ({ page }) => {
+    await mockBootstrap(page)
+    await mockDevMode(page, DEV_STATUS_ACTIVE)
+    await loadApp(page)
+
+    const sidebarBadge = page.locator('[data-testid="dev-vault-sidebar-badge"]')
+    await expect(sidebarBadge).toBeVisible()
+    await expect(sidebarBadge).toContainText('live')
+  })
+
+  test('no badges or Developer tab when dev mode inactive', async ({ page }) => {
     await mockBootstrap(page)
     await mockDevMode(page, DEV_STATUS_INACTIVE)
     await loadApp(page)
+
+    await expect(page.locator('[data-testid="dev-vault-header-badge"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid="dev-vault-sidebar-badge"]')).toHaveCount(0)
 
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible()
     await expect(page.locator('[data-testid="settings-tab-developer"]')).toHaveCount(0)
+  })
+
+  test('Switch Vault section shows "no alternate vaults" when list is empty', async ({ page }) => {
+    const emptyVaultsStatus = {
+      ...DEV_STATUS_ACTIVE,
+      available_vaults: [],
+    }
+    await mockBootstrap(page)
+    await mockDevMode(page, emptyVaultsStatus)
+    await loadApp(page)
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+    await page.locator('[data-testid="settings-tab-developer"]').click()
+
+    const switcher = page.locator('[data-testid="dev-vault-switcher"]')
+    await expect(switcher).toBeVisible()
+    await expect(page.locator('[data-testid="dev-vault-empty"]')).toContainText('No alternate vaults configured')
   })
 })

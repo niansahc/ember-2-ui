@@ -37,6 +37,7 @@ export default function Sidebar({
   onOpenSettings,
   onOpenUpdates,
   onOpenAbout,
+  devVaultLabel,
 }) {
   const [conversations, setConversations] = useState([])
   const [projects, setProjects] = useState([])
@@ -537,7 +538,7 @@ export default function Sidebar({
           )}
 
           <div className="sidebar-footer">
-            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
           </div>
         </nav>
         <ContextMenuPopup />
@@ -752,7 +753,7 @@ export default function Sidebar({
 
         <div className="sidebar-footer">
           {!collapsed && (
-            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} />
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
           )}
         </div>
       </nav>
@@ -761,7 +762,7 @@ export default function Sidebar({
   )
 }
 
-function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg }) {
+function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg, devVaultLabel }) {
   const [version, setVersion] = useState('')
 
   useEffect(() => {
@@ -785,6 +786,7 @@ function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, 
         <div className="sidebar-brand-info">
           <span className="sidebar-brand-name">Ember-2</span>
           <span className="sidebar-version">{version || '...'}</span>
+          {devVaultLabel && <span className="dev-vault-sidebar-badge" data-testid="dev-vault-sidebar-badge">[{devVaultLabel}]</span>}
         </div>
       </button>
     </>
