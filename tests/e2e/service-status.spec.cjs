@@ -131,30 +131,30 @@ test.describe('Service Status Indicator', () => {
     await expect(page.locator('[data-testid="service-panel"]')).not.toBeVisible()
   })
 
-  test('indicator is bottom-left and does not overlap chat input controls', async ({ page }) => {
+  test('indicator is above the send button and does not overlap input controls', async ({ page }) => {
     await mockHealthy(page)
     await loadApp(page)
 
     const container = page.locator('[data-testid="service-status"]')
     const box = await container.boundingBox()
-    // Near the left edge
-    expect(box.x).toBeLessThan(100)
+    const viewportWidth = page.viewportSize().width
 
-    // Above the input bar — the dot's bottom edge should not overlap
-    // the attach button. Input bar is ~50px from viewport bottom.
-    const viewportHeight = page.viewportSize().height
-    const dotBottom = box.y + box.height
-    // Dot should end at least 50px above the viewport bottom
-    expect(viewportHeight - dotBottom).toBeGreaterThan(30)
+    // Should be on the right side of the viewport (near the send button)
+    expect(box.x).toBeGreaterThan(viewportWidth / 2)
 
-    // Verify the attach button is clickable — the whole point of this fix
+    // Should sit above the input bar — not overlapping send or attach
+    const sendBtn = page.locator('.input-send')
+    if (await sendBtn.isVisible()) {
+      const sendBox = await sendBtn.boundingBox()
+      // Dot's bottom edge should be above the send button's top edge
+      expect(box.y + box.height).toBeLessThanOrEqual(sendBox.y + 5)
+    }
+
     const attachBtn = page.locator('.input-attach')
     if (await attachBtn.isVisible()) {
-      // Should be clickable without the service dot intercepting
-      await expect(attachBtn).toBeEnabled()
       const attachBox = await attachBtn.boundingBox()
-      // No overlap: dot bottom should be above attach top
-      expect(box.y + box.height).toBeLessThanOrEqual(attachBox.y + 5) // small tolerance
+      // No overlap with attach either
+      expect(box.y + box.height).toBeLessThanOrEqual(attachBox.y + 5)
     }
   })
 })
