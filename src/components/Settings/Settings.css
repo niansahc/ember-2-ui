@@ -1026,3 +1026,67 @@
     padding: 0.65rem 0.75rem;
   }
 }
+
+/* ── Device Security section ─────────────────────────────────
+   Three states: enabled (green), disabled (amber), error (muted).
+   Uses a small status dot + text. Disabled state can include a docs
+   link below the main text. */
+
+.device-security-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 0;
+}
+
+.device-security-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.device-security-dot-enabled {
+  background: #6bcb8b;
+  box-shadow: 0 0 6px rgba(107, 203, 139, 0.4);
+}
+
+.device-security-dot-disabled {
+  background: #f0a84b;
+  box-shadow: 0 0 6px rgba(240, 168, 75, 0.4);
+}
+
+.device-security-dot-error {
+  background: var(--text-muted);
+}
+
+.device-security-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.device-security-text {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.device-security-disabled .device-security-text {
+  color: var(--text-primary);
+}
+
+.device-security-error .device-security-text {
+  color: var(--text-muted);
+}
+
+.device-security-link {
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.device-security-link:hover {
+  text-decoration: underline;
+}

@@ -345,6 +345,27 @@ export async function recoverPin(recoveryPassphrase, newPin) {
 }
 
 /**
+ * Get disk encryption status for the host device.
+ * Backend endpoint GET /v1/system/disk-encryption is in flight with G.
+ * Contract: { enabled: bool, platform: "windows"|"darwin"|"linux"|"unknown",
+ *             method: "bitlocker"|"filevault"|"luks"|null }.
+ * Returns { ok: false } on network/parse error so Settings can show the
+ * error copy without throwing.
+ */
+export async function getDiskEncryption() {
+  try {
+    const res = await fetch(`${API_URL}/system/disk-encryption`, {
+      headers: { ...authHeaders() },
+    })
+    if (!res.ok) return { ok: false }
+    const data = await res.json()
+    return { ok: true, ...data }
+  } catch {
+    return { ok: false }
+  }
+}
+
+/**
  * Change an existing PIN. Requires the current PIN for re-auth.
  * Backend endpoint POST /v1/security/pin/change is implemented by G — wired
  * behind the same rate limiter as /pin/verify. Until that ships, Playwright

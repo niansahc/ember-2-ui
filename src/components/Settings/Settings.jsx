@@ -11,6 +11,7 @@ import {
   getPinStatus,
   getLodestone,
   updateLodestone,
+  getDiskEncryption,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -33,6 +34,20 @@ const PROVIDERS = [
   { id: 'anthropic', name: 'Anthropic' },
   { id: 'openai', name: 'OpenAI' },
 ]
+
+// Disk encryption docs links — official vendor docs only, routed by the
+// `method` field returned by GET /v1/system/disk-encryption.
+const DISK_ENCRYPTION_DOCS = {
+  bitlocker: 'https://support.microsoft.com/en-us/windows/device-encryption-in-windows-ad5dcf4b-dbe0-2331-228f-7925c2a3012d',
+  filevault: 'https://support.apple.com/guide/mac-help/protect-data-on-your-mac-with-filevault-mh11785/mac',
+  luks: 'https://wiki.archlinux.org/title/Dm-crypt/Device_encryption',
+}
+const DISK_ENCRYPTION_DOCS_FALLBACK = 'https://en.wikipedia.org/wiki/Disk_encryption'
+const DISK_ENCRYPTION_LABELS = {
+  bitlocker: 'BitLocker',
+  filevault: 'FileVault',
+  luks: 'LUKS',
+}
 
 const TABS = [
   { id: 'general', label: 'General', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
@@ -69,6 +84,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   const [vaultPathRevealed, setVaultPathRevealed] = useState(false)
   const [vaultCopied, setVaultCopied] = useState(false)
   const [securityPinSet, setSecurityPinSet] = useState(false)
+  const [diskEncryption, setDiskEncryption] = useState(null) // null = not yet fetched; { ok, enabled, platform, method } once loaded
   const [lockOnLaunch, setLockOnLaunch] = useState(false)
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
@@ -164,6 +180,14 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
       } catch {}
     }
     loadPreferences()
+
+    // Device security — disk encryption status. Independent fetch so a
+    // slow/unavailable endpoint does not block the rest of Settings load.
+    async function loadDiskEncryption() {
+      const result = await getDiskEncryption()
+      if (!ignore) setDiskEncryption(result)
+    }
+    loadDiskEncryption()
 
     // Load lodestone records
     async function loadLodestone() {
@@ -602,6 +626,48 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 </button>
               )}
 
+
+              <hr className="settings-divider" />
+
+              {/* ── Device security ────────────────────────────────
+                  Shows disk encryption status for the host device. Backend
+                  endpoint GET /v1/system/disk-encryption is in flight with G;
+                  until then, Playwright intercepts the route in tests. */}
+              <div className="settings-section-label">Device Security</div>
+
+              {diskEncryption && diskEncryption.ok && diskEncryption.enabled && (
+                <div className="device-security-row device-security-enabled" data-testid="device-security-enabled">
+                  <span className="device-security-dot device-security-dot-enabled" aria-hidden="true" />
+                  <span className="device-security-text">Your device storage is encrypted.</span>
+                </div>
+              )}
+
+              {diskEncryption && diskEncryption.ok && !diskEncryption.enabled && (
+                <div className="device-security-row device-security-disabled" data-testid="device-security-disabled">
+                  <span className="device-security-dot device-security-dot-disabled" aria-hidden="true" />
+                  <div className="device-security-body">
+                    <span className="device-security-text">Your vault data is not encrypted at rest.</span>
+                    {diskEncryption.method && diskEncryption.method !== null && (
+                      <a
+                        className="device-security-link"
+                        href={DISK_ENCRYPTION_DOCS[diskEncryption.method] || DISK_ENCRYPTION_DOCS_FALLBACK}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="device-security-link"
+                      >
+                        Learn how to enable {DISK_ENCRYPTION_LABELS[diskEncryption.method] || 'disk encryption'}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {diskEncryption && !diskEncryption.ok && (
+                <div className="device-security-row device-security-error" data-testid="device-security-error">
+                  <span className="device-security-dot device-security-dot-error" aria-hidden="true" />
+                  <span className="device-security-text">Unable to check encryption status.</span>
+                </div>
+              )}
 
               <hr className="settings-divider" />
 
