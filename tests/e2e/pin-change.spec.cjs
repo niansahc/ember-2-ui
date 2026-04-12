@@ -17,6 +17,13 @@ async function mockPinAlreadySet(page) {
   })
 }
 
+/**
+ * Navigate to Settings > Security > Change PIN and open the modal.
+ * Does the full click-through so individual tests can start from
+ * "I'm staring at the Change PIN overlay" without repeating boilerplate.
+ * Expects mockPinAlreadySet to have run first — otherwise the button
+ * won't exist and this function will throw a very judgmental error.
+ */
 async function openChangePinModal(page) {
   await page.goto('/')
   await page.waitForSelector('.app-layout', { timeout: 15000 })
