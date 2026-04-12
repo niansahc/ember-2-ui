@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { mockGetOllamaModels } from '../../api/mock.js'
 import {
   getModel as realGetModel,
@@ -66,7 +66,9 @@ const TABS = [
   { id: 'about', label: 'About', icon: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 16v-4 M12 8h.01' },
 ]
 
-export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
+// React.memo prevents re-render when App.jsx re-renders (e.g. modal
+// state changes) but Settings props haven't changed.
+export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
   const [webSearch, setWebSearch] = useState(true)
@@ -220,9 +222,20 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
         setDevAvailableVaults(vaults)
       }
     }
-    loadDevStatus()
+    // Developer status and lodestone are deferred to their own useEffects
+    // below — they only fetch when the relevant tab is selected. This
+    // avoids 2 unnecessary API calls when the user opens Settings to a
+    // different tab (the common case).
 
-    // Load lodestone records
+    return () => { ignore = true }
+  }, [isOpen])
+
+  // Deferred: lodestone records — only fetched when Memory tab is active.
+  // Saves one API call when opening Settings to any other tab.
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'memory') return
+    if (lodestoneRecords.length > 0) return // already loaded this session
+    let ignore = false
     async function loadLodestone() {
       setLodestoneLoading(true)
       try {
@@ -235,7 +248,29 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
       }
     }
     loadLodestone()
+    return () => { ignore = true }
+  }, [isOpen, activeTab])
 
+  // Deferred: developer status — only fetched when Developer tab is active
+  // or on initial open (for the header badge). The badge needs devMode on
+  // first open, so we fetch once on open, then re-fetch on tab switch.
+  useEffect(() => {
+    if (!isOpen) return
+    let ignore = false
+    async function loadDevStatus() {
+      const result = await getDeveloperStatus()
+      if (ignore) return
+      setDevMode(result.dev_mode || false)
+      if (result.active_vault) setDevActiveVault(result.active_vault)
+      if (result.available_vaults) {
+        const vaults = [...result.available_vaults]
+        if (result.active_vault && !vaults.some((v) => v.label === result.active_vault.label)) {
+          vaults.unshift(result.active_vault)
+        }
+        setDevAvailableVaults(vaults)
+      }
+    }
+    loadDevStatus()
     return () => { ignore = true }
   }, [isOpen])
 
@@ -1302,7 +1337,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
       </div>
     </>
   )
-}
+}) // end memo(Settings)
 
 const LODESTONE_CATEGORIES = [
   { key: 'character', name: 'Character', subtitle: 'Who you are and how you see yourself' },

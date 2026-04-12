@@ -198,10 +198,9 @@ export default function App() {
   const handleConnected = useCallback((detectedModel) => {
     setModel(detectedModel)
     setView('chat')
-    // Fetch full model info for accurate display
-    realGetModel().then((data) => {
-      if (data.model) setModel(data.model)
-    }).catch(() => {})
+    // Splash already provides the model from /api/health — no need for a
+    // redundant GET /model here. Settings will fetch fresh model info when
+    // opened. Dropping this saves one network request on every boot.
     // Restore active conversation from localStorage if one was saved
     try {
       const savedSession = localStorage.getItem('ember_active_session')

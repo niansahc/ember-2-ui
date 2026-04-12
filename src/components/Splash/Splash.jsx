@@ -19,7 +19,9 @@ export default function Splash({ onConnected }) {
         if (cancelled) return
         if (result.ok) {
           setStatus('connected')
-          setTimeout(() => onConnected(result.model), 600)
+          // 200ms is enough to flash "Ready." without feeling sluggish.
+          // Was 600ms — cut per v0.15.0 performance audit.
+          setTimeout(() => onConnected(result.model), 200)
           return
         }
         // Real API returned not ok — try mock fallback
@@ -27,7 +29,7 @@ export default function Splash({ onConnected }) {
         if (cancelled) return
         if (mock.ok) {
           setStatus('connected')
-          setTimeout(() => onConnected(mock.model), 600)
+          setTimeout(() => onConnected(mock.model), 200)
           return
         }
         setStatus('error')

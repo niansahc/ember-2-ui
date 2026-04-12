@@ -1,11 +1,18 @@
 import { useEffect, useRef, useCallback } from 'react'
 
 /**
- * Fires onIdle after `minutes` of inactivity (no mouse, keyboard, or messages).
- * Returns a resetTimer function to call when activity occurs.
+ * Fires onIdle after `minutes` of inactivity.
+ *
+ * Uses two listeners — pointerdown (covers mouse + touch in one event)
+ * and keydown (covers keyboard). A 1-second debounce prevents rapid-fire
+ * resetTimer calls from high-frequency events like mouse drags. The old
+ * implementation used 4 raw listeners (mousemove, keydown, click,
+ * touchstart) with no debounce, causing measurable overhead on high-DPI
+ * displays where mousemove fires hundreds of times per second.
  */
 export function useIdleTimeout(minutes, onIdle, enabled = true) {
   const timerRef = useRef(null)
+  const debounceRef = useRef(null)
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -17,23 +24,28 @@ export function useIdleTimeout(minutes, onIdle, enabled = true) {
   useEffect(() => {
     if (!enabled || minutes <= 0) return
 
+    // Debounced activity handler — fires resetTimer at most once per second.
+    // Prevents cascading resets from rapid pointer or keyboard events.
     function handleActivity() {
+      if (debounceRef.current) return
+      debounceRef.current = setTimeout(() => { debounceRef.current = null }, 1000)
       resetTimer()
     }
 
-    window.addEventListener('mousemove', handleActivity)
-    window.addEventListener('keydown', handleActivity)
-    window.addEventListener('click', handleActivity)
-    window.addEventListener('touchstart', handleActivity)
+    // pointerdown: covers mouse click, touch tap, pen tap — one listener
+    // instead of separate click + touchstart + mousemove.
+    // keydown: covers keyboard activity.
+    // Both passive — we never preventDefault on these.
+    window.addEventListener('pointerdown', handleActivity, { passive: true })
+    window.addEventListener('keydown', handleActivity, { passive: true })
 
     resetTimer()
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
-      window.removeEventListener('mousemove', handleActivity)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      window.removeEventListener('pointerdown', handleActivity)
       window.removeEventListener('keydown', handleActivity)
-      window.removeEventListener('click', handleActivity)
-      window.removeEventListener('touchstart', handleActivity)
     }
   }, [minutes, enabled, resetTimer])
 

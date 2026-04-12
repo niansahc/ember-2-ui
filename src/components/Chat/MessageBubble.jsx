@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import emberMascot from '../../../assets/ember-mascot.png'
@@ -46,7 +46,9 @@ function sourceLabel(msg) {
   return 'LLM'
 }
 
-export default function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
+// React.memo — prevents re-render when sibling messages update.
+// Each bubble only re-renders when its own message object changes.
+export default memo(function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
   const isUser = message.role === 'user'
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -259,4 +261,4 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
       </div>
     </div>
   )
-}
+}) // end memo(MessageBubble)
