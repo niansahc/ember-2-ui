@@ -250,4 +250,53 @@ test.describe('Settings', () => {
     await expect(hint).toBeVisible()
     await expect(hint).toContainText('Per-conversation control coming in a future release')
   })
+
+  test('autonomous web search toggle defaults to OFF', async ({ page }) => {
+    // Override preferences mock to simulate a fresh user (no stored pref)
+    await page.route('**/v1/preferences', async (route, request) => {
+      if (request.method() !== 'GET') return route.continue()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_run_tour_complete: true,
+          onboarding_complete: true,
+          pin_setup_dismissed: true,
+          // web_search_autonomous intentionally omitted — fresh user
+        }),
+      })
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const featuresTab = page.locator('.settings-tab', { hasText: 'Features' })
+    await featuresTab.click()
+
+    const toggle = page.locator('label[aria-label="Toggle autonomous web search"] input')
+    await expect(toggle).not.toBeChecked()
+  })
+
+  test('web search tooltip does not clip outside settings panel', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const featuresTab = page.locator('.settings-tab', { hasText: 'Features' })
+    await featuresTab.click()
+
+    // Hover the info icon to show the tooltip
+    const infoIcon = page.locator('.settings-info-icon').first()
+    await infoIcon.hover()
+
+    const tooltip = page.locator('.settings-info-tooltip').first()
+    await expect(tooltip).toBeVisible()
+
+    // Tooltip should be fully within the viewport
+    const tooltipBox = await tooltip.boundingBox()
+    const viewportWidth = page.viewportSize().width
+    expect(tooltipBox.x).toBeGreaterThanOrEqual(0)
+    expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(viewportWidth + 5)
+  })
 })

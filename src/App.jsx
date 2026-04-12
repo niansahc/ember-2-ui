@@ -372,6 +372,7 @@ export default function App() {
           onRegenerate={regenerate}
           onEdit={editAndResend}
         />
+        <ServiceStatus />
       </main>
 
       <Settings
@@ -409,8 +410,6 @@ export default function App() {
         onClose={() => setAboutOpen(false)}
         onOpenBugReport={() => { setBugReportOpen(true); setAboutOpen(false) }}
       />
-
-      <ServiceStatus />
     </div>
   )
 }

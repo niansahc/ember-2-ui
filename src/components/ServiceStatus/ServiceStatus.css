@@ -3,16 +3,18 @@
    Sits like a tiny sentinel above the input controls — close
    enough to feel connected, high enough to never overlap. */
 
-/* The dot and panel both anchor to the right edge. The panel expands
-   leftward when it appears — the dot stays exactly where it was. */
+/* Positioned absolute inside .app-main (the content area right of the
+   sidebar). This means the dot is always in the bottom-left of the
+   CONTENT area — never overlapping the sidebar or its menu items.
+   The panel expands upward. */
 .service-status {
-  position: fixed;
-  bottom: 4.5rem;
-  right: 1.35rem;
-  z-index: 9000;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 50;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.35rem;
   pointer-events: auto;
 }
@@ -207,7 +209,7 @@
   }
 
   .service-status {
-    bottom: 4rem;
-    right: 0.75rem;
+    bottom: 16px;
+    left: 12px;
   }
 }

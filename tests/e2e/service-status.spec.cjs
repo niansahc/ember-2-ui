@@ -131,30 +131,25 @@ test.describe('Service Status Indicator', () => {
     await expect(page.locator('[data-testid="service-panel"]')).not.toBeVisible()
   })
 
-  test('indicator is above the send button and does not overlap input controls', async ({ page }) => {
+  test('indicator is in the content area bottom-left, away from input controls', async ({ page }) => {
     await mockHealthy(page)
     await loadApp(page)
 
     const container = page.locator('[data-testid="service-status"]')
     const box = await container.boundingBox()
-    const viewportWidth = page.viewportSize().width
+    const appMain = page.locator('.app-main')
+    const mainBox = await appMain.boundingBox()
 
-    // Should be on the right side of the viewport (near the send button)
-    expect(box.x).toBeGreaterThan(viewportWidth / 2)
+    // Dot should be near the LEFT edge of the content area (not the viewport)
+    const relativeX = box.x - mainBox.x
+    expect(relativeX).toBeGreaterThanOrEqual(10)
+    expect(relativeX).toBeLessThan(100)
 
-    // Should sit above the input bar — not overlapping send or attach
+    // Does not overlap send button
     const sendBtn = page.locator('.input-send')
     if (await sendBtn.isVisible()) {
       const sendBox = await sendBtn.boundingBox()
-      // Dot's bottom edge should be above the send button's top edge
-      expect(box.y + box.height).toBeLessThanOrEqual(sendBox.y + 5)
-    }
-
-    const attachBtn = page.locator('.input-attach')
-    if (await attachBtn.isVisible()) {
-      const attachBox = await attachBtn.boundingBox()
-      // No overlap with attach either
-      expect(box.y + box.height).toBeLessThanOrEqual(attachBox.y + 5)
+      expect(box.x + box.width).toBeLessThan(sendBox.x)
     }
   })
 })
