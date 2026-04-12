@@ -152,6 +152,29 @@
   to { transform: rotate(360deg); }
 }
 
+/* Shutdown button */
+.service-shutdown-btn {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.35rem 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.service-shutdown-btn:hover:not(:disabled) {
+  color: #e85d5d;
+}
+
+.service-shutdown-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 /* ── Mobile ──────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {

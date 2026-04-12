@@ -173,6 +173,22 @@ export async function restartService(name) {
   return await res.json()
 }
 
+/**
+ * Shut down the API server. G is building POST /v1/service/shutdown.
+ * After this call the backend stops — the dots will go dark on next poll.
+ */
+export async function shutdownService() {
+  const res = await fetch(`${API_URL}/service/shutdown`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Shutdown failed (${res.status})`)
+  }
+  return await res.json()
+}
+
 // ---------------------------------------------------------------------------
 // Model info
 // ---------------------------------------------------------------------------

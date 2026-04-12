@@ -9,7 +9,7 @@
  * response. Restart hits POST /v1/service/{name}/restart (also G).
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getServiceHealth, restartService } from '../../api/ember.js'
+import { getServiceHealth, restartService, shutdownService } from '../../api/ember.js'
 import './ServiceStatus.css'
 
 const POLL_INTERVAL = 15000
@@ -35,6 +35,7 @@ export default function ServiceStatus() {
   const [health, setHealth] = useState({ api: 'unknown', docker: 'unknown' })
   const [expanded, setExpanded] = useState(false)
   const [restarting, setRestarting] = useState({}) // { api: true } while in-flight
+  const [shuttingDown, setShuttingDown] = useState(false)
   const containerRef = useRef(null)
   const pollRef = useRef(null)
 
@@ -72,6 +73,19 @@ export default function ServiceStatus() {
       // Silently fail — next poll will update status
     } finally {
       setRestarting((prev) => ({ ...prev, [name]: false }))
+    }
+  }
+
+  async function handleShutdown() {
+    setShuttingDown(true)
+    try {
+      await shutdownService()
+      // API is stopping — force both dots dark immediately
+      setHealth({ api: 'down', docker: 'unknown' })
+    } catch {
+      // Even on error, next poll will update
+    } finally {
+      setShuttingDown(false)
     }
   }
 
@@ -115,6 +129,14 @@ export default function ServiceStatus() {
               </button>
             </div>
           ))}
+          <button
+            className="service-shutdown-btn"
+            onClick={handleShutdown}
+            disabled={shuttingDown || health.api !== 'ok'}
+            data-testid="service-shutdown"
+          >
+            {shuttingDown ? 'Stopping...' : 'Shut down Ember'}
+          </button>
         </div>
       )}
 
