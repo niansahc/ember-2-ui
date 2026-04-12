@@ -6,8 +6,10 @@
 // double as the UI contract.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 async function openSecurityTab(page) {
+  await mockBootstrap(page)
   await page.goto('/')
   await page.waitForSelector('.app-layout', { timeout: 15000 })
   await page.locator('.app-header-btn[aria-label="Open settings"]').click()

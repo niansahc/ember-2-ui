@@ -5,8 +5,11 @@
 // mocks become the contract test for the UI.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 // Pretend a PIN is already set so the Change PIN button appears.
+// Called AFTER mockBootstrap — later routes win in Playwright, so
+// this overrides mockBootstrap's default pin_set: false.
 async function mockPinAlreadySet(page) {
   await page.route('**/security/pin/status', async (route) => {
     await route.fulfill({
@@ -43,6 +46,7 @@ async function openChangePinModal(page) {
 
 test.describe('Change PIN flow', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await mockPinAlreadySet(page)
   })
 

@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.7.3 — 2026-04-12
+
+### Features
+- Change PIN flow — Settings > Security, verify current → enter new → confirm
+- Disk encryption status — Settings > Security, Device Security section with platform-appropriate docs link
+- Service status indicator — breathing amber dot above send button, hover for restart/shutdown panel
+- Developer vault switcher — Settings > Developer tab (dev mode only), vault swap with rebuilding note
+- Vault citation UI — unified "Source: Vault / Web Search / LLM" label on every assistant message
+- Header/sidebar badges showing active vault label in dev mode
+
+### Performance
+- Settings wrapped in React.memo, deferred tab-specific API fetches (lodestone, developer status)
+- MessageBubble wrapped in React.memo — siblings no longer trigger re-renders
+- Boot chain: dropped redundant model fetch, cut splash delay 600ms → 200ms
+- Idle timeout: 4 raw DOM listeners → 2 passive with 1s debounce
+
+### Accessibility
+- focus-visible on all new interactive elements (7 selectors)
+- Service dots keyboard-accessible (Enter/Space to expand)
+- PIN error messages announced via aria-live
+- Touch targets at 44px minimum
+
+### Bug Fixes
+- Disk encryption link falls back to platform when method is null (case-insensitive)
+- Conversation memory toggle label clarified as global setting
+- Flaky e2e tests resolved via shared mock-bootstrap helper (107 passing, 0 flaky)
+- Service status dot positioned to never overlap input controls
+
+### Tests
+- 45 new Playwright tests across 6 new spec files
+- Shared mock-bootstrap.cjs helper for deterministic splash → chat in all specs
+- Performance audit documented in docs/performance-audit-v0.15.0.md
+
+---
+
 ## v0.7.2 — 2026-04-10
 
 ### Security
