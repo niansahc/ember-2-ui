@@ -15,6 +15,17 @@ const DEV_STATUS_ACTIVE = {
   ],
 }
 
+// Simulates G's real response: active vault NOT in available_vaults list.
+// The UI should inject it so users can switch back.
+const DEV_STATUS_MISSING_DEFAULT = {
+  dev_mode: true,
+  active_vault: { label: 'default', path: 'C:\\EmberVault' },
+  available_vaults: [
+    { label: 'demo', path: 'C:\\demo_vault' },
+    { label: 'test', path: 'C:\\test_vault' },
+  ],
+}
+
 const DEV_STATUS_INACTIVE = { dev_mode: false }
 
 function mockDevMode(page, status) {
@@ -173,5 +184,78 @@ test.describe('Developer Vault Switcher', () => {
     const switcher = page.locator('[data-testid="dev-vault-switcher"]')
     await expect(switcher).toBeVisible()
     await expect(page.locator('[data-testid="dev-vault-empty"]')).toContainText('No alternate vaults configured')
+  })
+
+  test('Memory tab vault path reflects active dev vault, not hardcoded default', async ({ page }) => {
+    await mockBootstrap(page)
+    await mockDevMode(page, DEV_STATUS_ACTIVE)
+    await loadApp(page)
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    // Navigate to Memory tab
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
+    // Reveal the vault path
+    const eyeBtn = page.locator('.vault-path-icon-btn').first()
+    await eyeBtn.click()
+
+    const pathEl = page.locator('[data-testid="memory-vault-path"]')
+    const text = await pathEl.textContent()
+    // Should show the dev vault path, not the default C:\EmberVault
+    expect(text).toContain('private_vault')
+  })
+
+  test('Memory tab section label shows vault label when dev mode active', async ({ page }) => {
+    await mockBootstrap(page)
+    await mockDevMode(page, DEV_STATUS_ACTIVE)
+    await loadApp(page)
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
+    // The "Vault" section label should include the active vault label
+    const sectionLabel = page.locator('.settings-section-label', { hasText: 'Vault' }).first()
+    await expect(sectionLabel).toContainText('live')
+  })
+
+  test('Switch Vault list includes default vault when not in available_vaults', async ({ page }) => {
+    // G's endpoint returns default as active but NOT in available_vaults.
+    // UI should inject it so users can switch back after switching away.
+    await mockBootstrap(page)
+    await mockDevMode(page, DEV_STATUS_MISSING_DEFAULT)
+    await loadApp(page)
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const devTab = page.locator('[data-testid="settings-tab-developer"]')
+    await devTab.click()
+
+    // Switch to demo first
+    await page.route('**/developer/vault/swap', async (route) => {
+      const body = route.request().postDataJSON()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          active_vault: 'C:\\demo_vault',
+          label: body.vault_label || 'demo',
+          note: 'indexes cleared',
+        }),
+      })
+    })
+    const demoOption = page.locator('[data-testid="dev-vault-option-demo"]')
+    await expect(demoOption).toBeVisible()
+    await demoOption.click()
+
+    // After switching to demo, "default" should appear as a switch-back option
+    const defaultOption = page.locator('[data-testid="dev-vault-option-default"]')
+    await expect(defaultOption).toBeVisible()
   })
 })

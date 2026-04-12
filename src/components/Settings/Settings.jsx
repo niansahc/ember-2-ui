@@ -205,13 +205,21 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
     }
     loadDiskEncryption()
 
-    // Developer mode — check if dev mode is active and load vault info
+    // Developer mode — check if dev mode is active and load vault info.
+    // If the default/active vault isn't in available_vaults, inject it so
+    // users can always switch back after switching away.
     async function loadDevStatus() {
       const result = await getDeveloperStatus()
       if (ignore) return
       setDevMode(result.dev_mode || false)
       if (result.active_vault) setDevActiveVault(result.active_vault)
-      if (result.available_vaults) setDevAvailableVaults(result.available_vaults)
+      if (result.available_vaults) {
+        const vaults = [...result.available_vaults]
+        if (result.active_vault && !vaults.some((v) => v.label === result.active_vault.label)) {
+          vaults.unshift(result.active_vault)
+        }
+        setDevAvailableVaults(vaults)
+      }
     }
     loadDevStatus()
 
@@ -815,13 +823,13 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
           {/* ── Memory tab ────────────────────────────────────── */}
           {activeTab === 'memory' && (
             <div id="settings-panel-memory" role="tabpanel" className="settings-tab-panel">
-              <div className="settings-section-label">Vault</div>
+              <div className="settings-section-label">Vault{devMode && devActiveVault ? ` (${devActiveVault.label})` : ''}</div>
 
               <div className="settings-row vault-path-row">
                 <div className="settings-row-info">
                   <span className="settings-row-label">Where is my vault?</span>
-                  <span className="settings-row-hint settings-row-path">
-                    {vaultPathRevealed ? 'C:\\EmberVault' : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
+                  <span className="settings-row-hint settings-row-path" data-testid="memory-vault-path">
+                    {vaultPathRevealed ? (devMode && devActiveVault ? devActiveVault.path : 'C:\\EmberVault') : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
                   </span>
                 </div>
                 <div className="vault-path-actions">
@@ -850,7 +858,7 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <button
                     className="vault-path-icon-btn"
                     onClick={() => {
-                      navigator.clipboard.writeText('C:\\EmberVault').then(() => {
+                      navigator.clipboard.writeText(devMode && devActiveVault ? devActiveVault.path : 'C:\\EmberVault').then(() => {
                         setVaultCopied(true)
                         setTimeout(() => setVaultCopied(false), 2000)
                       })
