@@ -16,6 +16,7 @@ import About from './components/About/About.jsx'
 import LockScreen from './components/LockScreen/LockScreen.jsx'
 import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
+import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
@@ -393,6 +394,8 @@ export default function App() {
         onClose={() => setAboutOpen(false)}
         onOpenBugReport={() => { setBugReportOpen(true); setAboutOpen(false) }}
       />
+
+      <ServiceStatus />
     </div>
   )
 }

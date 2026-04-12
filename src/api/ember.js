@@ -129,6 +129,51 @@ export async function checkConnection() {
 }
 
 // ---------------------------------------------------------------------------
+// Service health (ServiceStatus indicator)
+// ---------------------------------------------------------------------------
+
+/**
+ * Poll service health for the status indicator. Reads the existing
+ * /api/health endpoint — G is adding a `docker` field alongside the
+ * existing `status` and `model` fields. Until shipped, the UI treats
+ * a missing `docker` field as "unknown".
+ *
+ * Returns { api: "ok"|"down", docker: "ok"|"down"|"unknown" }
+ */
+export async function getServiceHealth() {
+  try {
+    const res = await fetch('/api/health', {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return { api: 'down', docker: 'unknown' }
+    const data = await res.json().catch(() => ({}))
+    return {
+      api: 'ok',
+      docker: data.docker || 'unknown',
+    }
+  } catch {
+    return { api: 'down', docker: 'unknown' }
+  }
+}
+
+/**
+ * Restart a named service. G is building POST /v1/service/{name}/restart.
+ * Mocked in Playwright via page.route() until shipped.
+ */
+export async function restartService(name) {
+  const res = await fetch(`${API_URL}/service/${encodeURIComponent(name)}/restart`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Restart failed (${res.status})`)
+  }
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Model info
 // ---------------------------------------------------------------------------
 
