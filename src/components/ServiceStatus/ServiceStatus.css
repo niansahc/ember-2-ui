@@ -1,16 +1,16 @@
 /* ── Service Status Indicator ─────────────────────────────────
-   Fixed bottom-right. Two small ember-colored dots that breathe
-   when healthy, dim when degraded, go dark when down. Expands
-   upward on hover to show labels, status, and restart controls. */
+   Fixed bottom-left. Single API dot that breathes when healthy,
+   dims when down. Expands upward on hover to show status, restart,
+   and shutdown. Positioned away from the send button (bottom-right). */
 
 .service-status {
   position: fixed;
   bottom: 1rem;
-  right: 1rem;
+  left: 1rem;
   z-index: 9000;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.35rem;
   pointer-events: auto;
 }
@@ -206,6 +206,6 @@
 
   .service-status {
     bottom: 0.75rem;
-    right: 0.75rem;
+    left: 0.75rem;
   }
 }

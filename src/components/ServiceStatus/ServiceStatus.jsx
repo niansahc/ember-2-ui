@@ -1,23 +1,19 @@
 /**
- * ServiceStatus — persistent service health indicator.
+ * ServiceStatus — persistent API health indicator.
  *
- * Fixed bottom-right corner. Collapsed: two tiny dots (API + Docker)
- * with a warm breathing glow when healthy. Hover/tap: expands upward
- * to show service labels, status text, and per-service restart buttons.
+ * Fixed bottom-left corner (away from the send button). Collapsed: a
+ * single small dot showing API status with a warm breathing glow when
+ * healthy. Hover/tap: expands upward to show status text, a restart
+ * button, and a shutdown button.
  *
- * Polls GET /api/health every 15s. G is adding a `docker` field to the
- * response. Restart hits POST /v1/service/{name}/restart (also G).
+ * Polls GET /api/health every 15s. Restart hits
+ * POST /v1/service/api/restart. Shutdown hits POST /v1/service/shutdown.
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getServiceHealth, restartService, shutdownService } from '../../api/ember.js'
 import './ServiceStatus.css'
 
 const POLL_INTERVAL = 15000
-
-const SERVICES = [
-  { key: 'api', label: 'API' },
-  { key: 'docker', label: 'Docker' },
-]
 
 function dotClass(status) {
   if (status === 'ok') return 'service-dot-ok'
@@ -32,9 +28,9 @@ function statusLabel(status) {
 }
 
 export default function ServiceStatus() {
-  const [health, setHealth] = useState({ api: 'unknown', docker: 'unknown' })
+  const [health, setHealth] = useState({ api: 'unknown' })
   const [expanded, setExpanded] = useState(false)
-  const [restarting, setRestarting] = useState({}) // { api: true } while in-flight
+  const [restarting, setRestarting] = useState(false)
   const [shuttingDown, setShuttingDown] = useState(false)
   const containerRef = useRef(null)
   const pollRef = useRef(null)
@@ -63,16 +59,16 @@ export default function ServiceStatus() {
     return () => document.removeEventListener('pointerdown', handleClick)
   }, [expanded])
 
-  async function handleRestart(name) {
-    setRestarting((prev) => ({ ...prev, [name]: true }))
+  async function handleRestart() {
+    setRestarting(true)
     try {
-      await restartService(name)
+      await restartService('api')
       // Re-poll after short delay for the service to come back
       setTimeout(poll, 2000)
     } catch {
       // Silently fail — next poll will update status
     } finally {
-      setRestarting((prev) => ({ ...prev, [name]: false }))
+      setRestarting(false)
     }
   }
 
@@ -80,17 +76,13 @@ export default function ServiceStatus() {
     setShuttingDown(true)
     try {
       await shutdownService()
-      // API is stopping — force both dots dark immediately
-      setHealth({ api: 'down', docker: 'unknown' })
+      setHealth({ api: 'down' })
     } catch {
       // Even on error, next poll will update
     } finally {
       setShuttingDown(false)
     }
   }
-
-  const allOk = health.api === 'ok' && health.docker === 'ok'
-  const allDown = health.api !== 'ok' && health.docker !== 'ok'
 
   return (
     <div
@@ -100,35 +92,33 @@ export default function ServiceStatus() {
       onMouseLeave={() => setExpanded(false)}
       data-testid="service-status"
     >
-      {/* Expanded panel */}
+      {/* Expanded panel — API only, no Docker */}
       {expanded && (
         <div className="service-panel" data-testid="service-panel">
-          {SERVICES.map((svc) => (
-            <div className="service-panel-row" key={svc.key}>
-              <span className={`service-dot ${dotClass(health[svc.key])}`} />
-              <span className="service-panel-label">{svc.label}</span>
-              <span className={`service-panel-status service-panel-status-${health[svc.key]}`}>
-                {statusLabel(health[svc.key])}
-              </span>
-              <button
-                className="service-restart-btn"
-                onClick={() => handleRestart(svc.key)}
-                disabled={restarting[svc.key]}
-                aria-label={`Restart ${svc.label}`}
-                title={`Restart ${svc.label}`}
-                data-testid={`service-restart-${svc.key}`}
-              >
-                {restarting[svc.key] ? (
-                  <span className="service-restart-spinner" />
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polyline points="23 4 23 10 17 10" />
-                    <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          ))}
+          <div className="service-panel-row">
+            <span className={`service-dot ${dotClass(health.api)}`} />
+            <span className="service-panel-label">API</span>
+            <span className={`service-panel-status service-panel-status-${health.api}`}>
+              {statusLabel(health.api)}
+            </span>
+            <button
+              className="service-restart-btn"
+              onClick={handleRestart}
+              disabled={restarting}
+              aria-label="Restart API"
+              title="Restart API"
+              data-testid="service-restart-api"
+            >
+              {restarting ? (
+                <span className="service-restart-spinner" />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+                </svg>
+              )}
+            </button>
+          </div>
           <button
             className="service-shutdown-btn"
             onClick={handleShutdown}
@@ -140,13 +130,13 @@ export default function ServiceStatus() {
         </div>
       )}
 
-      {/* Collapsed dots — keyboard-accessible so non-mouse users can expand */}
+      {/* Collapsed: single API dot — keyboard-accessible */}
       <div
         className="service-dots"
         data-testid="service-dots"
         role="button"
         tabIndex={0}
-        aria-label={`Service status: API ${statusLabel(health.api)}, Docker ${statusLabel(health.docker)}. Press Enter to expand.`}
+        aria-label={`API status: ${statusLabel(health.api)}. Press Enter to expand.`}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
@@ -154,14 +144,11 @@ export default function ServiceStatus() {
           }
         }}
       >
-        {SERVICES.map((svc) => (
-          <span
-            key={svc.key}
-            className={`service-dot ${dotClass(health[svc.key])} ${health[svc.key] === 'ok' ? 'service-dot-breathe' : ''}`}
-            data-testid={`service-dot-${svc.key}`}
-            aria-label={`${svc.label}: ${statusLabel(health[svc.key])}`}
-          />
-        ))}
+        <span
+          className={`service-dot ${dotClass(health.api)} ${health.api === 'ok' ? 'service-dot-breathe' : ''}`}
+          data-testid="service-dot-api"
+          aria-label={`API: ${statusLabel(health.api)}`}
+        />
       </div>
     </div>
   )
