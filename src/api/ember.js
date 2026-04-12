@@ -598,6 +598,41 @@ export async function writeState(type, text, { source = 'ui', tags = [], metadat
   return await res.json()
 }
 
+// ---------------------------------------------------------------------------
+// Developer vault switcher (dev mode only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether dev mode is active and which vault is loaded.
+ * G is building GET /v1/developer/status.
+ * Returns { dev_mode, active_vault: { label, path }, available_vaults }.
+ */
+export async function getDeveloperStatus() {
+  try {
+    const res = await fetch(`${API_URL}/developer/status`, { headers: authHeaders() })
+    if (!res.ok) return { dev_mode: false }
+    return await res.json()
+  } catch {
+    return { dev_mode: false }
+  }
+}
+
+/**
+ * Swap to a different vault. G is building POST /v1/developer/vault/swap.
+ */
+export async function swapVault(vaultLabel) {
+  const res = await fetch(`${API_URL}/developer/vault/swap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ vault: vaultLabel }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Swap failed (${res.status})`)
+  }
+  return await res.json()
+}
+
 export const hasApiKey = !!API_KEY
 
 function authHeaders() {

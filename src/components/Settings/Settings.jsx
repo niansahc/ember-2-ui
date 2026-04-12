@@ -12,6 +12,8 @@ import {
   getLodestone,
   updateLodestone,
   getDiskEncryption,
+  getDeveloperStatus,
+  swapVault,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
@@ -95,6 +97,13 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
   const [lockOnLaunch, setLockOnLaunch] = useState(false)
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
+  // Developer mode state
+  const [devMode, setDevMode] = useState(false)
+  const [devActiveVault, setDevActiveVault] = useState(null) // { label, path }
+  const [devAvailableVaults, setDevAvailableVaults] = useState([])
+  const [devSwapping, setDevSwapping] = useState(false)
+  const [devRebuilding, setDevRebuilding] = useState(false)
+  const [devVaultPathRevealed, setDevVaultPathRevealed] = useState(false)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
   const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
   const [lodestoneRecords, setLodestoneRecords] = useState([])
@@ -195,6 +204,16 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
       if (!ignore) setDiskEncryption(result)
     }
     loadDiskEncryption()
+
+    // Developer mode — check if dev mode is active and load vault info
+    async function loadDevStatus() {
+      const result = await getDeveloperStatus()
+      if (ignore) return
+      setDevMode(result.dev_mode || false)
+      if (result.active_vault) setDevActiveVault(result.active_vault)
+      if (result.available_vaults) setDevAvailableVaults(result.available_vaults)
+    }
+    loadDevStatus()
 
     // Load lodestone records
     async function loadLodestone() {
@@ -349,6 +368,21 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
               <span className="settings-tab-label">{tab.label}</span>
             </button>
           ))}
+          {devMode && (
+            <button
+              className={`settings-tab ${activeTab === 'developer' ? 'settings-tab-active' : ''}`}
+              onClick={() => setActiveTab('developer')}
+              role="tab"
+              aria-selected={activeTab === 'developer'}
+              aria-controls="settings-panel-developer"
+              data-testid="settings-tab-developer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+              </svg>
+              <span className="settings-tab-label">Developer</span>
+            </button>
+          )}
         </nav>
 
         <div className="settings-content">
@@ -1189,6 +1223,84 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                 Report a bug
               </button>
 
+            </div>
+          )}
+
+          {/* ── Developer tab (dev mode only) ─────────────────── */}
+          {activeTab === 'developer' && devMode && (
+            <div id="settings-panel-developer" role="tabpanel" className="settings-tab-panel" data-testid="settings-panel-developer">
+              <div className="settings-section-label">Active Vault</div>
+
+              {devActiveVault && (
+                <>
+                  <div className="settings-row">
+                    <div className="settings-row-info">
+                      <span className="settings-row-label">Vault</span>
+                    </div>
+                    <span className="dev-vault-badge" data-testid="dev-vault-badge">{devActiveVault.label}</span>
+                  </div>
+
+                  <div className="settings-row">
+                    <div className="settings-row-info">
+                      <span className="settings-row-label">Path</span>
+                      <span className="settings-row-path" data-testid="dev-vault-path">
+                        {devVaultPathRevealed ? devActiveVault.path : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
+                      </span>
+                    </div>
+                    <button
+                      className="vault-path-icon-btn"
+                      onClick={() => setDevVaultPathRevealed((v) => !v)}
+                      aria-label={devVaultPathRevealed ? 'Hide vault path' : 'Reveal vault path'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        {devVaultPathRevealed
+                          ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
+                          : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
+                        }
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {devRebuilding && (
+                <div className="dev-rebuilding-note" data-testid="dev-rebuilding-note">
+                  Indexes rebuilding — search results may be incomplete for a few minutes.
+                </div>
+              )}
+
+              {devAvailableVaults.length > 0 && (
+                <div className="dev-vault-switcher" data-testid="dev-vault-switcher">
+                  <div className="settings-section-label">Switch Vault</div>
+                  {devAvailableVaults
+                    .filter((v) => !devActiveVault || v.label !== devActiveVault.label)
+                    .map((vault) => (
+                      <button
+                        key={vault.label}
+                        className="dev-vault-option"
+                        data-testid={`dev-vault-option-${vault.label}`}
+                        disabled={devSwapping}
+                        onClick={async () => {
+                          setDevSwapping(true)
+                          try {
+                            const result = await swapVault(vault.label)
+                            setDevActiveVault(vault)
+                            setDevVaultPathRevealed(false)
+                            if (result.rebuilding) {
+                              setDevRebuilding(true)
+                              setTimeout(() => setDevRebuilding(false), 60000)
+                            }
+                          } catch { /* next poll will correct state */ }
+                          finally { setDevSwapping(false) }
+                        }}
+                      >
+                        <span className="dev-vault-option-label">{vault.label}</span>
+                        <span className="dev-vault-option-path">{vault.path}</span>
+                      </button>
+                    ))
+                  }
+                </div>
+              )}
             </div>
           )}
         </div>

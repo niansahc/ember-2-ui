@@ -1027,6 +1027,75 @@
   }
 }
 
+/* ── Developer tab ───────────────────────────────────────────
+   Only visible when EMBER_DEV_MODE is active. Shows vault info,
+   switcher, and rebuilding status. */
+
+.dev-vault-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+  color: #f0a84b;
+  background: rgba(240, 168, 75, 0.12);
+}
+
+.dev-rebuilding-note {
+  padding: 0.6rem 0.75rem;
+  background: rgba(240, 168, 75, 0.08);
+  border: 1px solid rgba(240, 168, 75, 0.18);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.dev-vault-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.dev-vault-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.dev-vault-option:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.dev-vault-option:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dev-vault-option-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.dev-vault-option-path {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Device Security section ─────────────────────────────────
    Three states: enabled (green), disabled (amber), error (muted).
    Uses a small status dot + text. Disabled state can include a docs
