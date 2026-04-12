@@ -649,7 +649,7 @@ export async function swapVault(vaultLabel) {
   const res = await fetch(`${API_URL}/developer/vault/swap`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ vault: vaultLabel }),
+    body: JSON.stringify({ vault_label: vaultLabel }),
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

@@ -86,10 +86,16 @@ test.describe('Developer Vault Switcher', () => {
     await mockDevMode(page, DEV_STATUS_ACTIVE)
     await page.route('**/developer/vault/swap', async (route) => {
       swapCalls += 1
+      // Match G's real response format: { active_vault, label, note }
+      const body = route.request().postDataJSON()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ status: 'ok', rebuilding: true }),
+        body: JSON.stringify({
+          active_vault: 'C:\\DEVEmberVault\\demo_vault',
+          label: body.vault_label || 'demo',
+          note: 'indexes cleared, will rebuild on first query',
+        }),
       })
     })
     await loadApp(page)

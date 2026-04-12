@@ -1286,9 +1286,10 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                             setDevSwapping(true)
                             try {
                               const result = await swapVault(vault.label)
-                              setDevActiveVault(vault)
+                              setDevActiveVault({ label: result.label || vault.label, path: result.active_vault || vault.path })
                               setDevVaultPathRevealed(false)
-                              if (result.rebuilding) {
+                              // G returns a `note` field when indexes need rebuilding
+                              if (result.note || result.rebuilding) {
                                 setDevRebuilding(true)
                                 setTimeout(() => setDevRebuilding(false), 60000)
                               }
