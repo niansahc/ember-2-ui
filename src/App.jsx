@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
+import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
@@ -63,8 +63,6 @@ export default function App() {
   const [onboardingInitial, setOnboardingInitial] = useState({ profile: {}, lodestone: {} })
   const [pinIsSet, setPinIsSet] = useState(false)
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
-  const [devMode, setDevMode] = useState(false)
-  const [devVaultLabel, setDevVaultLabel] = useState(null)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
 
@@ -107,15 +105,6 @@ export default function App() {
     }
     checkLock()
 
-    // Developer mode check
-    async function checkDevMode() {
-      try {
-        const result = await getDeveloperStatus()
-        setDevMode(result.dev_mode || false)
-        if (result.active_vault) setDevVaultLabel(result.active_vault.label)
-      } catch {}
-    }
-    checkDevMode()
   }, [view])
 
   // Listen for PIN setup request from Settings
@@ -301,7 +290,6 @@ export default function App() {
         onOpenSettings={() => { setSettingsOpen(true); setSidebarOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSidebarOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSidebarOpen(false) }}
-        devVaultLabel={devMode ? devVaultLabel : null}
       />
 
       <main className="app-main">
@@ -320,9 +308,6 @@ export default function App() {
           </button>
           <div className="app-header-title-group">
             <h1 className="app-header-title">Ember-2</h1>
-            {devMode && devVaultLabel && (
-              <span className="dev-vault-header-badge" data-testid="dev-vault-header-badge">[{devVaultLabel}]</span>
-            )}
             {model && (
               <button
                 className="app-model-indicator"

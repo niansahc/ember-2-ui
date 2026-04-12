@@ -117,32 +117,14 @@ test.describe('Developer Vault Switcher', () => {
     await expect(note).toContainText('Indexes rebuilding')
   })
 
-  test('header badge shows vault label when dev mode active', async ({ page }) => {
-    await mockBootstrap(page)
-    await mockDevMode(page, DEV_STATUS_ACTIVE)
-    await loadApp(page)
-
-    const headerBadge = page.locator('[data-testid="dev-vault-header-badge"]')
-    await expect(headerBadge).toBeVisible()
-    await expect(headerBadge).toContainText('live')
-  })
-
-  test('sidebar badge shows vault label when dev mode active', async ({ page }) => {
-    await mockBootstrap(page)
-    await mockDevMode(page, DEV_STATUS_ACTIVE)
-    await loadApp(page)
-
-    const sidebarBadge = page.locator('[data-testid="dev-vault-sidebar-badge"]')
-    await expect(sidebarBadge).toBeVisible()
-    await expect(sidebarBadge).toContainText('live')
-  })
-
-  test('no badges when dev mode inactive', async ({ page }) => {
+  test('Developer tab not shown when dev mode inactive (no external badges)', async ({ page }) => {
     await mockBootstrap(page)
     await mockDevMode(page, DEV_STATUS_INACTIVE)
     await loadApp(page)
 
-    await expect(page.locator('[data-testid="dev-vault-header-badge"]')).toHaveCount(0)
-    await expect(page.locator('[data-testid="dev-vault-sidebar-badge"]')).toHaveCount(0)
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+    await expect(page.locator('.settings-page')).toBeVisible()
+    await expect(page.locator('[data-testid="settings-tab-developer"]')).toHaveCount(0)
   })
 })
