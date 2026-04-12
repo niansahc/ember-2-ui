@@ -69,7 +69,7 @@ test.describe('Developer Vault Switcher', () => {
     await expect(devTab).toBeVisible()
   })
 
-  test('Developer tab shows active vault label and masked path', async ({ page }) => {
+  test('Developer tab shows active vault label and plain text path', async ({ page }) => {
     await mockBootstrap(page)
     await mockDevMode(page, DEV_STATUS_ACTIVE)
     await loadApp(page)
@@ -84,11 +84,12 @@ test.describe('Developer Vault Switcher', () => {
     await expect(badge).toBeVisible()
     await expect(badge).toContainText('live')
 
-    // Path is masked by default
+    // Path is shown in plain text — no masking in dev tab
     const path = page.locator('[data-testid="dev-vault-path"]')
     await expect(path).toBeVisible()
     const pathText = await path.textContent()
-    expect(pathText).toContain('\u2022\u2022\u2022\u2022')
+    expect(pathText).toContain('private_vault')
+    expect(pathText).not.toContain('\u2022')
   })
 
   test('Switch Vault button swaps and shows rebuilding note', async ({ page }) => {
