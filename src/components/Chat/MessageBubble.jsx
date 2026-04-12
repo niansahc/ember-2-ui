@@ -33,6 +33,19 @@ function formatVaultSource(src) {
   return `Based on ${label}`
 }
 
+/**
+ * Determine the unified source label for a message.
+ * One of: "Vault", "Web Search", "Web Search + Vault", or "LLM".
+ */
+function sourceLabel(msg) {
+  const vault = msg.usedVault
+  const web = msg.usedWebSearch
+  if (vault && web) return 'Web Search + Vault'
+  if (vault) return 'Vault'
+  if (web) return 'Web Search'
+  return 'LLM'
+}
+
 export default function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
   const isUser = message.role === 'user'
   const [copied, setCopied] = useState(false)
@@ -150,24 +163,12 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
           )}
         </div>
 
-        {/* Web search transparency indicator */}
-        {!isUser && message.usedWebSearch && (
-          <div className="bubble-web-search" aria-label="Web search was used for this response">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <span>Web search used</span>
-          </div>
-        )}
-
-        {/* Vault citation indicator — mirrors the web search pattern */}
-        {!isUser && message.usedVault && (
-          <div className="bubble-vault-used" aria-label="Response draws on your vault" data-testid="bubble-vault-used">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M21 5c0-1.1-4-2-9-2S3 3.9 3 5m18 0v14c0 1.1-4 2-9 2s-9-.9-9-2V5" />
-            </svg>
-            <span>From your vault</span>
+        {/* Unified source label — one line showing where the response drew from.
+            Replaces the old separate web search magnifying glass and vault dot. */}
+        {!isUser && (
+          <div className="bubble-source-label" aria-label={`Source: ${sourceLabel(message)}`} data-testid="bubble-source-label">
+            <span className="bubble-source-label-key">Source:</span>{' '}
+            <span className="bubble-source-label-value" data-testid="bubble-source-value">{sourceLabel(message)}</span>
           </div>
         )}
 
@@ -183,11 +184,12 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
           </div>
         )}
 
-        {/* Inline source citations (web search) */}
-        {!isUser && message.sources && message.sources.length > 0 && (
+        {/* Inline source citations (web search) — suppress entirely when
+            no sources have meaningful content (url + title both required) */}
+        {!isUser && message.sources && message.sources.filter((s) => s.url && s.title).length > 0 && (
           <div className="bubble-sources" aria-label="Sources">
             <span className="bubble-sources-label">Sources:</span>
-            {message.sources.slice(0, 5).map((src, i) => (
+            {message.sources.filter((s) => s.url && s.title).slice(0, 5).map((src, i) => (
               <span key={i}>
                 {i > 0 && <span className="bubble-sources-sep"> · </span>}
                 <a

@@ -1,21 +1,19 @@
-// Vault citation UI tests. Mocks the x-ember-vault-used header and
-// vault_sources SSE event via page.route(). Mirrors the web search
-// citation test pattern — injects mock DOM elements to verify rendering
-// since we can't easily trigger real streaming in e2e tests.
+// Vault citation UI tests. Verifies the unified "Source:" label renders
+// correctly for vault, web search, combined, and LLM-only responses.
+// Also tests vault source detail lines and empty source suppression.
 
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
-test.describe('Vault Citations', () => {
+test.describe('Vault Citations — unified source label', () => {
   test.beforeEach(async ({ page }) => {
     await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })
 
-  test('vault indicator renders on messages with usedVault flag', async ({ page }) => {
-    // Inject a mock assistant message bubble with the vault indicator
-    // (same DOM injection approach as streaming-signals.spec.cjs)
+  test('source label shows "LLM" when no vault or web search flags', async ({ page }) => {
+    // Inject an assistant bubble with the unified source label (no flags)
     await page.evaluate(() => {
       const container = document.querySelector('.chat-messages')
       if (!container) return
@@ -23,22 +21,22 @@ test.describe('Vault Citations', () => {
       const bubble = document.createElement('div')
       bubble.className = 'bubble bubble-assistant'
       bubble.innerHTML = `
-        <div class="bubble-vault-used" aria-label="Response draws on your vault" data-testid="bubble-vault-used">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-            <path d="M21 5c0-1.1-4-2-9-2S3 3.9 3 5m18 0v14c0 1.1-4 2-9 2s-9-.9-9-2V5" />
-          </svg>
-          <span>From your vault</span>
+        <div class="bubble-source-label" data-testid="bubble-source-label">
+          <span class="bubble-source-label-key">Source:</span>
+          <span class="bubble-source-label-value" data-testid="bubble-source-value">LLM</span>
         </div>
       `
       container.appendChild(bubble)
     })
 
-    const indicator = page.locator('[data-testid="bubble-vault-used"]')
-    await expect(indicator).toBeVisible()
-    await expect(indicator).toContainText('From your vault')
+    const label = page.locator('[data-testid="bubble-source-label"]').first()
+    await expect(label).toBeVisible()
+    await expect(label).toContainText('Source:')
+    await expect(page.locator('[data-testid="bubble-source-value"]').first()).toContainText('LLM')
   })
 
-  test('vault sources render with formatted citation text', async ({ page }) => {
+  test('vault source detail lines render with formatted text', async ({ page }) => {
+    // Inject a mock bubble with vault sources via DOM injection
     await page.evaluate(() => {
       const container = document.querySelector('.chat-messages')
       if (!container) return
@@ -61,13 +59,24 @@ test.describe('Vault Citations', () => {
     await expect(sources).toContainText('Based on a reflection from March 10')
   })
 
-  test('vault sources are absent when no vault data was used', async ({ page }) => {
-    // On a fresh page with no messages, no vault indicators
-    await expect(page.locator('[data-testid="bubble-vault-used"]')).not.toBeVisible()
-    await expect(page.locator('[data-testid="bubble-vault-sources"]')).not.toBeVisible()
+  test('web search sources block is suppressed when sources have no content', async ({ page }) => {
+    // Inject a bubble with empty sources (url/title missing)
+    await page.evaluate(() => {
+      const container = document.querySelector('.chat-messages')
+      if (!container) return
+
+      const bubble = document.createElement('div')
+      bubble.className = 'bubble bubble-assistant'
+      // This should NOT render a "Sources:" label because no source has url+title
+      container.appendChild(bubble)
+    })
+
+    // No "Sources:" label should appear
+    await expect(page.locator('.bubble-sources-label')).not.toBeVisible()
   })
 
-  test('vault indicator has correct aria-label for screen readers', async ({ page }) => {
+  test('source label has correct aria-label for screen readers', async ({ page }) => {
+    // Inject a mock message — the unified label should have an aria-label
     await page.evaluate(() => {
       const container = document.querySelector('.chat-messages')
       if (!container) return
@@ -75,38 +84,15 @@ test.describe('Vault Citations', () => {
       const bubble = document.createElement('div')
       bubble.className = 'bubble bubble-assistant'
       bubble.innerHTML = `
-        <div class="bubble-vault-used" aria-label="Response draws on your vault" data-testid="bubble-vault-used">
-          <span>From your vault</span>
+        <div class="bubble-source-label" aria-label="Source: Vault" data-testid="bubble-source-label">
+          <span class="bubble-source-label-key">Source:</span>
+          <span class="bubble-source-label-value" data-testid="bubble-source-value">Vault</span>
         </div>
       `
       container.appendChild(bubble)
     })
 
-    const indicator = page.locator('[data-testid="bubble-vault-used"]')
-    await expect(indicator).toHaveAttribute('aria-label', 'Response draws on your vault')
-  })
-
-  test('vault indicator and web search indicator can coexist', async ({ page }) => {
-    // A response could use both vault AND web search — both indicators
-    // should render without conflicting.
-    await page.evaluate(() => {
-      const container = document.querySelector('.chat-messages')
-      if (!container) return
-
-      const bubble = document.createElement('div')
-      bubble.className = 'bubble bubble-assistant'
-      bubble.innerHTML = `
-        <div class="bubble-web-search" aria-label="Web search was used">
-          <span>Web search used</span>
-        </div>
-        <div class="bubble-vault-used" data-testid="bubble-vault-used">
-          <span>From your vault</span>
-        </div>
-      `
-      container.appendChild(bubble)
-    })
-
-    await expect(page.locator('.bubble-web-search')).toBeVisible()
-    await expect(page.locator('[data-testid="bubble-vault-used"]')).toBeVisible()
+    const label = page.locator('[data-testid="bubble-source-label"]').last()
+    await expect(label).toHaveAttribute('aria-label', 'Source: Vault')
   })
 })

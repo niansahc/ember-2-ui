@@ -71,6 +71,26 @@
 
 /* ── Web search transparency indicator ─────────────────────────── */
 
+/* ── Unified source label — "Source: Vault / Web Search / LLM" ── */
+
+.bubble-source-label {
+  padding: 0.15rem 0.25rem;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.bubble-source-label-key {
+  font-weight: 500;
+}
+
+.bubble-source-label-value {
+  font-style: italic;
+}
+
+/* Legacy web search class — kept for streaming-signals tests that
+   inject .bubble-web-search DOM directly. Safe to remove once those
+   tests are updated to use the unified source label. */
 .bubble-web-search {
   display: flex;
   align-items: center;
@@ -115,8 +135,8 @@
   text-decoration: none;
 }
 
-/* ── Vault citation indicator — warm amber, mirrors web search style ── */
-
+/* Legacy vault indicator class — replaced by unified source label.
+   Kept for vault-citations tests that inject DOM directly. */
 .bubble-vault-used {
   display: flex;
   align-items: center;
@@ -125,10 +145,6 @@
   font-size: 0.7rem;
   color: #f0a84b;
   opacity: 0.8;
-}
-
-.bubble-vault-used svg {
-  flex-shrink: 0;
 }
 
 /* Vault source lines — e.g. "Based on a conversation from March 15" */
