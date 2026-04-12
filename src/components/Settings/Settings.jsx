@@ -36,7 +36,8 @@ const PROVIDERS = [
 ]
 
 // Disk encryption docs links — official vendor docs only, routed by the
-// `method` field returned by GET /v1/system/disk-encryption.
+// `method` field (preferred) or `platform` field (fallback) from
+// GET /v1/system/disk-encryption.
 const DISK_ENCRYPTION_DOCS = {
   bitlocker: 'https://support.microsoft.com/en-us/windows/device-encryption-in-windows-ad5dcf4b-dbe0-2331-228f-7925c2a3012d',
   filevault: 'https://support.apple.com/guide/mac-help/protect-data-on-your-mac-with-filevault-mh11785/mac',
@@ -47,6 +48,12 @@ const DISK_ENCRYPTION_LABELS = {
   bitlocker: 'BitLocker',
   filevault: 'FileVault',
   luks: 'LUKS',
+}
+// Fallback: if backend returns method=null, infer from platform.
+const PLATFORM_TO_METHOD = {
+  windows: 'bitlocker',
+  darwin: 'filevault',
+  linux: 'luks',
 }
 
 const TABS = [
@@ -647,17 +654,21 @@ export default function Settings({ isOpen, initialTab, onClose, onOpenBugReport,
                   <span className="device-security-dot device-security-dot-disabled" aria-hidden="true" />
                   <div className="device-security-body">
                     <span className="device-security-text">Your vault data is not encrypted at rest.</span>
-                    {diskEncryption.method && diskEncryption.method !== null && (
-                      <a
-                        className="device-security-link"
-                        href={DISK_ENCRYPTION_DOCS[diskEncryption.method] || DISK_ENCRYPTION_DOCS_FALLBACK}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-testid="device-security-link"
-                      >
-                        Learn how to enable {DISK_ENCRYPTION_LABELS[diskEncryption.method] || 'disk encryption'}
-                      </a>
-                    )}
+                    {(() => {
+                      const key = diskEncryption.method || PLATFORM_TO_METHOD[(diskEncryption.platform || '').toLowerCase()]
+                      if (!key) return null
+                      return (
+                        <a
+                          className="device-security-link"
+                          href={DISK_ENCRYPTION_DOCS[key] || DISK_ENCRYPTION_DOCS_FALLBACK}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-testid="device-security-link"
+                        >
+                          Learn how to enable {DISK_ENCRYPTION_LABELS[key] || 'disk encryption'}
+                        </a>
+                      )
+                    })()}
                   </div>
                 </div>
               )}
