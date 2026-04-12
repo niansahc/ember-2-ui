@@ -17,11 +17,22 @@
 
 /* ── Collapsed dots ──────────────────────────────────────────── */
 
+/* Clickable/focusable zone — min 44px touch target wraps the small dots */
 .service-dots {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+}
+
+.service-dots:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .service-dot {
@@ -139,6 +150,11 @@
   cursor: default;
 }
 
+.service-restart-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .service-restart-spinner {
   width: 10px;
   height: 10px;
@@ -173,6 +189,11 @@
 .service-shutdown-btn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.service-shutdown-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */

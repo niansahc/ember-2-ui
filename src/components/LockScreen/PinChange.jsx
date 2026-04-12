@@ -104,7 +104,7 @@ export default function PinChange({ onDone, onCancel }) {
               />
             </div>
 
-            {error && <p className="pin-setup-error">{error}</p>}
+            {error && <p className="pin-setup-error" role="alert" aria-live="polite">{error}</p>}
 
             <button type="submit" className="pin-setup-btn-primary">
               Next
@@ -150,7 +150,7 @@ export default function PinChange({ onDone, onCancel }) {
             />
           </div>
 
-          {error && <p className="pin-setup-error">{error}</p>}
+          {error && <p className="pin-setup-error" role="alert" aria-live="polite">{error}</p>}
 
           <button type="submit" className="pin-setup-btn-primary" disabled={saving} data-testid="pin-change-submit">
             {saving ? 'Updating…' : 'Update PIN'}

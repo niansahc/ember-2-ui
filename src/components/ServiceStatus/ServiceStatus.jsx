@@ -140,8 +140,20 @@ export default function ServiceStatus() {
         </div>
       )}
 
-      {/* Collapsed dots */}
-      <div className="service-dots" data-testid="service-dots">
+      {/* Collapsed dots — keyboard-accessible so non-mouse users can expand */}
+      <div
+        className="service-dots"
+        data-testid="service-dots"
+        role="button"
+        tabIndex={0}
+        aria-label={`Service status: API ${statusLabel(health.api)}, Docker ${statusLabel(health.docker)}. Press Enter to expand.`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setExpanded((v) => !v)
+          }
+        }}
+      >
         {SERVICES.map((svc) => (
           <span
             key={svc.key}
