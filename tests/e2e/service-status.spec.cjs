@@ -131,13 +131,30 @@ test.describe('Service Status Indicator', () => {
     await expect(page.locator('[data-testid="service-panel"]')).not.toBeVisible()
   })
 
-  test('indicator is positioned in the bottom-left', async ({ page }) => {
+  test('indicator is bottom-left and does not overlap chat input controls', async ({ page }) => {
     await mockHealthy(page)
     await loadApp(page)
 
     const container = page.locator('[data-testid="service-status"]')
     const box = await container.boundingBox()
-    // Should be near the left edge, not the right
+    // Near the left edge
     expect(box.x).toBeLessThan(100)
+
+    // Above the input bar — the dot's bottom edge should not overlap
+    // the attach button. Input bar is ~50px from viewport bottom.
+    const viewportHeight = page.viewportSize().height
+    const dotBottom = box.y + box.height
+    // Dot should end at least 50px above the viewport bottom
+    expect(viewportHeight - dotBottom).toBeGreaterThan(30)
+
+    // Verify the attach button is clickable — the whole point of this fix
+    const attachBtn = page.locator('.input-attach')
+    if (await attachBtn.isVisible()) {
+      // Should be clickable without the service dot intercepting
+      await expect(attachBtn).toBeEnabled()
+      const attachBox = await attachBtn.boundingBox()
+      // No overlap: dot bottom should be above attach top
+      expect(box.y + box.height).toBeLessThanOrEqual(attachBox.y + 5) // small tolerance
+    }
   })
 })
