@@ -279,6 +279,31 @@ test.describe('Settings', () => {
     await expect(toggle).not.toBeChecked()
   })
 
+  test('Launch Installer button is visible in About tab and triggers POST', async ({ page }) => {
+    let launchCalls = 0
+    await page.route('**/system/launch-installer', async (route) => {
+      launchCalls += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'launched' }),
+      })
+    })
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const aboutTab = page.locator('.settings-tab', { hasText: 'About' })
+    await aboutTab.click()
+
+    const launchBtn = page.locator('[data-testid="launch-installer-btn"]')
+    await expect(launchBtn).toBeVisible()
+    await expect(launchBtn).toContainText('Launch Installer')
+    await launchBtn.click()
+
+    expect(launchCalls).toBe(1)
+  })
+
   test('web search tooltip does not clip outside settings panel', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()

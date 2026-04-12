@@ -658,6 +658,23 @@ export async function swapVault(vaultLabel) {
   return await res.json()
 }
 
+/**
+ * Launch the Ember installer on the user's machine.
+ * G is building POST /v1/system/launch-installer which shells
+ * out to open the installer executable.
+ */
+export async function launchInstaller() {
+  const res = await fetch(`${API_URL}/system/launch-installer`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Launch failed (${res.status})`)
+  }
+  return await res.json()
+}
+
 export const hasApiKey = !!API_KEY
 
 function authHeaders() {
