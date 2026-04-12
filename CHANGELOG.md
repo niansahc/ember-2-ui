@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.7.4 — 2026-04-12
+
+### Features
+- Launch Installer button in Settings > About tab
+
+### Bug Fixes
+- Autonomous web search toggle now defaults to OFF (was showing ON from stale backend pref)
+- Web search tooltip no longer clips outside Settings panel bounds
+- Service status dot repositioned inside content area — never overlaps sidebar or input controls
+
+---
+
 ## v0.7.3 — 2026-04-12
 
 ### Features
