@@ -45,8 +45,10 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
     throw new Error(`API error ${res.status}: ${text}`)
   }
 
-  // Web search transparency: read header before consuming the stream
+  // Transparency headers: read before consuming the stream so the UI can
+  // show indicators for web search and vault-grounded responses.
   const usedWebSearch = res.headers.get('x-ember-web-search') === 'true'
+  const usedVault = res.headers.get('x-ember-vault-used') === 'true'
 
   async function* chunks() {
     const reader = res.body.getReader()
@@ -81,6 +83,13 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
             continue
           }
 
+          // Vault sources event: citations from vault-grounded responses
+          // G ships this as { type: 'vault_sources', sources: [...] }
+          if (parsed.type === 'vault_sources' && parsed.sources) {
+            yield { type: 'vault_sources', sources: parsed.sources }
+            continue
+          }
+
           const content = parsed.choices?.[0]?.delta?.content
           if (content) yield content
         } catch {
@@ -90,7 +99,7 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
     }
   }
 
-  return { stream: chunks(), usedWebSearch }
+  return { stream: chunks(), usedWebSearch, usedVault }
 }
 
 // ---------------------------------------------------------------------------

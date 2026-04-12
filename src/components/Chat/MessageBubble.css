@@ -115,6 +115,35 @@
   text-decoration: none;
 }
 
+/* ── Vault citation indicator — warm amber, mirrors web search style ── */
+
+.bubble-vault-used {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.7rem;
+  color: #f0a84b;
+  opacity: 0.8;
+}
+
+.bubble-vault-used svg {
+  flex-shrink: 0;
+}
+
+/* Vault source lines — e.g. "Based on a conversation from March 15" */
+.bubble-vault-sources {
+  padding: 0.2rem 0.25rem 0;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+  line-height: 1.6;
+}
+
+.bubble-vault-source {
+  font-style: italic;
+}
+
 /* ── Actions bar (copy, regenerate, timestamp) ────────────────── */
 
 .bubble-actions {

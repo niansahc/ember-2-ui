@@ -144,7 +144,7 @@ export function useChat() {
           // Stream from real API — tokens arrive one at a time
           // streamChat returns { stream, usedWebSearch } so we can read
           // the web search transparency header before consuming chunks.
-          const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
+          const { stream, usedWebSearch, usedVault } = await realStreamChat(allMessages, { sessionId })
           if (usedWebSearch) {
             setStreamingStatus('searching')
           }
@@ -155,11 +155,20 @@ export function useChat() {
               setStreamingStatus(chunk.content)
               continue
             }
-            // Sources event: inline citations
+            // Sources event: inline citations (web search)
             if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId ? { ...m, sources: chunk.sources } : m,
+                ),
+              )
+              continue
+            }
+            // Vault sources event: citations from vault-grounded responses
+            if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m,
                 ),
               )
               continue
@@ -172,11 +181,18 @@ export function useChat() {
               ),
             )
           }
-          // Mark web search indicator after stream completes
+          // Mark transparency indicators after stream completes
           if (usedWebSearch) {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedWebSearch: true } : m,
+              ),
+            )
+          }
+          if (usedVault) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedVault: true } : m,
               ),
             )
           }
@@ -279,9 +295,19 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          const { stream, usedWebSearch } = await realStreamChat(allMessages, { sessionId })
+          const { stream, usedWebSearch, usedVault } = await realStreamChat(allMessages, { sessionId })
           for await (const chunk of stream) {
             if (abortRef.current) break
+            // Handle object events (vault_sources, sources, status) same as main path
+            if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+              setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m))
+              continue
+            }
+            if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
+              setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, sources: chunk.sources } : m))
+              continue
+            }
+            if (chunk && typeof chunk === 'object') continue // skip other object events
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: m.content + chunk } : m,
@@ -292,6 +318,13 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedWebSearch: true } : m,
+              ),
+            )
+          }
+          if (usedVault) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedVault: true } : m,
               ),
             )
           }

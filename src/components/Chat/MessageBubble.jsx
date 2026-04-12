@@ -5,6 +5,34 @@ import emberMascot from '../../../assets/ember-mascot.png'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
 import './MessageBubble.css'
 
+/**
+ * Turn a vault source record into a human-friendly citation string.
+ * G sends { type, timestamp, summary } — we want something warm and
+ * readable like "Based on a conversation from March 15" rather than
+ * raw metadata. Falls back to the summary if type is unexpected.
+ */
+function formatVaultSource(src) {
+  const typeLabels = {
+    conversation: 'a conversation',
+    reflection: 'a reflection',
+    journal: 'a journal entry',
+    state: 'a state record',
+    ingested: 'an imported document',
+    lodestone: 'a lodestone record',
+  }
+  const label = typeLabels[src.type] || src.summary || 'a memory'
+  if (src.timestamp) {
+    try {
+      const date = new Date(src.timestamp.replace(/-/g, (m, i) => i > 9 ? ':' : m))
+      if (!isNaN(date)) {
+        const formatted = date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+        return `Based on ${label} from ${formatted}`
+      }
+    } catch { /* fall through */ }
+  }
+  return `Based on ${label}`
+}
+
 export default function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
   const isUser = message.role === 'user'
   const [copied, setCopied] = useState(false)
@@ -133,7 +161,29 @@ export default function MessageBubble({ message, isLast, onRegenerate, onEdit })
           </div>
         )}
 
-        {/* Inline source citations */}
+        {/* Vault citation indicator — mirrors the web search pattern */}
+        {!isUser && message.usedVault && (
+          <div className="bubble-vault-used" aria-label="Response draws on your vault" data-testid="bubble-vault-used">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M21 5c0-1.1-4-2-9-2S3 3.9 3 5m18 0v14c0 1.1-4 2-9 2s-9-.9-9-2V5" />
+            </svg>
+            <span>From your vault</span>
+          </div>
+        )}
+
+        {/* Vault source citations — "Based on a conversation from March 15" etc. */}
+        {!isUser && message.vaultSources && message.vaultSources.length > 0 && (
+          <div className="bubble-vault-sources" aria-label="Vault sources" data-testid="bubble-vault-sources">
+            {message.vaultSources.slice(0, 5).map((src, i) => (
+              <span key={i} className="bubble-vault-source">
+                {i > 0 && <span className="bubble-sources-sep"> · </span>}
+                {formatVaultSource(src)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Inline source citations (web search) */}
         {!isUser && message.sources && message.sources.length > 0 && (
           <div className="bubble-sources" aria-label="Sources">
             <span className="bubble-sources-label">Sources:</span>
