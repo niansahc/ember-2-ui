@@ -1,10 +1,12 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
-// Edge case tests — UI resilience, localStorage corruption, layout stability
+// Edge case tests — UI resilience, localStorage corruption, layout stability.
+// Uses bootstrap mocks so splash → chat transition is deterministic.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('Edge Cases — Input Handling', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })
@@ -49,6 +51,7 @@ test.describe('Edge Cases — Input Handling', () => {
 
 test.describe('Edge Cases — Layout Stability', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })
@@ -133,6 +136,7 @@ test.describe('Edge Cases — Layout Stability', () => {
 test.describe('Edge Cases — localStorage Resilience', () => {
   test('corrupted theme value in localStorage falls back to default', async ({ page }) => {
     // Inject bad theme value before load
+    await mockBootstrap(page)
     await page.addInitScript(() => {
       localStorage.setItem('ember-theme', 'nonexistent-theme')
     })
@@ -148,6 +152,7 @@ test.describe('Edge Cases — localStorage Resilience', () => {
   })
 
   test('corrupted custom theme JSON in localStorage does not crash', async ({ page }) => {
+    await mockBootstrap(page)
     await page.addInitScript(() => {
       localStorage.setItem('ember-theme', 'custom')
       localStorage.setItem('ember-theme-custom', '{invalid json!!!')
@@ -160,6 +165,7 @@ test.describe('Edge Cases — localStorage Resilience', () => {
   })
 
   test('empty localStorage loads app with defaults', async ({ page }) => {
+    await mockBootstrap(page)
     await page.addInitScript(() => {
       localStorage.clear()
     })
@@ -179,6 +185,7 @@ test.describe('Edge Cases — Mobile Layout', () => {
   test.use({ viewport: { width: 375, height: 667 } })
 
   test('chat input stays visible after focusing and blurring', async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
@@ -195,6 +202,7 @@ test.describe('Edge Cases — Mobile Layout', () => {
   })
 
   test('settings panel does not overflow viewport on mobile', async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 

@@ -1,9 +1,15 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
+// Uses bootstrap mocks so splash → chat is deterministic under parallel
+// worker load. Tests in this file verify Settings UI behavior; none of
+// them inspect real model switching or real preference writes, so mocking
+// the bootstrap GETs is safe. POST/PATCH requests still hit the real
+// backend because mockBootstrap scopes its handlers to GET only.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('Settings', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

@@ -1,6 +1,9 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
+// Uses bootstrap mocks so splash → chat transition is deterministic under
+// parallel worker load. None of the tests in this file inspect real model
+// or preference data; they verify mobile layout behavior.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 // iPhone 14 viewport
 const MOBILE = { width: 390, height: 844 }
@@ -9,6 +12,7 @@ test.describe('Mobile Viewport', () => {
   test.use({ viewport: MOBILE })
 
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

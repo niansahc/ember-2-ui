@@ -1,8 +1,7 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
-
 const { test, expect } = require('@playwright/test')
 const path = require('path')
 const fs = require('fs')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 // Read API key from .env file for direct API calls in tests
 function readApiKey() {
@@ -43,6 +42,7 @@ async function cleanupTask(taskId) {
 
 test.describe('Task Tray', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

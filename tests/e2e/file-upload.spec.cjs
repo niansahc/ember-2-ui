@@ -1,10 +1,10 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
-
 const { test, expect } = require('@playwright/test')
 const path = require('path')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('File Upload', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

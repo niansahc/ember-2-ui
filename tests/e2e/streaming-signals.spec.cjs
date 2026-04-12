@@ -1,11 +1,15 @@
 // Tests for streaming status signals and inline source citations.
 // These tests inject mock SSE events via page.evaluate to simulate
 // backend status events without requiring the actual API pipeline.
+// Uses bootstrap mocks so the app loads deterministically — none of the
+// streaming/sources assertions care about real model or preference data.
 
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('Streaming Signals & Sources', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

@@ -1,7 +1,9 @@
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('About Nature', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 

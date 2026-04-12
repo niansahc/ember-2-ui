@@ -1,11 +1,10 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
-
 const { test, expect } = require('@playwright/test')
+const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('Sidebar', () => {
   test.beforeEach(async ({ page }) => {
+    await mockBootstrap(page)
     await page.goto('/')
-    // Wait for splash to connect and transition to chat
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })
 
