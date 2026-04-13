@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, HelpCircle, CheckCircle, Minimize2, GitBranch } from 'lucide-react'
+import { Search, HelpCircle, CheckCircle, Minimize2, GitBranch, Database } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -70,7 +70,9 @@ export default function App() {
   const [searchAutonomous, setSearchAutonomous] = useState(false)
   const [deviationOn, setDeviationOn] = useState(false)
 
-  const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
+  const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
+  const [bareMode, setBareMode] = useState(false)
+  const [vaultOff, setVaultOff] = useState(false)
 
   // Guided first-run tour — shows once for new users, only when not locked
   useTour(view === 'chat' && !isLocked && !showPinSetup)
@@ -227,6 +229,8 @@ export default function App() {
   function handleNewConversation(projectId) {
     clearMessages()
     setActiveConversation(null)
+    setBareMode(false)
+    setVaultOff(false)
     try { localStorage.removeItem('ember_active_session') } catch {}
     setSidebarOpen(false)
     // If started from a project view, assign new conversation to that project
@@ -394,6 +398,32 @@ export default function App() {
             )}
           </div>
           <div className="app-header-actions">
+            {!webSearchOn && (
+              <button
+                className={`app-conv-toggle ${bareMode ? 'app-conv-toggle-active' : ''}`}
+                onClick={() => {
+                  const next = !bareMode
+                  setBareMode(next)
+                  setChatOptions({ bareMode: next })
+                }}
+                title={bareMode ? 'Bare mode on — personality off' : 'Enable bare mode'}
+                aria-label={bareMode ? 'Bare mode is on. Click to disable.' : 'Enable bare mode for this conversation.'}
+              >
+                <Minimize2 size={15} aria-hidden="true" />
+              </button>
+            )}
+            <button
+              className={`app-conv-toggle ${vaultOff ? 'app-conv-toggle-active' : ''}`}
+              onClick={() => {
+                const next = !vaultOff
+                setVaultOff(next)
+                setChatOptions({ vaultEnabled: !next })
+              }}
+              title={vaultOff ? 'Vault off — conversation not saved' : 'Vault on — conversation saved'}
+              aria-label={vaultOff ? 'Vault is off. Click to enable saving.' : 'Vault is on. Click to disable saving for this conversation.'}
+            >
+              <Database size={15} aria-hidden="true" />
+            </button>
             {messages.length > 0 && (
               <button
                 className="app-header-btn"
@@ -421,6 +451,12 @@ export default function App() {
           </button>
           </div>
         </header>
+
+        {vaultOff && (
+          <div className="app-vault-banner" role="status">
+            Vault off — this conversation won't be saved.
+          </div>
+        )}
 
         <Chat
           messages={messages}

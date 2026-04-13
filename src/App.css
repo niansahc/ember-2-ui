@@ -134,6 +134,58 @@
   }
 }
 
+/* ── Per-conversation toggles (header actions) ─────────────── */
+
+.app-conv-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  opacity: 0.5;
+}
+
+.app-conv-toggle:hover {
+  background: var(--bg-surface-hover);
+  opacity: 1;
+}
+
+.app-conv-toggle-active {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.app-conv-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .app-conv-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── Vault-off banner ──────────────────────────────────────── */
+
+.app-vault-banner {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
 .app-header-actions {
   display: flex;
   align-items: center;

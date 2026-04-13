@@ -24,7 +24,11 @@ if (!API_KEY) {
  * Stream a chat response from the Ember API.
  * Yields text chunks as they arrive.
  */
-export async function streamChat(messages, { sessionId = '', signal } = {}) {
+export async function streamChat(messages, { sessionId = '', signal, bareMode, vaultEnabled } = {}) {
+  const body = { model: 'ember', messages, stream: true }
+  if (bareMode != null) body.bare_mode = bareMode
+  if (vaultEnabled != null) body.vault_enabled = vaultEnabled
+
   const res = await fetch(`${API_URL}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -32,11 +36,7 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
       ...authHeaders(),
       ...(sessionId && { 'X-Session-ID': sessionId }),
     },
-    body: JSON.stringify({
-      model: 'ember',
-      messages,
-      stream: true,
-    }),
+    body: JSON.stringify(body),
     signal,
   })
 
