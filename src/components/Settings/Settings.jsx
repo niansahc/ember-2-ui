@@ -118,6 +118,7 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   const [devRebuilding, setDevRebuilding] = useState(false)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
   const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
+  const [contextLength, setContextLength] = useState(8192)
   const [lodestoneRecords, setLodestoneRecords] = useState([])
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
   const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
@@ -205,6 +206,7 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
         setDeviationEnabled(prefs.deviation_enabled || false)
         setWebSearch(prefs.web_search !== false)
         setWebSearchAutonomous(prefs.web_search_autonomous || false)
+        if (prefs.context_length) setContextLength(prefs.context_length)
         setSecurityPinSet(pinStatus.pin_set)
       } catch {}
     }
@@ -1242,6 +1244,32 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
               <hr className="settings-divider" />
 
               <div className="settings-section-label">Features</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Context length</span>
+                  <span className="settings-row-hint">
+                    Max tokens Ollama uses for context. Higher values use more VRAM. Default: 8192.
+                  </span>
+                </div>
+                <select
+                  className="settings-select"
+                  value={contextLength}
+                  onChange={(e) => {
+                    const val = Number(e.target.value)
+                    setContextLength(val)
+                    updatePreferences({ context_length: val })
+                  }}
+                >
+                  <option value="2048">2048</option>
+                  <option value="4096">4096</option>
+                  <option value="8192">8192</option>
+                  <option value="16384">16384</option>
+                  <option value="32768">32768</option>
+                  <option value="65536">65536</option>
+                  <option value="131072">131072</option>
+                </select>
+              </div>
 
               <div className="settings-row">
                 <div className="settings-row-info">
