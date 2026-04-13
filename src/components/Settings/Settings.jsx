@@ -432,100 +432,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
           {/* ── General tab ───────────────────────────────────── */}
           {activeTab === 'general' && (
             <div id="settings-panel-general" role="tabpanel" className="settings-tab-panel">
-              <div className="settings-section-label">Appearance</div>
-
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Theme</span>
-                </div>
-              </div>
-              <div className="theme-picker" role="radiogroup" aria-label="Choose a theme">
-                {themes?.map((t) => (
-                  <button
-                    key={t.id}
-                    className={`theme-swatch ${theme === t.id ? 'theme-swatch-active' : ''}`}
-                    onClick={() => setTheme(t.id)}
-                    role="radio"
-                    aria-checked={theme === t.id}
-                    aria-label={t.name}
-                    title={t.name}
-                  >
-                    <div className="theme-swatch-colors">
-                      <span className="theme-swatch-bg" style={{ background: t.preview[0] }} />
-                      <span className="theme-swatch-accent" style={{ background: t.preview[1] }} />
-                      <span className="theme-swatch-text" style={{ background: t.preview[2] }} />
-                    </div>
-                    <span className="theme-swatch-name">{t.name}</span>
-                  </button>
-                ))}
-              </div>
-
-              {theme === 'custom' && (
-                <div className="custom-theme-pickers">
-                  <label className="custom-theme-field">
-                    <span className="custom-theme-label">Accent</span>
-                    <input
-                      type="color"
-                      value={customColors.accent}
-                      onChange={(e) => setCustomColors({ accent: e.target.value })}
-                      className="custom-theme-input"
-                      aria-label="Custom accent color"
-                    />
-                    <span className="custom-theme-hex">{customColors.accent}</span>
-                  </label>
-                  <label className="custom-theme-field">
-                    <span className="custom-theme-label">Background</span>
-                    <input
-                      type="color"
-                      value={customColors.bg}
-                      onChange={(e) => setCustomColors({ bg: e.target.value })}
-                      className="custom-theme-input"
-                      aria-label="Custom background color"
-                    />
-                    <span className="custom-theme-hex">{customColors.bg}</span>
-                  </label>
-                </div>
-              )}
-
-              <hr className="settings-divider" />
-
-              <div className="settings-section-label">Conversation</div>
-
-              <div className="settings-style-section">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Conversational Style</span>
-                  <span className="settings-row-hint">Controls how Ember responds</span>
-                </div>
-                <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
-                  {[
-                    { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
-                    { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
-                    { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
-                  ].map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name="conversational_style"
-                        value={opt.value}
-                        checked={tone === opt.value}
-                        onChange={() => {
-                          setTone(opt.value)
-                          updatePreferences({ conversational_style: opt.value })
-                        }}
-                        className="sr-only"
-                      />
-                      <span className="settings-style-label">{opt.label}</span>
-                      <span className="settings-style-desc">{opt.desc}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <hr className="settings-divider" />
-
               <div className="settings-section-label">Models</div>
 
               {/* Tab selector */}
@@ -619,6 +525,100 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                   <div className="cloud-disclosure">
                     When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device.
                   </div>
+                </div>
+              )}
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Conversation</div>
+
+              <div className="settings-style-section">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Conversational Style</span>
+                  <span className="settings-row-hint">Controls how Ember responds</span>
+                </div>
+                <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
+                  {[
+                    { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
+                    { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
+                    { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="conversational_style"
+                        value={opt.value}
+                        checked={tone === opt.value}
+                        onChange={() => {
+                          setTone(opt.value)
+                          updatePreferences({ conversational_style: opt.value })
+                        }}
+                        className="sr-only"
+                      />
+                      <span className="settings-style-label">{opt.label}</span>
+                      <span className="settings-style-desc">{opt.desc}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Appearance</div>
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Theme</span>
+                </div>
+              </div>
+              <div className="theme-picker" role="radiogroup" aria-label="Choose a theme">
+                {themes?.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`theme-swatch ${theme === t.id ? 'theme-swatch-active' : ''}`}
+                    onClick={() => setTheme(t.id)}
+                    role="radio"
+                    aria-checked={theme === t.id}
+                    aria-label={t.name}
+                    title={t.name}
+                  >
+                    <div className="theme-swatch-colors">
+                      <span className="theme-swatch-bg" style={{ background: t.preview[0] }} />
+                      <span className="theme-swatch-accent" style={{ background: t.preview[1] }} />
+                      <span className="theme-swatch-text" style={{ background: t.preview[2] }} />
+                    </div>
+                    <span className="theme-swatch-name">{t.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              {theme === 'custom' && (
+                <div className="custom-theme-pickers">
+                  <label className="custom-theme-field">
+                    <span className="custom-theme-label">Accent</span>
+                    <input
+                      type="color"
+                      value={customColors.accent}
+                      onChange={(e) => setCustomColors({ accent: e.target.value })}
+                      className="custom-theme-input"
+                      aria-label="Custom accent color"
+                    />
+                    <span className="custom-theme-hex">{customColors.accent}</span>
+                  </label>
+                  <label className="custom-theme-field">
+                    <span className="custom-theme-label">Background</span>
+                    <input
+                      type="color"
+                      value={customColors.bg}
+                      onChange={(e) => setCustomColors({ bg: e.target.value })}
+                      className="custom-theme-input"
+                      aria-label="Custom background color"
+                    />
+                    <span className="custom-theme-hex">{customColors.bg}</span>
+                  </label>
                 </div>
               )}
 
