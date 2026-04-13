@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, HelpCircle, CheckCircle, Minimize2 } from 'lucide-react'
+import { Search, HelpCircle, CheckCircle, Minimize2, GitBranch } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -68,6 +68,7 @@ export default function App() {
   const [devVaultLabel, setDevVaultLabel] = useState(null)
   const [webSearchOn, setWebSearchOn] = useState(false)
   const [searchAutonomous, setSearchAutonomous] = useState(false)
+  const [deviationOn, setDeviationOn] = useState(false)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
 
@@ -110,6 +111,7 @@ export default function App() {
         // feature flags for header icons
         setWebSearchOn(prefs.web_search !== false)
         setSearchAutonomous(prefs.web_search_autonomous || false)
+        setDeviationOn(prefs.deviation_enabled || false)
       } catch {}
     }
     checkLock()
@@ -337,7 +339,6 @@ export default function App() {
                 title={model}
                 aria-label={`Current model: ${model}. Click to change.`}
               >
-                <span className={`app-model-dot ${isCloudModelName(model) ? 'app-model-dot-cloud' : ''}`} />
                 <span className="app-model-name">{displayModelName(model)}</span>
               </button>
             )}
@@ -379,6 +380,16 @@ export default function App() {
                 aria-label="Bare mode, web search disabled. Click to open Features settings."
               >
                 <Minimize2 size={15} aria-hidden="true" />
+              </button>
+            )}
+            {deviationOn && (
+              <button
+                className="app-feature-icon"
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
+                title="Deviation engine is on"
+                aria-label="Deviation engine is on. Click to open Features settings."
+              >
+                <GitBranch size={15} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -428,8 +439,13 @@ export default function App() {
         onClose={() => {
           setSettingsOpen(false)
           setSettingsInitialTab(null)
-          // Re-fetch model in case it changed externally or via settings
+          // re-fetch model and feature prefs in case they changed in Settings
           realGetModel().then((data) => { if (data.model) setModel(data.model) }).catch(() => {})
+          getPreferences().then((prefs) => {
+            setWebSearchOn(prefs.web_search !== false)
+            setSearchAutonomous(prefs.web_search_autonomous || false)
+            setDeviationOn(prefs.deviation_enabled || false)
+          }).catch(() => {})
         }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}

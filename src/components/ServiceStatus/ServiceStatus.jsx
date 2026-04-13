@@ -89,6 +89,7 @@ export default function ServiceStatus() {
       <button
         className="ss-dot-btn"
         onClick={() => setExpanded((v) => !v)}
+        title={`API: ${statusLabel(health.api)}`}
         aria-label={`Service status: ${statusLabel(health.api)}. Click to expand.`}
         data-testid="service-dots"
       >

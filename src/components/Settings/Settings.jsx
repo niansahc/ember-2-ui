@@ -193,6 +193,7 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
         setIdleLockEnabled(prefs.idle_lock_enabled || false)
         setIdleTimeout(prefs.idle_timeout || 15)
         setDeviationEnabled(prefs.deviation_enabled || false)
+        setWebSearch(prefs.web_search !== false)
         setWebSearchAutonomous(prefs.web_search_autonomous || false)
         setSecurityPinSet(pinStatus.pin_set)
       } catch {}
@@ -1134,7 +1135,10 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                   <input
                     type="checkbox" role="switch"
                     checked={webSearch}
-                    onChange={(e) => setWebSearch(e.target.checked)}
+                    onChange={(e) => {
+                      setWebSearch(e.target.checked)
+                      updatePreferences({ web_search: e.target.checked })
+                    }}
                   />
                   <span className="toggle-track" />
                 </label>
