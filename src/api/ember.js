@@ -660,11 +660,9 @@ export async function swapVault(vaultLabel) {
 
 /**
  * Launch the Ember installer on the user's machine.
- * G is building POST /v1/system/launch-installer which shells
- * out to open the installer executable.
  */
 export async function launchInstaller() {
-  const res = await fetch(`${API_URL}/system/launch-installer`, {
+  const res = await fetch(`${API_URL}/launch-installer`, {
     method: 'POST',
     headers: { ...authHeaders() },
   })
@@ -672,6 +670,17 @@ export async function launchInstaller() {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.detail || `Launch failed (${res.status})`)
   }
+  return await res.json()
+}
+
+/**
+ * Get vault storage stats -- current size and 30-day projection.
+ */
+export async function getVaultStorage() {
+  const res = await fetch(`${API_URL}/vault/storage`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return null
   return await res.json()
 }
 

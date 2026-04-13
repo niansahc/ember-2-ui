@@ -15,9 +15,18 @@ import {
   getDeveloperStatus,
   swapVault,
   launchInstaller,
+  getVaultStorage,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
+
+function formatBytes(bytes) {
+  if (bytes == null) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
 
 // Cloud models by provider (matches CLOUD_MODELS in config.py)
 const CLOUD_MODELS = {
@@ -95,6 +104,7 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   const [confirmingRemove, setConfirmingRemove] = useState(null) // provider id or null
   const [vaultPathRevealed, setVaultPathRevealed] = useState(false)
   const [vaultCopied, setVaultCopied] = useState(false)
+  const [vaultStorage, setVaultStorage] = useState(null)
   const [securityPinSet, setSecurityPinSet] = useState(false)
   const [diskEncryption, setDiskEncryption] = useState(null) // null = not yet fetched; { ok, enabled, platform, method } once loaded
   const [lockOnLaunch, setLockOnLaunch] = useState(false)
@@ -231,6 +241,12 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
 
     return () => { ignore = true }
   }, [isOpen])
+
+  // Deferred: vault storage stats — only fetched when Memory tab is active.
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'memory') return
+    getVaultStorage().then((data) => { if (data) setVaultStorage(data) }).catch(() => {})
+  }, [isOpen, activeTab])
 
   // Deferred: lodestone records — only fetched when Memory tab is active.
   // Saves one API call when opening Settings to any other tab.
@@ -919,6 +935,20 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 </div>
               </div>
 
+              {vaultStorage && (
+                <div className="settings-row vault-storage-row">
+                  <div className="settings-row-info">
+                    <span className="settings-row-label">Storage</span>
+                    <span className="settings-row-hint">
+                      {formatBytes(vaultStorage.current_bytes)}
+                      {vaultStorage.projection_30d_bytes != null && (
+                        <> — projected {formatBytes(vaultStorage.projection_30d_bytes)} in 30 days</>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <hr className="settings-divider" />
 
               <div className="settings-section-label">Lodestone</div>
@@ -1265,7 +1295,9 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 className="settings-link-btn"
                 data-testid="launch-installer-btn"
                 onClick={async () => {
-                  try { await launchInstaller() } catch { /* endpoint may not exist yet */ }
+                  try { await launchInstaller() } catch (err) {
+                    console.warn('[Settings] Launch installer failed:', err.message)
+                  }
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
