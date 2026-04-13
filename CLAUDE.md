@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.7.1 (published). 62 Playwright tests passing, 3 skipped. BUG-001 (sidebar conversation links) fixed in v0.7.1. Settings redesign, onboarding flow, and lodestone panel shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.7.4 (published). 113 Playwright tests passing, 17 skipped. Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -30,7 +30,13 @@ These exist and must not be re-implemented:
 - Conversational style selector (Casual/Balanced/Thoughtful card selector in Settings)
 - PIN/passphrase lock screen with idle timeout and recovery
 - Multi-image upload — select and send multiple images in a single message
+- Vault citation UI -- unified "Source: Vault / Web Search / LLM" label on every assistant message
 - Web search transparency indicator (magnifying glass icon on messages that used web search)
+- Service status indicator -- breathing dot with hover panel for restart/shutdown
+- Change PIN flow in Settings > Security (verify current, enter new, confirm)
+- Disk encryption status in Settings > Security with platform-appropriate docs link
+- Developer vault switcher in Settings > Developer tab (dev mode only)
+- Launch Installer button in Settings > About tab
 - Session restore on page refresh via localStorage
 - PWA manifest for Android/iOS home screen installation
 - Full-page tabbed Settings (General, Security, Memory, Features, About)
@@ -141,7 +147,7 @@ A release is not complete at commit. A release is not complete at tag. A release
 - [ ] Constitution, nature, and Lodestone layers reviewed for coherence
 - [ ] Research review: any watch items ready to graduate to roadmap?
 
-**ember-2-ui (frontend, current: v0.7.1):**
+**ember-2-ui (frontend, current: v0.7.4):**
 - [ ] All Playwright tests passing: npx playwright test --workers=2
 - [ ] CHANGELOG.md updated
 - [ ] package.json version bumped
