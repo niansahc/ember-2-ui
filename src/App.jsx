@@ -69,6 +69,7 @@ export default function App() {
   const [webSearchOn, setWebSearchOn] = useState(false)
   const [searchAutonomous, setSearchAutonomous] = useState(false)
   const [deviationOn, setDeviationOn] = useState(false)
+  const [bareModeCapable, setBareModeCapable] = useState(false)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
   const [bareMode, setBareMode] = useState(false)
@@ -114,6 +115,7 @@ export default function App() {
         setWebSearchOn(prefs.web_search !== false)
         setSearchAutonomous(prefs.web_search_autonomous || false)
         setDeviationOn(prefs.deviation_enabled || false)
+        setBareModeCapable(prefs.bare_mode_enabled || false)
       } catch {}
     }
     checkLock()
@@ -398,7 +400,7 @@ export default function App() {
             )}
           </div>
           <div className="app-header-actions">
-            {!webSearchOn && (
+            {bareModeCapable && (
               <button
                 className={`app-conv-toggle ${bareMode ? 'app-conv-toggle-active' : ''}`}
                 onClick={() => {
@@ -481,6 +483,7 @@ export default function App() {
             setWebSearchOn(prefs.web_search !== false)
             setSearchAutonomous(prefs.web_search_autonomous || false)
             setDeviationOn(prefs.deviation_enabled || false)
+            setBareModeCapable(prefs.bare_mode_enabled || false)
           }).catch(() => {})
         }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
