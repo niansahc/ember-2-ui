@@ -154,15 +154,15 @@
   cursor: help;
 }
 
-/* Tooltip anchored right so it doesn't clip outside the Settings panel.
-   Old centering (left: 50% + translateX -50%) overflowed when the info
-   icon sat near the right edge of a row. */
+/* Tooltip appears below the icon so it stays inside the scrollable
+   .settings-content container (overflow-y: auto clips upward tooltips
+   when the row is near the top of the panel). */
 .settings-info-tooltip {
   display: none;
   position: absolute;
-  bottom: calc(100% + 8px);
-  right: -0.5rem;
-  left: auto;
+  top: calc(100% + 8px);
+  left: 0;
+  right: auto;
   width: 280px;
   max-width: calc(100vw - 3rem);
   padding: 0.6rem 0.75rem;

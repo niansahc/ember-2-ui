@@ -335,6 +335,7 @@ export default function App() {
             )}
           </div>
           <div className="app-header-actions">
+            <ServiceStatus model={model} isCloudModel={isCloudModelName(model)} />
             {messages.length > 0 && (
               <button
                 className="app-header-btn"
@@ -372,7 +373,6 @@ export default function App() {
           onRegenerate={regenerate}
           onEdit={editAndResend}
         />
-        <ServiceStatus />
       </main>
 
       <Settings
