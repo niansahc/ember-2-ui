@@ -1174,15 +1174,20 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 </label>
               </div>
 
-              <div className="settings-row settings-row-nested">
+              <div className={`settings-row settings-row-nested ${!webSearch ? 'settings-row-disabled' : ''}`}>
                 <div className="settings-row-info">
                   <span className="settings-row-label">Search automatically when uncertain</span>
-                  <span className="settings-row-hint">Off by default — Ember will ask before searching</span>
+                  <span className="settings-row-hint">
+                    {webSearchAutonomous
+                      ? 'Ember searches without asking'
+                      : 'Ask-first — Ember asks before searching'}
+                  </span>
                 </div>
-                <label className="toggle" aria-label="Toggle autonomous web search" title={webSearchAutonomous ? 'Click to disable' : 'Click to enable'}>
+                <label className="toggle" aria-label="Toggle autonomous web search" title={!webSearch ? 'Enable web search first' : webSearchAutonomous ? 'Click to disable' : 'Click to enable'}>
                   <input
                     type="checkbox" role="switch"
                     checked={webSearchAutonomous}
+                    disabled={!webSearch}
                     onChange={(e) => {
                       setWebSearchAutonomous(e.target.checked)
                       updatePreferences({ web_search_autonomous: e.target.checked })

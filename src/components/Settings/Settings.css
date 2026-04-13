@@ -503,6 +503,11 @@
   opacity: 0.9;
 }
 
+.settings-row-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* ── Divider ─────────────────────────────────────────────────── */
 
 .settings-divider {
