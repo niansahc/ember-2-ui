@@ -116,6 +116,7 @@ export function useChat() {
 
     setMessages((prev) => [...prev, userMsg])
     setIsStreaming(true)
+    if (imageDataUrls.length > 0) setStreamingStatus('analyzing')
     abortRef.current = false
 
     const assistantId = uuid()
@@ -142,9 +143,9 @@ export function useChat() {
       if (apiAvailableRef.current) {
         try {
           // Stream from real API — tokens arrive one at a time
-          // streamChat returns { stream, usedWebSearch } so we can read
-          // the web search transparency header before consuming chunks.
-          const { stream, usedWebSearch, usedVault } = await realStreamChat(allMessages, { sessionId })
+          // streamChat returns transparency headers so the UI can show
+          // indicators for web search, vault, and vision-grounded responses.
+          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId })
           if (usedWebSearch) {
             setStreamingStatus('searching')
           }
@@ -193,6 +194,14 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedVault: true } : m,
+              ),
+            )
+          }
+          // vision attribution -- from header or inferred when images were sent
+          if (usedVision || imageDataUrls.length > 0) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedVision: true } : m,
               ),
             )
           }
@@ -295,7 +304,7 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          const { stream, usedWebSearch, usedVault } = await realStreamChat(allMessages, { sessionId })
+          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId })
           for await (const chunk of stream) {
             if (abortRef.current) break
             // Handle object events (vault_sources, sources, status) same as main path
@@ -325,6 +334,13 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedVault: true } : m,
+              ),
+            )
+          }
+          if (usedVision) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, usedVision: true } : m,
               ),
             )
           }

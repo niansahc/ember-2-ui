@@ -40,10 +40,12 @@ function formatVaultSource(src) {
 function sourceLabel(msg) {
   const vault = msg.usedVault
   const web = msg.usedWebSearch
-  if (vault && web) return 'Web Search + Vault'
-  if (vault) return 'Vault'
-  if (web) return 'Web Search'
-  return 'LLM'
+  const vision = msg.usedVision
+  const parts = []
+  if (vision) parts.push('Vision')
+  if (web) parts.push('Web Search')
+  if (vault) parts.push('Vault')
+  return parts.length > 0 ? parts.join(' + ') : 'LLM'
 }
 
 // React.memo — prevents re-render when sibling messages update.

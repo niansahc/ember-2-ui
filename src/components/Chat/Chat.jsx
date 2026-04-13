@@ -8,6 +8,7 @@ const STATUS_LABELS = {
   searching: 'Searching the web\u2026',
   verifying: 'Verifying\u2026',
   refining: 'Refining\u2026',
+  analyzing: 'Analyzing image\u2026',
 }
 
 export default function Chat({ messages, isStreaming, streamingStatus, onSend, onStop, onRegenerate, onEdit }) {

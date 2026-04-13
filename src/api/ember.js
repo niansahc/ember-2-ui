@@ -49,6 +49,7 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
   // show indicators for web search and vault-grounded responses.
   const usedWebSearch = res.headers.get('x-ember-web-search') === 'true'
   const usedVault = res.headers.get('x-ember-vault-used') === 'true'
+  const usedVision = res.headers.get('x-ember-vision-used') === 'true'
 
   async function* chunks() {
     const reader = res.body.getReader()
@@ -99,7 +100,7 @@ export async function streamChat(messages, { sessionId = '', signal } = {}) {
     }
   }
 
-  return { stream: chunks(), usedWebSearch, usedVault }
+  return { stream: chunks(), usedWebSearch, usedVault, usedVision }
 }
 
 // ---------------------------------------------------------------------------
