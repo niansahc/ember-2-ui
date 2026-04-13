@@ -93,6 +93,32 @@
   white-space: nowrap;
 }
 
+/* ── Feature status icons (header) ──────────────────────────── */
+
+.app-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-feature-icon:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+}
+
+.app-feature-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .app-header-actions {
   display: flex;
   align-items: center;

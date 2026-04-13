@@ -1,6 +1,6 @@
 /* ── Service Status Indicator (header bar) ────────────────────
-   Inline in the app header, between the title group and action
-   buttons. Icons + status dot, with a dropdown panel on expand. */
+   Single health dot in the header title group. Click to expand
+   a dropdown with status, restart, and shutdown controls. */
 
 .ss-container {
   position: relative;
@@ -8,50 +8,28 @@
   align-items: center;
 }
 
-/* ── Icon strip (always visible) ────────────────────────────── */
+/* ── Dot button (always visible) ────────────────────────────── */
 
-.ss-icons {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  min-height: 44px;
-  min-width: 44px;
-  transition: background 0.15s;
-}
-
-.ss-icons:hover {
-  background: var(--bg-surface-hover);
-}
-
-.ss-icons:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* individual icon wrapper */
-.ss-icon {
+.ss-dot-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  transition: color 0.3s ease, opacity 0.3s ease;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
 }
 
-/* icon color states */
-.ss-icon-green {
-  color: #4ade80;
+.ss-dot-btn:hover {
+  background: var(--bg-surface-hover);
 }
 
-.ss-icon-amber {
-  color: #fbbf24;
-}
-
-.ss-icon-red {
-  color: #f87171;
+.ss-dot-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ── Status dot ─────────────────────────────────────────────── */
@@ -61,7 +39,6 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-left: 0.25rem;
   transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
@@ -114,7 +91,8 @@
 .ss-panel {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -123,14 +101,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  min-width: 200px;
+  min-width: 180px;
   z-index: 100;
   animation: ss-panel-in 0.15s ease-out;
 }
 
 @keyframes ss-panel-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .ss-panel-row {
@@ -161,30 +139,6 @@
 
 .ss-panel-status-unknown {
   color: #fbbf24;
-}
-
-/* model info row inside panel */
-.ss-panel-info {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--border);
-}
-
-.ss-panel-info-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  min-width: 36px;
-}
-
-.ss-panel-info-value {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
 }
 
 /* ── Restart button ─────────────────────────────────────────── */
@@ -266,28 +220,20 @@
 /* ── Mobile ─────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
-  .ss-icons {
-    gap: 0.2rem;
-    padding: 0.25rem 0.35rem;
-  }
-
-  .ss-icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .ss-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-
   .ss-dot {
     width: 6px;
     height: 6px;
   }
 
   .ss-panel {
+    left: auto;
     right: -0.5rem;
-    min-width: 180px;
+    transform: none;
+    min-width: 170px;
+  }
+
+  @keyframes ss-panel-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }

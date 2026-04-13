@@ -18,6 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
+import { Search, HelpCircle, CheckCircle, Minimize2 } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -65,6 +66,8 @@ export default function App() {
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
   const [devMode, setDevMode] = useState(false)
   const [devVaultLabel, setDevVaultLabel] = useState(null)
+  const [webSearchOn, setWebSearchOn] = useState(false)
+  const [searchAutonomous, setSearchAutonomous] = useState(false)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, editAndResend } = useChat()
 
@@ -103,6 +106,10 @@ export default function App() {
         if (!pinStatus.pin_set && !prefs.pin_setup_dismissed && prefs.first_run_tour_complete) {
           setShowPinSetup(true)
         }
+
+        // feature flags for header icons
+        setWebSearchOn(prefs.web_search !== false)
+        setSearchAutonomous(prefs.web_search_autonomous || false)
       } catch {}
     }
     checkLock()
@@ -322,10 +329,11 @@ export default function App() {
             {devMode && devVaultLabel && (
               <span className="dev-vault-header-badge" data-testid="dev-vault-header-badge">[{devVaultLabel}]</span>
             )}
+            <ServiceStatus />
             {model && (
               <button
                 className="app-model-indicator"
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('general') }}
                 title={model}
                 aria-label={`Current model: ${model}. Click to change.`}
               >
@@ -333,9 +341,48 @@ export default function App() {
                 <span className="app-model-name">{displayModelName(model)}</span>
               </button>
             )}
+            {webSearchOn && (
+              <button
+                className="app-feature-icon"
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
+                title="Web search is on"
+                aria-label="Web search is on. Click to open Features settings."
+              >
+                <Search size={15} aria-hidden="true" />
+              </button>
+            )}
+            {webSearchOn && !searchAutonomous && (
+              <button
+                className="app-feature-icon"
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
+                title="Ask-first mode — Ember asks before searching"
+                aria-label="Ask-first mode is on. Click to open Features settings."
+              >
+                <HelpCircle size={15} aria-hidden="true" />
+              </button>
+            )}
+            {webSearchOn && searchAutonomous && (
+              <button
+                className="app-feature-icon"
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
+                title="Auto-search — Ember searches without asking"
+                aria-label="Autonomous search is on. Click to open Features settings."
+              >
+                <CheckCircle size={15} aria-hidden="true" />
+              </button>
+            )}
+            {!webSearchOn && (
+              <button
+                className="app-feature-icon"
+                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
+                title="Bare mode — web search is off"
+                aria-label="Bare mode, web search disabled. Click to open Features settings."
+              >
+                <Minimize2 size={15} aria-hidden="true" />
+              </button>
+            )}
           </div>
           <div className="app-header-actions">
-            <ServiceStatus model={model} isCloudModel={isCloudModelName(model)} />
             {messages.length > 0 && (
               <button
                 className="app-header-btn"
