@@ -1,9 +1,12 @@
 // Requires Ember API running at localhost:8000 (start_api.bat)
+// Must run against the test vault -- these tests change the active model.
 
 const { test, expect } = require('@playwright/test')
+const { assertTestVault } = require('./helpers/testvault.cjs')
 
 test.describe('Model Switching', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    await assertTestVault(request)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })

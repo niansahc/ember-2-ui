@@ -48,17 +48,29 @@ test.describe('Model Indicator — rendering', () => {
   })
 })
 
+const { assertTestVault, snapshotVault, cleanupSinceSnapshot } = require('./helpers/testvault.cjs')
+
 test.describe('Model Indicator — real backend', () => {
   // No mocks — these tests compare the displayed model against the live
-  // /model response, which means they require the real backend to be up.
-  // If the backend is unavailable, they skip rather than fail so the
-  // release gate isn't blocked by infrastructure issues.
-  test.beforeEach(async ({ page }) => {
+  // /model response. Must run against the 'test' vault (asserted in beforeEach)
+  // and any writes are cleaned up in afterEach.
+  let vaultSnapshot = null
+
+  test.beforeEach(async ({ page, request }) => {
+    await assertTestVault(request)
+    vaultSnapshot = await snapshotVault(request)
     await page.goto('/')
     try {
       await page.waitForSelector('.app-layout', { timeout: 20000 })
     } catch {
       test.skip(true, 'app-layout did not appear — backend may be unreachable')
+    }
+  })
+
+  test.afterEach(async ({ request }) => {
+    if (vaultSnapshot) {
+      await cleanupSinceSnapshot(request, vaultSnapshot)
+      vaultSnapshot = null
     }
   })
 

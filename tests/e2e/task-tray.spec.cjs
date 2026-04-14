@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test')
 const path = require('path')
 const fs = require('fs')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
+const { assertTestVault } = require('./helpers/testvault.cjs')
 
 // Read API key from .env file for direct API calls in tests
 function readApiKey() {
@@ -41,7 +42,9 @@ async function cleanupTask(taskId) {
 }
 
 test.describe('Task Tray', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    // guard: createTask hits the real backend. Assert test vault first.
+    await assertTestVault(request)
     await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
