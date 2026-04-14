@@ -235,6 +235,12 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
         if (result.active_vault && !vaults.some((v) => v.label === result.active_vault.label)) {
           vaults.unshift(result.active_vault)
         }
+        // Always offer a swap-back option to the personal vault, even if it
+        // isn't in the backend's available_vaults list (the swap endpoint
+        // accepts 'private_vault' as a label since cc798be).
+        if (!vaults.some((v) => v.label === 'private_vault')) {
+          vaults.push({ label: 'private_vault', path: '(your personal vault)' })
+        }
         setDevAvailableVaults(vaults)
       }
     }
@@ -288,6 +294,12 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
         const vaults = [...result.available_vaults]
         if (result.active_vault && !vaults.some((v) => v.label === result.active_vault.label)) {
           vaults.unshift(result.active_vault)
+        }
+        // Always offer a swap-back option to the personal vault, even if it
+        // isn't in the backend's available_vaults list (the swap endpoint
+        // accepts 'private_vault' as a label since cc798be).
+        if (!vaults.some((v) => v.label === 'private_vault')) {
+          vaults.push({ label: 'private_vault', path: '(your personal vault)' })
         }
         setDevAvailableVaults(vaults)
       }
