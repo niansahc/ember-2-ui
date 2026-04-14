@@ -80,9 +80,8 @@ test.describe('Bare Mode Toggle', () => {
     await bareToggle.click()
     await expect(bareToggle).toHaveClass(/app-conv-toggle-active/)
 
-    // click new conversation button
-    const newConvoBtn = page.locator('[aria-label="New conversation"]')
-    await newConvoBtn.click()
+    // Ctrl+N triggers new conversation
+    await page.keyboard.press('Control+n')
 
     // toggle should reset to inactive
     const resetToggle = page.locator('.app-header-actions .app-conv-toggle').first()

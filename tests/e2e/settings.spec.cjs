@@ -281,7 +281,7 @@ test.describe('Settings', () => {
 
   test('Launch Installer button is visible in About tab and triggers POST', async ({ page }) => {
     let launchCalls = 0
-    await page.route('**/system/launch-installer', async (route) => {
+    await page.route('**/launch-installer', async (route) => {
       launchCalls += 1
       await route.fulfill({
         status: 200,
