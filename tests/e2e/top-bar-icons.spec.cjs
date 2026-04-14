@@ -17,14 +17,37 @@ test.describe('Top Bar Feature Icons', () => {
     await expect(searchIcon).toBeVisible()
   })
 
-  test('web search off shows bare mode icon', async ({ page }) => {
+  test('web search off does NOT show bare mode icon', async ({ page }) => {
+    // bare mode icon is tied to per-conversation bareMode state,
+    // not to web search being off
     await mockBootstrap(page, {
       preferences: { web_search: false },
     })
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-    const bareIcon = page.locator('.app-feature-icon[title="Bare mode — web search is off"]')
+    const bareIcon = page.locator('.app-feature-icon[title*="Bare mode"]')
+    await expect(bareIcon).not.toBeVisible()
+  })
+
+  test('bare mode icon appears when per-conversation bare mode is ON', async ({ page }) => {
+    // the bare mode icon only appears when the per-conversation toggle is active.
+    // Activating the toggle requires bare_mode_enabled capability in prefs.
+    await mockBootstrap(page, {
+      preferences: { bare_mode_enabled: true },
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+    // initially no bare mode icon in feature icons (toggle is off by default)
+    const bareIcon = page.locator('.app-feature-icon[title*="Bare mode"]')
+    await expect(bareIcon).not.toBeVisible()
+
+    // click the per-conversation bare mode toggle in header actions
+    const bareToggle = page.locator('.app-header-actions .app-conv-toggle').first()
+    await bareToggle.click()
+
+    // now the feature icon should appear
     await expect(bareIcon).toBeVisible()
   })
 
@@ -39,7 +62,7 @@ test.describe('Top Bar Feature Icons', () => {
     await expect(devIcon).toBeVisible()
   })
 
-  test('all features off shows only bare mode icon', async ({ page }) => {
+  test('all features off shows no feature icons', async ({ page }) => {
     await mockBootstrap(page, {
       preferences: {
         web_search: false,
@@ -49,13 +72,10 @@ test.describe('Top Bar Feature Icons', () => {
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
+    // with web search off, no search/autonomous icons. bare mode icon is gated
+    // on per-conversation state, not web search, so nothing should render.
     const allIcons = page.locator('.app-header-title-group .app-feature-icon')
-    const count = await allIcons.count()
-
-    // only the bare mode icon should appear
-    expect(count).toBe(1)
-    const bareIcon = page.locator('.app-feature-icon[title="Bare mode — web search is off"]')
-    await expect(bareIcon).toBeVisible()
+    await expect(allIcons).toHaveCount(0)
   })
 
   test('clicking a feature icon opens Settings to Features tab', async ({ page }) => {

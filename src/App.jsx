@@ -378,12 +378,12 @@ export default function App() {
                 <CheckCircle size={15} aria-hidden="true" />
               </button>
             )}
-            {!webSearchOn && (
+            {bareMode && (
               <button
                 className="app-feature-icon"
                 onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
-                title="Bare mode — web search is off"
-                aria-label="Bare mode, web search disabled. Click to open Features settings."
+                title="Bare mode — personality off for this conversation"
+                aria-label="Bare mode is on for this conversation. Click to open Features settings."
               >
                 <Minimize2 size={15} aria-hidden="true" />
               </button>
