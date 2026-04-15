@@ -69,7 +69,6 @@ export default function App() {
   const [webSearchOn, setWebSearchOn] = useState(false)
   const [searchAutonomous, setSearchAutonomous] = useState(false)
   const [deviationOn, setDeviationOn] = useState(false)
-  const [bareModeCapable, setBareModeCapable] = useState(false)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
   const [bareMode, setBareMode] = useState(false)
@@ -115,7 +114,6 @@ export default function App() {
         setWebSearchOn(prefs.web_search !== false)
         setSearchAutonomous(prefs.web_search_autonomous || false)
         setDeviationOn(prefs.deviation_enabled || false)
-        setBareModeCapable(prefs.bare_mode_enabled || false)
       } catch {}
     }
     checkLock()
@@ -233,6 +231,7 @@ export default function App() {
     setActiveConversation(null)
     setBareMode(false)
     setVaultOff(false)
+    setChatOptions({ bareMode: false, vaultEnabled: true })
     try { localStorage.removeItem('ember_active_session') } catch {}
     setSidebarOpen(false)
     // If started from a project view, assign new conversation to that project
@@ -246,6 +245,11 @@ export default function App() {
     try { localStorage.setItem('ember_active_session', id) } catch {}
     if (projectId) setActiveProject(projectId)
     setSidebarOpen(false)
+    // Per-conversation toggles reset on any conversation entry — vault ON, bare OFF.
+    // setChatOptions clears the ref-side flags so the next request sends defaults.
+    setBareMode(false)
+    setVaultOff(false)
+    setChatOptions({ bareMode: false, vaultEnabled: true })
     loadConversation(id)
   }
 
@@ -400,20 +404,18 @@ export default function App() {
             )}
           </div>
           <div className="app-header-actions">
-            {bareModeCapable && (
-              <button
-                className={`app-conv-toggle ${bareMode ? 'app-conv-toggle-active' : ''}`}
-                onClick={() => {
-                  const next = !bareMode
-                  setBareMode(next)
-                  setChatOptions({ bareMode: next })
-                }}
-                title={bareMode ? 'Bare mode on — personality off. Click to restore.' : 'Personality on. Click to enable bare mode.'}
-                aria-label={bareMode ? 'Bare mode is on. Click to restore personality.' : 'Personality is on. Click to enable bare mode for this conversation.'}
-              >
-                {bareMode ? <X size={15} aria-hidden="true" /> : <Flame size={15} aria-hidden="true" />}
-              </button>
-            )}
+            <button
+              className={`app-conv-toggle ${bareMode ? 'app-conv-toggle-active' : ''}`}
+              onClick={() => {
+                const next = !bareMode
+                setBareMode(next)
+                setChatOptions({ bareMode: next })
+              }}
+              title={bareMode ? 'Bare mode on — personality off. Click to restore.' : 'Personality on. Click to enable bare mode.'}
+              aria-label={bareMode ? 'Bare mode is on. Click to restore personality.' : 'Personality is on. Click to enable bare mode for this conversation.'}
+            >
+              {bareMode ? <X size={15} aria-hidden="true" /> : <Flame size={15} aria-hidden="true" />}
+            </button>
             <button
               className={`app-conv-toggle ${vaultOff ? 'app-conv-toggle-active' : ''}`}
               onClick={() => {
@@ -483,7 +485,6 @@ export default function App() {
             setWebSearchOn(prefs.web_search !== false)
             setSearchAutonomous(prefs.web_search_autonomous || false)
             setDeviationOn(prefs.deviation_enabled || false)
-            setBareModeCapable(prefs.bare_mode_enabled || false)
           }).catch(() => {})
         }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}

@@ -35,17 +35,22 @@ function formatVaultSource(src) {
 
 /**
  * Determine the unified source label for a message.
- * One of: "Vault", "Web Search", "Web Search + Vault", or "LLM".
+ * Composes attribution strings from backend execution-state headers.
+ * Zero sources → returns null so the badge is suppressed entirely
+ * (identity-style responses handle attribution in their text).
  */
 function sourceLabel(msg) {
-  const vault = msg.usedVault
-  const web = msg.usedWebSearch
-  const vision = msg.usedVision
   const parts = []
-  if (vision) parts.push('Vision')
-  if (web) parts.push('Web Search')
-  if (vault) parts.push('Vault')
-  return parts.length > 0 ? parts.join(' + ') : 'LLM'
+  if (msg.usedVision) parts.push('Vision')
+  if (msg.usedWebSearch) parts.push('Web Search')
+  if (msg.usedFirstPartySource) parts.push('From your memory')
+  if (msg.usedThirdPartySource) parts.push('From your library')
+  // Legacy vault flag — only surface when backend hasn't classified authorship,
+  // to avoid double-labelling responses that already carry the new badges.
+  if (msg.usedVault && !msg.usedFirstPartySource && !msg.usedThirdPartySource) {
+    parts.push('Vault')
+  }
+  return parts.length > 0 ? parts.join(' + ') : null
 }
 
 // React.memo — prevents re-render when sibling messages update.
@@ -168,8 +173,9 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
         </div>
 
         {/* Unified source label — one line showing where the response drew from.
-            Replaces the old separate web search magnifying glass and vault dot. */}
-        {!isUser && (
+            Replaces the old separate web search magnifying glass and vault dot.
+            Suppressed entirely for zero-hit responses (identity queries, plain LLM). */}
+        {!isUser && sourceLabel(message) && (
           <div className="bubble-source-label" aria-label={`Source: ${sourceLabel(message)}`} data-testid="bubble-source-label">
             <span className="bubble-source-label-key">Source:</span>{' '}
             <span className="bubble-source-label-value" data-testid="bubble-source-value">{sourceLabel(message)}</span>

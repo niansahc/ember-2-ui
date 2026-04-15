@@ -82,7 +82,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
   const [webSearch, setWebSearch] = useState(true)
-  const [rememberConvo, setRememberConvo] = useState(true)
   const [tone, setTone] = useState('balanced')
   const [currentModel, setCurrentModel] = useState('')
   const [visionEnabled, setVisionEnabled] = useState(() => {
@@ -118,7 +117,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   const [devRebuilding, setDevRebuilding] = useState(false)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
   const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
-  const [bareModeEnabled, setBareModeEnabled] = useState(false)
   const [contextLength, setContextLength] = useState(8192)
   const [lodestoneRecords, setLodestoneRecords] = useState([])
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
@@ -207,7 +205,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
         setDeviationEnabled(prefs.deviation_enabled || false)
         setWebSearch(prefs.web_search !== false)
         setWebSearchAutonomous(prefs.web_search_autonomous || false)
-        setBareModeEnabled(prefs.bare_mode_enabled || false)
         if (prefs.context_length) setContextLength(prefs.context_length)
         setSecurityPinSet(pinStatus.pin_set)
       } catch {}
@@ -1295,50 +1292,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 </label>
               </div>
 
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">
-                    Bare Mode
-                    <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Bare mode information">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      <span className="settings-info-tooltip">
-                        Enables a per-conversation toggle in the chat header that strips Ember's personality for terse, literal responses. Off by default.
-                      </span>
-                    </span>
-                  </span>
-                  <span className="settings-row-hint">Capability toggle — enables the per-conversation bare mode icon in the chat header</span>
-                </div>
-                <label className="toggle" aria-label="Toggle bare mode capability" title={bareModeEnabled ? 'Click to disable' : 'Click to enable'}>
-                  <input
-                    type="checkbox" role="switch"
-                    checked={bareModeEnabled}
-                    onChange={(e) => {
-                      setBareModeEnabled(e.target.checked)
-                      updatePreferences({ bare_mode_enabled: e.target.checked })
-                    }}
-                  />
-                  <span className="toggle-track" />
-                </label>
-              </div>
-
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Should Ember remember conversations?</span>
-                  <span className="settings-row-hint">Saves all conversations to your vault. Per-conversation control is available via the vault toggle in the chat header.</span>
-                </div>
-                <label className="toggle" aria-label="Toggle conversation memory" title={rememberConvo ? 'Click to disable' : 'Click to enable'}>
-                  <input
-                    type="checkbox" role="switch"
-                    checked={rememberConvo}
-                    onChange={(e) => setRememberConvo(e.target.checked)}
-                  />
-                  <span className="toggle-track" />
-                </label>
-              </div>
             </div>
           )}
 

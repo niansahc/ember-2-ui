@@ -1,26 +1,22 @@
 // Tests for the bare mode per-conversation toggle in the chat header.
-// Bare mode strips personality from responses. The toggle only renders
-// when the backend advertises bare_mode_enabled in preferences.
+// Bare mode strips personality from responses. The toggle is always
+// visible — no capability gate — and defaults to OFF per conversation.
 
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 test.describe('Bare Mode Toggle', () => {
-  test('toggle is NOT visible by default (bare_mode_enabled absent)', async ({ page }) => {
+  test('toggle is always visible (no capability gate)', async ({ page }) => {
     await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-    // bare mode toggle should not render when pref is absent
-    const toggle = page.locator('.app-header-actions .app-conv-toggle').first()
-    // when bare mode is off, vault toggle is the only .app-conv-toggle
+    // both bare mode + vault toggles render unconditionally now
     const allToggles = page.locator('.app-header-actions .app-conv-toggle')
-    const count = await allToggles.count()
-    // only the vault toggle should exist (1), not bare mode
-    expect(count).toBe(1)
+    await expect(allToggles).toHaveCount(2)
   })
 
-  test('toggle is visible when bare_mode_enabled is true', async ({ page }) => {
+  test('toggle remains visible with or without preferences', async ({ page }) => {
     await mockBootstrap(page, {
       preferences: { bare_mode_enabled: true },
     })
