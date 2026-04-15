@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, HelpCircle, CheckCircle, Minimize2, GitBranch, Database } from 'lucide-react'
+import { Search, HelpCircle, CheckCircle, GitBranch, Database, Flame, X } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -385,7 +385,7 @@ export default function App() {
                 title="Bare mode — personality off for this conversation"
                 aria-label="Bare mode is on for this conversation. Click to open Features settings."
               >
-                <Minimize2 size={15} aria-hidden="true" />
+                <X size={15} aria-hidden="true" />
               </button>
             )}
             {deviationOn && (
@@ -408,10 +408,10 @@ export default function App() {
                   setBareMode(next)
                   setChatOptions({ bareMode: next })
                 }}
-                title={bareMode ? 'Bare mode on — personality off' : 'Enable bare mode'}
-                aria-label={bareMode ? 'Bare mode is on. Click to disable.' : 'Enable bare mode for this conversation.'}
+                title={bareMode ? 'Bare mode on — personality off. Click to restore.' : 'Personality on. Click to enable bare mode.'}
+                aria-label={bareMode ? 'Bare mode is on. Click to restore personality.' : 'Personality is on. Click to enable bare mode for this conversation.'}
               >
-                <Minimize2 size={15} aria-hidden="true" />
+                {bareMode ? <X size={15} aria-hidden="true" /> : <Flame size={15} aria-hidden="true" />}
               </button>
             )}
             <button
