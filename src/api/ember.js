@@ -153,7 +153,7 @@ export async function getServiceHealth() {
   try {
     const res = await fetch('/api/health', {
       headers: authHeaders(),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) return { api: 'down', docker: 'unknown' }
     const data = await res.json().catch(() => ({}))

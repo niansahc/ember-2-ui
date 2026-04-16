@@ -13,12 +13,14 @@ const POLL_INTERVAL = 15000
 
 function dotClass(status) {
   if (status === 'ok') return 'ss-dot-green'
+  if (status === 'slow') return 'ss-dot-amber'
   if (status === 'down') return 'ss-dot-red'
   return 'ss-dot-amber'
 }
 
 function statusLabel(status) {
   if (status === 'ok') return 'Healthy'
+  if (status === 'slow') return 'Slow'
   if (status === 'down') return 'Unreachable'
   return 'Unknown'
 }
@@ -30,10 +32,20 @@ export default function ServiceStatus() {
   const [shuttingDown, setShuttingDown] = useState(false)
   const containerRef = useRef(null)
   const pollRef = useRef(null)
+  const failCountRef = useRef(0)
 
   const poll = useCallback(async () => {
     const result = await getServiceHealth()
-    setHealth(result)
+    if (result.api === 'ok') {
+      failCountRef.current = 0
+      setHealth(result)
+    } else {
+      failCountRef.current += 1
+      setHealth({
+        ...result,
+        api: failCountRef.current >= 2 ? 'down' : 'slow',
+      })
+    }
   }, [])
 
   // initial poll + interval
@@ -130,7 +142,7 @@ export default function ServiceStatus() {
           <button
             className="ss-shutdown-btn"
             onClick={handleShutdown}
-            disabled={shuttingDown || health.api !== 'ok'}
+            disabled={shuttingDown || health.api === 'down'}
             data-testid="service-shutdown"
           >
             {shuttingDown ? 'Stopping...' : 'Shut down Ember'}
