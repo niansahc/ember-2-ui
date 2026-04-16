@@ -114,7 +114,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   const [devActiveVault, setDevActiveVault] = useState(null) // { label, path }
   const [devAvailableVaults, setDevAvailableVaults] = useState([])
   const [devSwapping, setDevSwapping] = useState(false)
-  const [devRebuilding, setDevRebuilding] = useState(false)
   const [deviationEnabled, setDeviationEnabled] = useState(false)
   const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
   const [contextLength, setContextLength] = useState(8192)
@@ -219,28 +218,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
     }
     loadDiskEncryption()
 
-    // Developer mode — check if dev mode is active and load vault info.
-    // If the default/active vault isn't in available_vaults, inject it so
-    // users can always switch back after switching away.
-    async function loadDevStatus() {
-      const result = await getDeveloperStatus()
-      if (ignore) return
-      setDevMode(result.dev_mode || false)
-      if (result.active_vault) setDevActiveVault(result.active_vault)
-      if (result.available_vaults) {
-        const vaults = [...result.available_vaults]
-        if (result.active_vault && !vaults.some((v) => v.label === result.active_vault.label)) {
-          vaults.unshift(result.active_vault)
-        }
-        // Always offer a swap-back option to the personal vault, even if it
-        // isn't in the backend's available_vaults list (the swap endpoint
-        // accepts 'private_vault' as a label since cc798be).
-        if (!vaults.some((v) => v.label === 'private_vault')) {
-          vaults.push({ label: 'private_vault', path: '(your personal vault)' })
-        }
-        setDevAvailableVaults(vaults)
-      }
-    }
     // Developer status and lodestone are deferred to their own useEffects
     // below — they only fetch when the relevant tab is selected. This
     // avoids 2 unnecessary API calls when the user opens Settings to a
@@ -1369,12 +1346,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 </>
               )}
 
-              {devRebuilding && (
-                <div className="dev-rebuilding-note" data-testid="dev-rebuilding-note">
-                  Indexes rebuilding — search results may be incomplete for a few minutes.
-                </div>
-              )}
-
               <div className="dev-vault-switcher" data-testid="dev-vault-switcher">
                 <div className="settings-section-label">Switch Vault</div>
                 {devAvailableVaults
@@ -1393,11 +1364,6 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                             try {
                               const result = await swapVault(vault.label)
                               setDevActiveVault({ label: result.label || vault.label, path: result.active_vault || vault.path })
-                              // G returns a `note` field when indexes need rebuilding
-                              if (result.note || result.rebuilding) {
-                                setDevRebuilding(true)
-                                setTimeout(() => setDevRebuilding(false), 60000)
-                              }
                             } catch { /* next poll will correct state */ }
                             finally { setDevSwapping(false) }
                           }}

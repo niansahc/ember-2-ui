@@ -1,7 +1,27 @@
+# Dependencies and build output
 node_modules/
 dist/
-.env
-*.log
+
+# Vite cache
 .vite/
+
+# Environment files (all variants — never commit secrets)
+.env*
+
+# Logs
+*.log
+
+# Test artifacts
 playwright-report/
 test-results/
+
+# Claude Code local settings (machine-specific, not shared)
+.claude/settings.local.json
+
+# OS-generated junk
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/

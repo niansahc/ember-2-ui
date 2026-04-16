@@ -269,14 +269,6 @@ export async function getConversations(limit = 50) {
   return data.conversations || []
 }
 
-export async function getConversation(sessionId) {
-  const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
-    headers: authHeaders(),
-  })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
-  return await res.json()
-}
-
 export async function getConversationTurns(sessionId) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     headers: authHeaders(),
@@ -324,34 +316,6 @@ export async function createProject(name, color = '#ff8c00') {
   })
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return await res.json()
-}
-
-export async function renameProject(projectId, name) {
-  const res = await fetch(`${API_URL}/projects/${projectId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ name }),
-  })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
-  return await res.json()
-}
-
-export async function deleteProject(projectId) {
-  const res = await fetch(`${API_URL}/projects/${projectId}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
-  return await res.json()
-}
-
-export async function getProjectConversations(projectId, limit = 50) {
-  const res = await fetch(`${API_URL}/projects/${projectId}/conversations?limit=${limit}`, {
-    headers: authHeaders(),
-  })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
-  const data = await res.json()
-  return data.conversations || []
 }
 
 export async function moveConversationToProject(conversationId, projectId) {
@@ -540,35 +504,6 @@ export async function uploadDocument(file) {
   }
   return await res.json()
 }
-
-/**
- * Send a chat message (non-streaming) with session tracking.
- */
-export async function sendChat(messages, { sessionId } = {}) {
-  const res = await fetch(`${API_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(sessionId && { 'X-Session-ID': sessionId }),
-    },
-    body: JSON.stringify({
-      model: 'ember',
-      messages,
-      stream: false,
-    }),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`API error ${res.status}: ${text}`)
-  }
-  const data = await res.json()
-  return data.choices?.[0]?.message?.content || ''
-}
-
-// ---------------------------------------------------------------------------
-// Memory / State writes (used by onboarding)
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Lodestone

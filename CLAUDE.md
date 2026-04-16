@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.7.4 (published). 113 Playwright tests passing, 17 skipped. Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.7.4 (published). 146 Playwright tests, 18 skipped. Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -30,8 +30,7 @@ These exist and must not be re-implemented:
 - Conversational style selector (Casual/Balanced/Thoughtful card selector in Settings)
 - PIN/passphrase lock screen with idle timeout and recovery
 - Multi-image upload — select and send multiple images in a single message
-- Vault citation UI -- unified "Source: Vault / Web Search / LLM" label on every assistant message
-- Web search transparency indicator (magnifying glass icon on messages that used web search)
+- Unified source attribution label on assistant messages (Source: Web Search / Vault / Vision)
 - Service status indicator -- breathing dot with hover panel for restart/shutdown
 - Change PIN flow in Settings > Security (verify current, enter new, confirm)
 - Disk encryption status in Settings > Security with platform-appropriate docs link
@@ -43,6 +42,8 @@ These exist and must not be re-implemented:
 - Onboarding flow (4-step: profile, lodestone gate, lodestone questionnaire, lodestone review)
 - Lodestone panel in Memory tab (5 taxonomy categories, per-record edit/dismiss/confirm)
 - Deviation Engine toggle in Features tab
+- Bare mode per-conversation toggle (flame/X icon in chat header, strips personality)
+- Vault storage display in Settings Memory tab (current size + 30-day projection)
 
 ---
 

@@ -50,13 +50,6 @@ export async function mockCheckConnection() {
 }
 
 /**
- * Get current model info.
- */
-export async function mockGetModel() {
-  return { model: 'qwen2.5:14b' }
-}
-
-/**
  * Get project list.
  */
 export async function mockGetProjects() {

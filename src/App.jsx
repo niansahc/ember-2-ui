@@ -28,11 +28,6 @@ import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
 
-// Detect cloud-hosted models to show a "cloud" badge in the header.
-function isCloudModelName(name) {
-  return name && (name.startsWith('claude-') || name.startsWith('gpt-'))
-}
-
 // Abbreviate model IDs for the header pill (e.g. "claude-3-haiku-..." → "Claude Haiku").
 function displayModelName(name) {
   if (!name) return ''
