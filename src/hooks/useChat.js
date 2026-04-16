@@ -146,7 +146,7 @@ export function useChat() {
           // Stream from real API — tokens arrive one at a time
           // streamChat returns transparency headers so the UI can show
           // indicators for web search, vault, and vision-grounded responses.
-          const { stream, usedWebSearch, usedVault, usedVision, usedFirstPartySource, usedThirdPartySource } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
           if (usedWebSearch) {
             setStreamingStatus('searching')
           }
@@ -195,20 +195,6 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedVault: true } : m,
-              ),
-            )
-          }
-          if (usedFirstPartySource) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedFirstPartySource: true } : m,
-              ),
-            )
-          }
-          if (usedThirdPartySource) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedThirdPartySource: true } : m,
               ),
             )
           }
@@ -324,7 +310,7 @@ export function useChat() {
 
       if (apiAvailableRef.current) {
         try {
-          const { stream, usedWebSearch, usedVault, usedVision, usedFirstPartySource, usedThirdPartySource } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
           for await (const chunk of stream) {
             if (abortRef.current) break
             // Handle object events (vault_sources, sources, status) same as main path
@@ -361,20 +347,6 @@ export function useChat() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, usedVision: true } : m,
-              ),
-            )
-          }
-          if (usedFirstPartySource) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedFirstPartySource: true } : m,
-              ),
-            )
-          }
-          if (usedThirdPartySource) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedThirdPartySource: true } : m,
               ),
             )
           }

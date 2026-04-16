@@ -45,18 +45,10 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
     throw new Error(`API error ${res.status}: ${text}`)
   }
 
-  // Transparency headers: read before consuming the stream so the UI can
-  // show indicators for web search and vault-grounded responses.
-  // Web search reads the *executed* header (not intent classification) —
-  // the badge only lights up when a search actually ran.
-  const usedWebSearch = res.headers.get('x-ember-web-search-executed') === 'true'
+  // Transparency headers — canonical names from the backend (G).
+  const usedWebSearch = res.headers.get('x-ember-web-search') === 'true'
   const usedVault = res.headers.get('x-ember-vault-used') === 'true'
   const usedVision = res.headers.get('x-ember-vision-used') === 'true'
-  // Source authorship — split vault grounding into first-party ("your memory")
-  // vs third-party ingested ("your library"). Backend sets these when the
-  // response actually drew from a source of that kind.
-  const usedFirstPartySource = res.headers.get('x-ember-source-first-party') === 'true'
-  const usedThirdPartySource = res.headers.get('x-ember-source-third-party') === 'true'
 
   async function* chunks() {
     const reader = res.body.getReader()
@@ -107,7 +99,7 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
     }
   }
 
-  return { stream: chunks(), usedWebSearch, usedVault, usedVision, usedFirstPartySource, usedThirdPartySource }
+  return { stream: chunks(), usedWebSearch, usedVault, usedVision }
 }
 
 // ---------------------------------------------------------------------------

@@ -35,21 +35,15 @@ function formatVaultSource(src) {
 
 /**
  * Determine the unified source label for a message.
- * Composes attribution strings from backend execution-state headers.
- * Zero sources → returns null so the badge is suppressed entirely
- * (identity-style responses handle attribution in their text).
+ * Reads execution-state flags set from backend response headers.
+ * When both web search and vault are present, web search wins.
+ * Zero sources → null (no badge rendered).
  */
 function sourceLabel(msg) {
   const parts = []
   if (msg.usedVision) parts.push('Vision')
   if (msg.usedWebSearch) parts.push('Web Search')
-  if (msg.usedFirstPartySource) parts.push('From your memory')
-  if (msg.usedThirdPartySource) parts.push('From your library')
-  // Legacy vault flag — only surface when backend hasn't classified authorship,
-  // to avoid double-labelling responses that already carry the new badges.
-  if (msg.usedVault && !msg.usedFirstPartySource && !msg.usedThirdPartySource) {
-    parts.push('Vault')
-  }
+  else if (msg.usedVault) parts.push('Vault')
   return parts.length > 0 ? parts.join(' + ') : null
 }
 
