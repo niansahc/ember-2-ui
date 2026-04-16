@@ -60,7 +60,7 @@ These exist and must not be re-implemented:
 
 ## Tech Stack
 
-- React 18
+- React 19
 - Vite
 - Playwright (e2e tests)
 - No axios — native fetch only
