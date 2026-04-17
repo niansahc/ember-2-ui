@@ -3,13 +3,92 @@
    ================================================================ */
 
 :root {
-  /* ── Shared layout tokens ─────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     Base tokens — pack-agnostic, color-theme-agnostic.
+     These are overridden by style packs (data-style-pack="...")
+     for typography, spacing, radii, motion, shadows, and status
+     colors. Color tokens (--bg-*, --accent, --text-*, etc.) are
+     owned by the color theme system below (data-theme="...") and
+     MUST NOT be touched by packs.
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Radii (can be pack-overridden) ─────────────────────────── */
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
-  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Typography: font stacks (pack-overridden) ─────────────── */
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-body);
+  --font-mono: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
+  /* Back-compat alias — many existing rules use --font */
+  --font: var(--font-body);
+
+  /* ── Typography: size scale (pack-overridden) ──────────────── */
+  --fs-xs:   0.72rem;
+  --fs-sm:   0.82rem;
+  --fs-base: 0.95rem;
+  --fs-md:   1.05rem;
+  --fs-lg:   1.25rem;
+  --fs-xl:   1.65rem;
+  --fs-2xl:  2.25rem;
+
+  /* ── Typography: weights + line heights ────────────────────── */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --lh-tight: 1.2;
+  --lh-snug:  1.4;
+  --lh-body:  1.6;
+  --lh-loose: 1.75;
+
+  /* ── Spacing scale — 4px base (pack-overridden) ────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  /* ── Layout constants ──────────────────────────────────────── */
   --sidebar-width: 280px;
   --header-height: 56px;
+
+  /* ── Control dimensions (pack-overridden) ──────────────────── */
+  --toggle-track-w: 44px;
+  --toggle-track-h: 24px;
+  --toggle-thumb:   18px;
+  --control-height: 32px;
+
+  /* ── Motion (pack-overridden) ──────────────────────────────── */
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── Shadows (pack-overridden) ─────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-key: 0 20px 48px -16px rgba(0, 0, 0, 0.5);
+
+  /* ── Status colors — semantic, color-theme-adjacent ───────── */
+  /* These are theme-agnostic (green for ok, amber for warn, red
+     for danger) because they communicate meaning, not brand. Each
+     color theme can override them if needed. */
+  --status-ok:        #6bcb8b;
+  --status-ok-bg:     rgba(107, 203, 139, 0.10);
+  --status-ok-text:   #6bcb8b;
+  --status-warn:      #f0a84b;
+  --status-warn-bg:   rgba(240, 168, 75, 0.12);
+  --status-warn-text: #f0a84b;
+  --status-danger:       #e85d5d;
+  --status-danger-bg:    rgba(232, 93, 93, 0.10);
+  --status-danger-text:  #e85d5d;
 }
 
 /* ═══════════════════════════════════════════════════════════════
