@@ -1294,3 +1294,57 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ── Segmented control ──────────────────────────────────────────
+   Pill-button group acting as a radiogroup. Used for compact
+   appearance prefs (font size, density) where options are small
+   and mutually exclusive. Appears on the right side of a settings-row. */
+
+.settings-segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.settings-segmented-btn {
+  padding: 0 var(--space-3);
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    color      var(--duration-fast) var(--ease-standard);
+  white-space: nowrap;
+}
+
+.settings-segmented-btn + .settings-segmented-btn {
+  border-left: 1px solid var(--border);
+}
+
+.settings-segmented-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+.settings-segmented-btn-active {
+  color: var(--bg-primary);
+  background: var(--accent);
+}
+
+.settings-segmented-btn-active:hover {
+  color: var(--bg-primary);
+  background: var(--accent-hover);
+}
+
+.settings-segmented-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
