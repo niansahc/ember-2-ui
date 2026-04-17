@@ -31,10 +31,9 @@ function bucketFor(hour) {
 
 // Greeting pools -- each entry is a complete, self-contained line.
 // {name} is filled at render time; lines without {name} are used when
-// we're rolling the "no name" branch. Every line has been audited for
-// work-schedule references ("clocking out"), location assumptions
-// ("home", "house"), bedtime commands ("goodnight", "before sleep"),
-// em-dashes, and AI-assistant opener cliches. 18 variants per
+// we're rolling the "no name" branch. Lines avoid work-schedule,
+// location, and bedtime assumptions — Ember doesn't know where you
+// are, what your schedule is, or when you sleep. 18 variants per
 // sub-pool = 180 titles total; per-bucket repeat rate for a daily
 // user is roughly once every five to six weeks.
 const VARIANTS = {
@@ -252,9 +251,7 @@ const VARIANTS = {
 
 // Subtitle pool -- 12 entries + 8 nulls = 20 slots, so ~40% of
 // greetings get no subtitle at all. Ember's restraint: when nothing
-// else is needed, the greeting stands alone. "What's on your mind?"
-// was cut (AI-assistant cliche). "Sit, or work?" became "Sit, or
-// push?" (no work-schedule reference).
+// else is needed, the greeting stands alone.
 const SUBTITLES_POOL = [
   'Where should we start?',
   'What are you noticing?',
