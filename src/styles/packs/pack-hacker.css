@@ -87,15 +87,13 @@
 }
 
 /* ── Lodestone category headers: § prefix, like a section mark ── */
-[data-style-pack="hacker"] .lodestone-category-header h3,
-[data-style-pack="hacker"] .lodestone-category-name {
+[data-style-pack="hacker"] .lodestone-category-title {
   font-family: var(--font-display);
   font-weight: 500;
   text-transform: lowercase;
   letter-spacing: 0.02em;
 }
-[data-style-pack="hacker"] .lodestone-category-header h3::before,
-[data-style-pack="hacker"] .lodestone-category-name::before {
+[data-style-pack="hacker"] .lodestone-category-title::before {
   content: '§ ';
   color: var(--accent);
 }
@@ -115,7 +113,7 @@
 }
 
 /* ── Vault path display: ~/ prefix on the visible path class ── */
-[data-style-pack="hacker"] .vault-path-display::before {
+[data-style-pack="hacker"] .settings-row-path::before {
   content: '~/';
   color: var(--accent);
   margin-right: 2px;
