@@ -29,6 +29,7 @@ import {
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
 import StylePackPicker from './StylePackPicker.jsx'
+import Segmented from './Segmented.jsx'
 import './Settings.css'
 
 /** Human-readable byte size (e.g. 1024 → "1.0 KB"). Used for vault storage display. */
@@ -95,7 +96,15 @@ const TABS = [
 
 // React.memo prevents re-render when App.jsx re-renders (e.g. modal
 // state changes) but Settings props haven't changed.
-export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors, stylePack, setStylePack, stylePacks }) {
+export default memo(function Settings({
+  isOpen, initialTab, onClose,
+  onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange,
+  theme, setTheme, themes, customColors, setCustomColors,
+  stylePack, setStylePack, stylePacks,
+  fontScale, setFontScale, fontScales,
+  density, setDensity, densities,
+  motionReduced, setMotionReduced,
+}) {
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
 
@@ -676,6 +685,44 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 setStylePack={setStylePack}
                 packs={stylePacks}
               />
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Display</div>
+
+              <Segmented
+                label="Font size"
+                hint="Scales text across the whole app."
+                options={fontScales}
+                value={fontScale}
+                onChange={setFontScale}
+              />
+
+              <Segmented
+                label="Density"
+                hint="Compact tightens spacing — handy on small screens."
+                options={densities}
+                value={density}
+                onChange={setDensity}
+              />
+
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-label">Reduced motion</span>
+                  <span className="settings-row-hint">
+                    Disables transitions. Your system preference is always respected; this adds an override.
+                  </span>
+                </div>
+                <label className="toggle">
+                  <input
+                    type="checkbox"
+                    checked={motionReduced}
+                    onChange={(e) => setMotionReduced(e.target.checked)}
+                    aria-label="Force reduced motion"
+                  />
+                  <span className="toggle-track"></span>
+                </label>
+              </div>
 
             </div>
           )}

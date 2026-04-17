@@ -91,6 +91,53 @@
   --status-danger-text:  #e85d5d;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Appearance prefs — font scale, density, reduced motion.
+   These are user-selectable in Settings > Appearance and apply via
+   data-* attributes on <html>. They compose with style packs:
+   font scale multiplies --fs-*, density multiplies --space-*, and
+   motion-reduce wins over packs via higher specificity.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Font scale — scales html's root font-size so every rem-based value
+   in the app (typography, padding, gap, radii in rem) scales together.
+   16px is the baseline; Small ~0.9×, Large ~1.1×.
+   Also updates the --fs-* token scale for consistency with anything
+   that eventually migrates from hardcoded rem to tokens. */
+html[data-font-scale="sm"] {
+  font-size: 14.5px;
+}
+html[data-font-scale="lg"] {
+  font-size: 17.5px;
+}
+
+/* Density — Compact ~0.82× the comfortable spacing. */
+[data-density="compact"] {
+  --space-1: 3px;
+  --space-2: 7px;
+  --space-3: 10px;
+  --space-4: 13px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 26px;
+  --space-8: 39px;
+}
+
+/* Motion — OS preference always respected. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}
+/* User override: higher specificity beats any [data-style-pack]. */
+html[data-motion="reduce"] {
+  --duration-fast: 0ms;
+  --duration-base: 0ms;
+  --duration-slow: 0ms;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Theme: Ember (default) — purple & orange
    ═══════════════════════════════════════════════════════════════ */

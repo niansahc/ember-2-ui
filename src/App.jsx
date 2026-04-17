@@ -24,6 +24,9 @@ import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
 import { useStylePack } from './hooks/useStylePack.js'
+import { useFontScale } from './hooks/useFontScale.js'
+import { useDensity } from './hooks/useDensity.js'
+import { useReducedMotion } from './hooks/useReducedMotion.js'
 import { useTour } from './hooks/useTour.js'
 import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
@@ -157,6 +160,9 @@ export default function App() {
   }, [messages.length, sessionId, activeConversation])
   const { theme, setTheme, themes, customColors, setCustomColors } = useTheme()
   const { stylePack, setStylePack, packs: stylePacks } = useStylePack()
+  const { scale: fontScale, setScale: setFontScale, scales: fontScales } = useFontScale()
+  const { density, setDensity, densities } = useDensity()
+  const { reduced: motionReduced, setReduced: setMotionReduced } = useReducedMotion()
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -496,6 +502,14 @@ export default function App() {
         stylePack={stylePack}
         setStylePack={setStylePack}
         stylePacks={stylePacks}
+        fontScale={fontScale}
+        setFontScale={setFontScale}
+        fontScales={fontScales}
+        density={density}
+        setDensity={setDensity}
+        densities={densities}
+        motionReduced={motionReduced}
+        setMotionReduced={setMotionReduced}
       />
 
       <BugReport
