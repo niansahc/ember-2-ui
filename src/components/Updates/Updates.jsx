@@ -1,3 +1,8 @@
+/**
+ * Updates — modal that checks for new releases via GitHub Releases API.
+ * Auto-checks on open (if not already checked), shows current vs latest
+ * version with changelog. Real-API-first, mock-fallback.
+ */
 import { useState, useEffect } from 'react'
 import { mockCheckUpdate } from '../../api/mock.js'
 import { checkUpdate as realCheckUpdate, getVersion } from '../../api/ember.js'

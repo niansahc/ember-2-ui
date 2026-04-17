@@ -1,3 +1,12 @@
+/**
+ * MessageBubble — a single message in the conversation.
+ *
+ * Wrapped in React.memo so only the bubble whose message object changed
+ * re-renders (not every bubble on each streaming chunk). Handles:
+ * user messages (plain text + image thumbnails), assistant messages
+ * (markdown via ReactMarkdown), inline editing, copy, regenerate,
+ * source attribution labels, and vault/web citations.
+ */
 import { useState, useRef, useEffect, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -160,6 +169,8 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
                   ),
                 }}
               >
+                {/* Zero-width space prevents ReactMarkdown from collapsing to
+                    nothing during streaming when content is still empty */}
                 {message.content || '\u200B'}
               </ReactMarkdown>
             </div>

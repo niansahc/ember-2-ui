@@ -1,9 +1,19 @@
+/**
+ * Chat — the main conversation view.
+ *
+ * Renders the message list, auto-scrolls on new content, shows a
+ * typing indicator during streaming, and hosts the InputBar at the
+ * bottom. The scroll-to-bottom button appears when the user scrolls
+ * up past a threshold so they can jump back down.
+ */
 import { useRef, useEffect, useState, useCallback } from 'react'
 import MessageBubble from './MessageBubble.jsx'
 import InputBar from './InputBar.jsx'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Chat.css'
 
+// Maps streaming status codes from the backend to user-facing labels.
+// These show next to the typing dots so the user knows what Ember is doing.
 const STATUS_LABELS = {
   searching: 'Searching the web\u2026',
   verifying: 'Verifying\u2026',
@@ -15,14 +25,15 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
   const scrollRef = useRef(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
 
-  // Auto-scroll on new messages
+  // Auto-scroll to bottom whenever messages change (new message or streaming chunk)
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
 
-  // Track scroll position for scroll-to-bottom button
+  // Show the "scroll to bottom" fab when the user is more than ~120px
+  // from the bottom — enough to mean they scrolled up intentionally.
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
@@ -35,7 +46,9 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
     }
   }
 
-  // Find last assistant message index
+  // Walk backward to find the last assistant message — only that message
+  // gets the regenerate button and "isLast" styling. IIFE so it runs
+  // inline as a derived value on every render.
   const lastAssistantIdx = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'assistant') return i
@@ -52,6 +65,7 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
         role="log"
         aria-label="Conversation"
       >
+        {/* ── Empty state — shown before the first message ── */}
         {messages.length === 0 && (
           <div className="chat-empty">
             <img src={emberMascot} alt="" className="chat-empty-logo" aria-hidden="true" />
@@ -61,6 +75,8 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
             </p>
           </div>
         )}
+
+        {/* ── Message list ── */}
         {messages.map((msg, i) => (
           <MessageBubble
             key={msg.id}
@@ -70,6 +86,8 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
             onEdit={!isStreaming ? onEdit : undefined}
           />
         ))}
+
+        {/* ── Typing indicator — visible while Ember is streaming ── */}
         {isStreaming && (
           <div className="chat-typing" aria-live="polite" aria-label={STATUS_LABELS[streamingStatus] || 'Ember is typing'}>
             <span className="typing-dot" />
@@ -82,6 +100,7 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
         )}
       </div>
 
+      {/* ── Scroll-to-bottom fab ── */}
       {showScrollBtn && (
         <button
           className="chat-scroll-btn"

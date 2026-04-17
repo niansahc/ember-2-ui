@@ -1,11 +1,22 @@
 /**
- * src/api/ember.js
+ * src/api/ember.js — API client for the Ember-2 FastAPI backend.
  *
- * Real API client for Ember-2 backend.
- * Connects to /v1/chat/completions (OpenAI-compatible).
+ * All fetch calls in the app go through this file. The backend exposes
+ * two URL namespaces:
+ *   • /v1/...  — OpenAI-compatible endpoints (chat, service, provider keys)
+ *   • /...     — Ember-native endpoints (model, ingest, memory, health)
+ * Functions here use API_URL (/v1) for the first and bare paths for the second.
+ *
+ * Auth: every request includes an X-API-Key header via authHeaders().
+ * The key comes from either:
+ *   1. window.__EMBER_API_KEY__ — injected by the FastAPI backend into
+ *      the served HTML at startup (production path), or
+ *   2. VITE_EMBER_API_KEY env var — for local dev with `npm run dev`
  */
 
 const API_URL = import.meta.env.VITE_EMBER_API_URL || 'http://localhost:8000/v1'
+// window.__EMBER_API_KEY__ is set by the backend's HTML template injection —
+// it's the production auth path so the key doesn't live in .env files.
 const API_KEY = window.__EMBER_API_KEY__ || import.meta.env.VITE_EMBER_API_KEY || ''
 
 if (!API_KEY) {
@@ -50,6 +61,10 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
   const usedVault = res.headers.get('x-ember-vault-used') === 'true'
   const usedVision = res.headers.get('x-ember-vision-used') === 'true'
 
+  // SSE stream parser. Tokens arrive as `data: {...}\n` lines, but network
+  // chunks don't respect line boundaries — a chunk can end mid-line. The
+  // buffer holds the trailing incomplete line; pop() removes it from the
+  // array and saves it for the next read.
   async function* chunks() {
     const reader = res.body.getReader()
     const decoder = new TextDecoder()
@@ -61,6 +76,8 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
+      // Last element is either empty (line ended with \n) or an incomplete
+      // line — stash it back in the buffer for the next chunk.
       buffer = lines.pop() || ''
 
       for (const line of lines) {
@@ -106,6 +123,7 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
 // Connection check
 // ---------------------------------------------------------------------------
 
+/** Fetch the backend version string from /api/health. Returns '' on failure. */
 export async function getVersion() {
   try {
     const res = await fetch('/api/health', {
@@ -123,6 +141,7 @@ export async function getVersion() {
   }
 }
 
+/** Quick liveness probe — Splash uses this to decide when the backend is ready. */
 export async function checkConnection() {
   try {
     const res = await fetch('/api/health', {
@@ -202,6 +221,7 @@ export async function shutdownService() {
 // Model info
 // ---------------------------------------------------------------------------
 
+/** Get current active model name. Hits /model (Ember-native, not /v1). */
 export async function getModel() {
   try {
     const res = await fetch('/model', { headers: authHeaders() })
@@ -211,6 +231,7 @@ export async function getModel() {
   }
 }
 
+/** Switch the active model. Hits /model (Ember-native, not /v1). */
 export async function setModel(model) {
   try {
     const res = await fetch('/model', {
@@ -228,6 +249,7 @@ export async function setModel(model) {
 // Cloud provider keys
 // ---------------------------------------------------------------------------
 
+/** Check if a cloud provider API key is configured. */
 export async function getProviderKey(provider) {
   try {
     const res = await fetch(`/provider-key/${provider}`, { headers: authHeaders() })
@@ -238,6 +260,7 @@ export async function getProviderKey(provider) {
   }
 }
 
+/** Store a cloud provider API key (Anthropic, OpenAI, etc.). */
 export async function setProviderKey(provider, apiKey) {
   const res = await fetch('/provider-key', {
     method: 'POST',
@@ -248,6 +271,7 @@ export async function setProviderKey(provider, apiKey) {
   return await res.json()
 }
 
+/** Remove a cloud provider API key. */
 export async function deleteProviderKey(provider) {
   const res = await fetch(`/provider-key/${provider}`, {
     method: 'DELETE',
@@ -260,6 +284,7 @@ export async function deleteProviderKey(provider) {
 // Conversations — session CRUD
 // ---------------------------------------------------------------------------
 
+/** List recent conversations (Sidebar uses this). */
 export async function getConversations(limit = 50) {
   const res = await fetch(`${API_URL}/conversations?limit=${limit}`, {
     headers: authHeaders(),
@@ -269,6 +294,7 @@ export async function getConversations(limit = 50) {
   return data.conversations || []
 }
 
+/** Fetch the full message history for a conversation. */
 export async function getConversationTurns(sessionId) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     headers: authHeaders(),
@@ -278,6 +304,7 @@ export async function getConversationTurns(sessionId) {
   return data.turns || []
 }
 
+/** Rename a conversation (Sidebar context menu). */
 export async function renameConversation(sessionId, title) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     method: 'PATCH',
@@ -288,6 +315,7 @@ export async function renameConversation(sessionId, title) {
   return await res.json()
 }
 
+/** Delete a conversation (Sidebar context menu). */
 export async function deleteConversation(sessionId) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     method: 'DELETE',
@@ -301,6 +329,7 @@ export async function deleteConversation(sessionId) {
 // Projects — CRUD
 // ---------------------------------------------------------------------------
 
+/** List all projects (Sidebar project view). */
 export async function getProjects() {
   const res = await fetch(`${API_URL}/projects`, { headers: authHeaders() })
   if (!res.ok) throw new Error(`API error ${res.status}`)
@@ -308,6 +337,7 @@ export async function getProjects() {
   return data.projects || []
 }
 
+/** Create a new project with a name and accent color. */
 export async function createProject(name, color = '#ff8c00') {
   const res = await fetch(`${API_URL}/projects`, {
     method: 'POST',
@@ -318,6 +348,7 @@ export async function createProject(name, color = '#ff8c00') {
   return await res.json()
 }
 
+/** Move a conversation into a project (deferred assignment from useChat). */
 export async function moveConversationToProject(conversationId, projectId) {
   const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
     method: 'PATCH',
@@ -332,6 +363,7 @@ export async function moveConversationToProject(conversationId, projectId) {
 // Security / PIN
 // ---------------------------------------------------------------------------
 
+/** Check whether a PIN is set (unauthenticated — runs before unlock). */
 export async function getPinStatus() {
   try {
     const res = await fetch(`${API_URL}/security/pin/status`)
@@ -342,6 +374,7 @@ export async function getPinStatus() {
   }
 }
 
+/** Set (or change) the PIN + recovery passphrase. */
 export async function setPin(pin, recoveryPassphrase) {
   const res = await fetch(`${API_URL}/security/pin/set`, {
     method: 'POST',
@@ -355,6 +388,12 @@ export async function setPin(pin, recoveryPassphrase) {
   return await res.json()
 }
 
+/**
+ * Verify a PIN attempt. Returns { valid, locked }.
+ * 429 = rate-limited lockout (5 min) — the lock screen shows a
+ * different UI state when `locked: true`, so we map it here
+ * instead of throwing.
+ */
 export async function verifyPin(pin) {
   const res = await fetch(`${API_URL}/security/pin/verify`, {
     method: 'POST',
@@ -366,6 +405,12 @@ export async function verifyPin(pin) {
   return await res.json()
 }
 
+/**
+ * Recovery flow — verify passphrase and set a new PIN.
+ * HTTP error codes map to user-facing messages:
+ *   429 → rate-limited lockout (5 min window)
+ *   403 → wrong passphrase
+ */
 export async function recoverPin(recoveryPassphrase, newPin) {
   const res = await fetch(`${API_URL}/security/pin/recover`, {
     method: 'POST',
@@ -424,6 +469,7 @@ export async function changePin(currentPin, newPin) {
 // Tasks
 // ---------------------------------------------------------------------------
 
+/** Fetch tasks, optionally filtered by status. Used by the Sidebar task tray. */
 export async function getTasks({ status } = {}) {
   try {
     const params = status ? `?status=${status}` : ''
@@ -436,6 +482,7 @@ export async function getTasks({ status } = {}) {
   }
 }
 
+/** Mark a task as completed/pending (checkbox in the task tray). */
 export async function updateTaskStatus(taskId, status) {
   const res = await fetch(`${API_URL}/tasks/${taskId}`, {
     method: 'PATCH',
@@ -446,6 +493,7 @@ export async function updateTaskStatus(taskId, status) {
   return await res.json()
 }
 
+/** Delete a task (swipe-to-dismiss in the tray). */
 export async function deleteTask(taskId) {
   const res = await fetch(`${API_URL}/tasks/${taskId}`, {
     method: 'DELETE',
@@ -458,6 +506,7 @@ export async function deleteTask(taskId) {
 // Preferences
 // ---------------------------------------------------------------------------
 
+/** Get all user preferences. Returns {} on failure (soft-fail by design). */
 export async function getPreferences() {
   try {
     const res = await fetch(`${API_URL}/preferences`, { headers: authHeaders() })
@@ -468,6 +517,7 @@ export async function getPreferences() {
   }
 }
 
+/** Partial-update preferences (PATCH merge). Returns {} on failure. */
 export async function updatePreferences(updates) {
   try {
     const res = await fetch(`${API_URL}/preferences`, {
@@ -509,6 +559,7 @@ export async function uploadDocument(file) {
 // Lodestone
 // ---------------------------------------------------------------------------
 
+/** Create a lodestone record (core identity fact). */
 export async function createLodestone(value, taxonomyCategory, source = 'onboarding') {
   const res = await fetch(`${API_URL}/lodestone`, {
     method: 'POST',
@@ -519,6 +570,7 @@ export async function createLodestone(value, taxonomyCategory, source = 'onboard
   return await res.json()
 }
 
+/** Update a lodestone record (edit text, confirm, dismiss, flag as noise). */
 export async function updateLodestone(recordId, updates) {
   const res = await fetch(`${API_URL}/lodestone/${recordId}`, {
     method: 'PATCH',
@@ -532,12 +584,14 @@ export async function updateLodestone(recordId, updates) {
   return await res.json()
 }
 
+/** Fetch all lodestone records (Memory tab panel). */
 export async function getLodestone() {
   const res = await fetch(`${API_URL}/lodestone`, { headers: authHeaders() })
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return await res.json()
 }
 
+/** Write a memory record to the vault (Onboarding uses this). */
 export async function writeMemory(text, memoryType = 'profile') {
   const res = await fetch('/write-memory', {
     method: 'POST',
@@ -548,6 +602,7 @@ export async function writeMemory(text, memoryType = 'profile') {
   return await res.json()
 }
 
+/** Write a state record to the vault (metadata is freeform — backend stores as JSON). */
 export async function writeState(type, text, { source = 'ui', tags = [], metadata = {} } = {}) {
   const res = await fetch('/write-state', {
     method: 'POST',
@@ -619,8 +674,10 @@ export async function getVaultStorage() {
   return await res.json()
 }
 
+/** True if an API key was found at boot — Splash uses this to skip auth warnings. */
 export const hasApiKey = !!API_KEY
 
+/** Build auth headers. Returns {} if no key — the request will still go out but the backend will reject it. */
 function authHeaders() {
   return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
 }
@@ -630,6 +687,7 @@ function authHeaders() {
 // Updates — GitHub Releases API
 // ---------------------------------------------------------------------------
 
+/** Check for a newer release via the GitHub Releases API. */
 export async function checkUpdate(currentVersion) {
   try {
     const res = await fetch(

@@ -1,3 +1,24 @@
+/**
+ * useChat — the core conversation engine.
+ *
+ * Owns message state, session tracking, streaming, and the
+ * API-first / mock-fallback pattern. Every chat interaction
+ * flows through here: send, regenerate, edit-and-resend, load
+ * history, and stop.
+ *
+ * File attachments are split by type:
+ *   • Images → base64 data URLs, sent inline via OpenAI multipart format
+ *   • Documents → uploaded to /ingest/upload (vault ingestion path)
+ *
+ * Per-conversation options (bareMode, vaultEnabled) are stored in a
+ * ref — not state — to avoid stale closures in the sendMessage callback.
+ * The ref is cleared on new conversation and updated via setChatOptions.
+ *
+ * Returns: { messages, isStreaming, streamingStatus, sessionId,
+ *            sendMessage, stopStreaming, clearMessages, loadConversation,
+ *            regenerate, setProjectForNewConversation, setChatOptions,
+ *            editAndResend }
+ */
 import { useState, useCallback, useRef } from 'react'
 import { uuid } from '../utils/uuid.js'
 import { mockStreamChat, mockGetMessages } from '../api/mock.js'
@@ -8,9 +29,7 @@ import {
   moveConversationToProject as realMoveToProject,
 } from '../api/ember.js'
 
-/**
- * Convert a File object to a base64 data URL string.
- */
+/** Convert a File object to a base64 data URL for the vision API. */
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -29,13 +48,18 @@ function fileToDataUrl(file) {
 export function useChat() {
   const [messages, setMessages] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
-  const [streamingStatus, setStreamingStatus] = useState(null)
+  const [streamingStatus, setStreamingStatus] = useState(null)  // 'searching' | 'verifying' | 'refining' | 'analyzing' | null
   const [sessionId, setSessionId] = useState(() => generateSessionId())
-  const abortRef = useRef(false)
-  const apiAvailableRef = useRef(true)
-  const pendingProjectRef = useRef(null)
-  const projectAssignedRef = useRef(false)
-  const chatOptionsRef = useRef({}) // per-conversation flags: bareMode, vaultEnabled
+
+  const abortRef = useRef(false)                // set true by stopStreaming to break the stream loop
+  const apiAvailableRef = useRef(true)           // flips false on first API failure → mock fallback
+  // Project assignment is deferred: the backend doesn't create the session
+  // until the first message, so we hold the project ID in a ref and assign
+  // after the first successful stream completes.
+  const pendingProjectRef = useRef(null)         // project to assign once session exists
+  const projectAssignedRef = useRef(false)       // prevents duplicate assignment calls
+  // Ref, not state — avoids stale closure in sendMessage's useCallback.
+  const chatOptionsRef = useRef({})              // per-conversation flags: { bareMode, vaultEnabled }
 
   function generateSessionId() {
     return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
@@ -56,6 +80,11 @@ export function useChat() {
     ])
   }
 
+  /**
+   * Send a message. Images ride inline (vision); documents go to vault first.
+   * Streams the response token-by-token and stamps transparency indicators
+   * (web search, vault, vision) from backend response headers.
+   */
   const sendMessage = useCallback(async (text, { images = [], documents = [] } = {}) => {
     if (!text.trim() && images.length === 0 && documents.length === 0) return
     if (isStreaming) return
@@ -127,10 +156,10 @@ export function useChat() {
     ])
 
     try {
-      // Build the messages array for the API. The last user message uses
-      // OpenAI multipart content format when images are attached.
+      // Rebuild the full conversation history for the API. We re-derive
+      // from `messages` state (not the backend session) so edits and trims
+      // are reflected. Images use the OpenAI vision multipart content format.
       const allMessages = [...messages, userMsg].map((m) => {
-        // For the message that has images, format as multipart content
         if (m.imageDataUrls && m.imageDataUrls.length > 0) {
           const parts = [{ type: 'text', text: m.content || '' }]
           for (const dataUrl of m.imageDataUrls) {
@@ -245,10 +274,12 @@ export function useChat() {
     }
   }, [messages, isStreaming, sessionId])
 
+  /** Signal the stream loop to stop after the current chunk. */
   const stopStreaming = useCallback(() => {
     abortRef.current = true
   }, [])
 
+  /** Reset everything for a new conversation — fresh session, no project, no options. */
   const clearMessages = useCallback(() => {
     setMessages([])
     setSessionId(generateSessionId())
@@ -257,18 +288,22 @@ export function useChat() {
     chatOptionsRef.current = {}
   }, [])
 
+  /** Merge per-conversation flags (bareMode, vaultEnabled) into the options ref. */
   const setChatOptions = useCallback((opts) => {
     chatOptionsRef.current = { ...chatOptionsRef.current, ...opts }
   }, [])
 
+  /** Queue a project assignment for the next new conversation (deferred until session exists). */
   const setProjectForNewConversation = useCallback((projectId) => {
     pendingProjectRef.current = projectId || null
     projectAssignedRef.current = false
   }, [])
 
+  /** Load an existing conversation's message history by ID (API-first, mock-fallback). */
   const loadConversation = useCallback(async (conversationId) => {
     try {
       const turns = await realGetConversationTurns(conversationId)
+      // Defensive: backend occasionally returns non-array on empty conversations
       const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
         id: t.id || uuid(),
         role: t.role,
@@ -286,11 +321,15 @@ export function useChat() {
     setSessionId(conversationId)
   }, [])
 
-  // Regenerate the last assistant response: trim messages back to the last user
-  // message (discarding the old response), then re-stream a new response from
-  // the same conversation history. Uses the same API-first/mock-fallback pattern.
+  /**
+   * Regenerate the last assistant response: trim back to the last user
+   * message, discard the old answer, and re-stream a fresh one.
+   * Intentionally separate from sendMessage to avoid re-triggering
+   * document ingestion or image processing on regen.
+   */
   const regenerate = useCallback(async () => {
     if (isStreaming) return
+    // findLastIndex is ES2023 — intentional, we target modern browsers
     const lastUserIdx = messages.findLastIndex((m) => m.role === 'user')
     if (lastUserIdx === -1) return
     const trimmed = messages.slice(0, lastUserIdx + 1)
@@ -377,6 +416,7 @@ export function useChat() {
     }
   }, [messages, isStreaming, sessionId])
 
+  /** Edit a previous user message and resend — trims everything after it and re-sends. */
   const editAndResend = useCallback(async (messageId, newText) => {
     if (isStreaming) return
 

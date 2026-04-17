@@ -1,3 +1,9 @@
+/**
+ * Splash — the first screen. Probes the backend, shows the mascot
+ * with a pulse animation while connecting, then transitions to the app.
+ * API-first / mock-fallback pattern: tries the real backend, falls back
+ * to mock data if it's unreachable (lets the UI render in dev without G).
+ */
 import { useEffect, useState } from 'react'
 import { checkConnection, hasApiKey } from '../../api/ember.js'
 import { mockCheckConnection } from '../../api/mock.js'
@@ -10,6 +16,7 @@ export default function Splash({ onConnected }) {
   const [missingKey, setMissingKey] = useState(false)
 
   useEffect(() => {
+    // Guard against setState on an unmounted component if the user navigates away
     let cancelled = false
 
     async function check() {

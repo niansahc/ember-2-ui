@@ -1,3 +1,8 @@
+/**
+ * BugReport — modal that opens a pre-filled GitHub Issue in the browser.
+ * No data is sent from Ember — the user files the bug on GitHub directly.
+ * useModal handles focus trapping and Escape-to-close.
+ */
 import { useModal } from '../../hooks/useModal.js'
 import './BugReport.css'
 

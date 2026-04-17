@@ -1,3 +1,10 @@
+/**
+ * About — Ember's manifesto page. Story, beliefs, nature facets, and ethos.
+ * Not a settings page — this is where Ember tells you who she is.
+ * Version fetched once on open from /api/health. Markdown-like content
+ * is rendered manually (headings via string parsing) to avoid pulling
+ * in a full markdown renderer for static copy.
+ */
 import { useState, useEffect } from 'react'
 import { getVersion } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'

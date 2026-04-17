@@ -1,9 +1,23 @@
+/**
+ * Onboarding — the first-run structured flow (4 steps + done screen).
+ *
+ * Step 1: Profile questions — basic identity context, written to vault as memories.
+ * Step 2: Lodestone gate — explains what Lodestone is, lets user opt in or skip.
+ * Step 3: Lodestone questionnaire — deeper questions mapped to taxonomy categories.
+ * Step 4: Lodestone review — backend-processed records shown one by one for
+ *         confirm / edit / dismiss. Each answer becomes a lodestone record.
+ * Step 5: Done — completion state written, user enters the app.
+ *
+ * Answers are persisted to preferences at each step so the user can resume
+ * if they close the browser mid-flow.
+ */
 import { useState } from 'react'
 import { writeMemory, writeState, updatePreferences, createLodestone, updateLodestone } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
 import './Onboarding.css'
 
-// Map question keys to lodestone taxonomy categories
+// Maps each question key → lodestone taxonomy category. Questions not in this
+// map fall back to 'character' (the broadest bucket).
 const QUESTION_CATEGORY_MAP = {
   time_1: 'character', time_2: 'character', time_3: 'character',
   decisions_1: 'character', decisions_2: 'character', decisions_3: 'character',
@@ -20,6 +34,7 @@ const CATEGORY_LABELS = {
   beyond: 'about what you reach toward',
 }
 
+// Step 1 questions — basic profile context, each written to vault as a memory record.
 const PROFILE_QUESTIONS = [
   {
     key: 'identity',
@@ -72,6 +87,8 @@ const PROFILE_QUESTIONS = [
   },
 ]
 
+// Step 3 sections — deeper questions grouped by theme. Each answered question
+// becomes a lodestone record via createLodestone(), categorized by QUESTION_CATEGORY_MAP.
 const LODESTONE_SECTIONS = [
   {
     title: 'How you spend your time',
@@ -176,15 +193,17 @@ const LODESTONE_SECTIONS = [
  *   initialLodestone — { key: answer } from previous onboarding (preferences)
  */
 export default function Onboarding({ onComplete, initialProfile, initialLodestone }) {
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(1)                            // 1-5 (steps described in file docstring)
   const [profileAnswers, setProfileAnswers] = useState(initialProfile || {})
   const [lodestoneAnswers, setLodestoneAnswers] = useState(initialLodestone || {})
   const [saving, setSaving] = useState(false)
-  const [expandedHelp, setExpandedHelp] = useState(null)
-  // Step 4 state
+  const [expandedHelp, setExpandedHelp] = useState(null)          // which question's "?" tooltip is open
+
+  // Step 4: review — backend returns processed lodestone records,
+  // user walks through them one at a time confirming or dismissing.
   const [proposedRecords, setProposedRecords] = useState([])
-  const [reviewIndex, setReviewIndex] = useState(0)
-  const [editingValue, setEditingValue] = useState(null)
+  const [reviewIndex, setReviewIndex] = useState(0)               // which record is being reviewed
+  const [editingValue, setEditingValue] = useState(null)           // non-null = user is editing the record text
 
   function updateProfile(key, value) {
     setProfileAnswers((prev) => ({ ...prev, [key]: value }))
@@ -194,6 +213,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     setLodestoneAnswers((prev) => ({ ...prev, [key]: value }))
   }
 
+  /** Step 1 → 2: write profile answers to vault as memory records, persist to prefs. */
   async function handleProfileNext() {
     setSaving(true)
     try {
@@ -213,6 +233,11 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     setStep(2)
   }
 
+  /**
+   * Step 3 → 4: create a lodestone record for each answered question,
+   * categorized by QUESTION_CATEGORY_MAP. If any records were created,
+   * advance to the review step; otherwise finish onboarding.
+   */
   async function handleLodestoneSubmit() {
     setSaving(true)
 
@@ -230,6 +255,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     const records = []
     for (const q of answered) {
       try {
+        // Fallback to 'character' if the question key isn't mapped — broadest bucket
         const category = QUESTION_CATEGORY_MAP[q.key] || 'character'
         const result = await createLodestone(
           lodestoneAnswers[q.key].trim(),
@@ -255,6 +281,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     setStep(4)
   }
 
+  /** Step 4: user confirms a proposed lodestone record (with optional edit). */
   async function handleReviewConfirm() {
     const record = proposedRecords[reviewIndex]
     const value = editingValue !== null ? editingValue : record.value
@@ -272,6 +299,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     advanceReview()
   }
 
+  /** Step 4: user dismisses a proposed lodestone record (marks unconfirmed). */
   async function handleReviewDismiss() {
     const record = proposedRecords[reviewIndex]
     try {
@@ -283,6 +311,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     advanceReview()
   }
 
+  /** Move to the next review card, or to the done screen if this was the last. */
   function advanceReview() {
     if (reviewIndex + 1 < proposedRecords.length) {
       setReviewIndex(reviewIndex + 1)
@@ -291,6 +320,7 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
     }
   }
 
+  /** Write completion state to vault + prefs, then hand off to the app. */
   async function finishOnboarding() {
     try {
       await writeState('onboarding', 'onboarding_complete', {
