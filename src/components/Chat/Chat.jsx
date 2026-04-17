@@ -6,7 +6,7 @@
  * bottom. The scroll-to-bottom button appears when the user scrolls
  * up past a threshold so they can jump back down.
  */
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import MessageBubble from './MessageBubble.jsx'
 import InputBar from './InputBar.jsx'
 import emberMascot from '../../../assets/ember-mascot.png'
@@ -26,15 +26,15 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
   const scrollRef = useRef(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
 
-  // Compute the session greeting once when Chat mounts. Using lazy
-  // useState initializer so the random picks happen exactly once —
-  // otherwise the greeting would flicker on every re-render.
+  // Compute the session greeting ONCE per hasOnboarded/userName transition.
+  // useMemo (not useState) because prefs load asynchronously — Chat often
+  // mounts before hasOnboarded flips true. A lazy useState initializer
+  // would lock in null forever; useMemo recomputes when deps change.
   // First-time users (!hasOnboarded) see the static Welcome copy; the
   // personalized time-of-day greeting is only for returning users.
-  const [greeting] = useState(() =>
-    hasOnboarded
-      ? getGreeting({ name: extractFirstName(userName) })
-      : null,
+  const greeting = useMemo(
+    () => (hasOnboarded ? getGreeting({ name: extractFirstName(userName) }) : null),
+    [hasOnboarded, userName],
   )
 
   // Auto-scroll to bottom whenever messages change (new message or streaming chunk)
