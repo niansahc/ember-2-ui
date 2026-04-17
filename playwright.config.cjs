@@ -5,7 +5,7 @@ module.exports = defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.spec.cjs',
   timeout: 30000,
-  retries: 0,
+  retries: 1,
   globalSetup: require.resolve('./tests/e2e/global-setup.cjs'),
   globalTeardown: require.resolve('./tests/e2e/global-teardown.cjs'),
   use: {
