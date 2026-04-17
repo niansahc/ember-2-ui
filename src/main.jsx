@@ -20,9 +20,9 @@ import './index.css'
 
 // ─── Style pack stylesheets ──────────────────────────────────────
 // Each pack registers its overrides under [data-style-pack="..."].
-// OG is the baseline (no overrides); the others are populated over
-// subsequent commits. Import order matters only if two packs
-// target the same selector — none do today, so alphabetical is fine.
+// OG is the baseline (the default token layer in index.css). Import
+// order is alphabetical; packs never share selectors, so cascade
+// order between them doesn't matter.
 import './styles/packs/pack-og.css'
 import './styles/packs/pack-clean.css'
 import './styles/packs/pack-hacker.css'
