@@ -1,21 +1,92 @@
 /* ════════════════════════════════════════════════════════════════
    Style Pack: Clean
 
-   Less but better. Single humanist sans, strict 4px grid, minimal
-   borders, one accent used once per screen. Color-agnostic.
-
-   STUB — populated in a follow-up commit.
+   Less but better. Inter throughout, tight radii, precise 4px grid
+   rhythm, minimal decoration. Color-agnostic — references theme
+   color tokens only. Every accent usage earns its place.
    ════════════════════════════════════════════════════════════════ */
 
 [data-style-pack="clean"] {
-  /* MVP override — Inter throughout (subtle shift from system-ui),
-     slightly tighter radii and line heights for precision feel.
-     Strict-grid enforcement + single-accent discipline land in the
-     follow-up commit. */
-  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --lh-body: 1.55;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 14px;
-  --lh-body: 1.55;
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 240ms;
+  --shadow-1: none;
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-key: 0 16px 40px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Section labels: quieter, slightly smaller, tighter tracking ── */
+[data-style-pack="clean"] .settings-section-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+/* ── Settings title: clean weight-600 sans, tight letter-spacing ── */
+[data-style-pack="clean"] .settings-title {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-size: 1.15rem;
+}
+
+/* ── Dividers: single hairline, no decoration ── */
+[data-style-pack="clean"] .settings-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-5) 0;
+  background: none;
+}
+
+/* ── Buttons: tight padding, no gradients or hover glows ── */
+[data-style-pack="clean"] .settings-action-btn {
+  padding: 6px var(--space-3);
+  font-weight: 500;
+  font-size: 0.82rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+
+/* ── Cards: no subtle inner shadows, precise 1px borders ── */
+[data-style-pack="clean"] .style-pack-card,
+[data-style-pack="clean"] .theme-swatch,
+[data-style-pack="clean"] .lodestone-entry {
+  box-shadow: none;
+}
+
+/* ── Tab bar: less heavy, restrained underline ── */
+[data-style-pack="clean"] .settings-tab {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+[data-style-pack="clean"] .settings-tab-active {
+  font-weight: 500;
+}
+
+/* ── Lodestone: dial back ornament, let whitespace do the work ── */
+[data-style-pack="clean"] .lodestone-entry {
+  border: 1px solid var(--border);
+  border-left-width: 1px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+
+/* ── Badges: minimal, subtle ── */
+[data-style-pack="clean"] .lodestone-badge {
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  border-radius: 3px;
+}
+
+/* ── Style-pack card active: 1px hairline instead of 2px ── */
+[data-style-pack="clean"] .style-pack-card {
+  border-width: 1px;
 }
