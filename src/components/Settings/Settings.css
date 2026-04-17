@@ -163,8 +163,7 @@
   top: calc(100% + 8px);
   left: 0;
   right: auto;
-  width: 280px;
-  max-width: calc(100vw - 3rem);
+  width: min(320px, calc(100vw - 2rem));
   padding: 0.6rem 0.75rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -211,13 +210,14 @@
 }
 
 .toggle-track {
-  width: 44px;
-  height: 24px;
+  width: var(--toggle-track-w);
+  height: var(--toggle-track-h);
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: calc(var(--toggle-track-h) / 2);
   position: relative;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard);
 }
 
 .toggle-track::after {
@@ -225,11 +225,12 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 18px;
-  height: 18px;
+  width: var(--toggle-thumb);
+  height: var(--toggle-thumb);
   background: var(--text-muted);
   border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
+  transition: transform var(--duration-base) var(--ease-standard),
+              background var(--duration-base) var(--ease-standard);
 }
 
 .toggle input:checked + .toggle-track {
@@ -238,7 +239,10 @@
 }
 
 .toggle input:checked + .toggle-track::after {
-  transform: translateX(20px);
+  /* Slides the thumb from its 2px-inset start position to the
+     mirrored end position. Works for any toggle size because the
+     distance equals (track-w - track-h). */
+  transform: translateX(calc(var(--toggle-track-w) - var(--toggle-track-h)));
   background: var(--accent);
 }
 
@@ -333,14 +337,14 @@
 }
 
 .settings-action-btn-danger {
-  color: #e85d5d;
+  color: var(--error);
   border-color: rgba(232, 93, 93, 0.3);
 }
 
 .settings-action-btn-danger:hover {
-  background: rgba(232, 93, 93, 0.1);
-  color: #e85d5d;
-  border-color: #e85d5d;
+  background: var(--status-danger-bg);
+  color: var(--error);
+  border-color: var(--error);
 }
 
 /* ── Vault path masking ──────────────────────────────────────── */
@@ -679,7 +683,7 @@
 }
 
 .cloud-provider-configured {
-  color: #6bcb8b;
+  color: var(--status-ok);
 }
 
 .cloud-provider-not-configured {
@@ -728,13 +732,19 @@
   margin-bottom: 0.5rem;
 }
 
-.cloud-remove-confirm-btn {
-  color: var(--error) !important;
-  border-color: var(--error) !important;
+/* Compound selector intentionally matches both classes on the same
+   element — raises specificity above `.settings-action-btn:hover`
+   (which would otherwise repaint this button in the accent color).
+   No !important needed. */
+.settings-action-btn.cloud-remove-confirm-btn {
+  color: var(--error);
+  border-color: var(--error);
 }
 
-.cloud-remove-confirm-btn:hover {
-  background: rgba(232, 93, 93, 0.1) !important;
+.settings-action-btn.cloud-remove-confirm-btn:hover {
+  background: var(--status-danger-bg);
+  color: var(--error);
+  border-color: var(--error);
 }
 
 /* ── Add key button ──────────────────────────────────────────── */
@@ -887,8 +897,8 @@
 }
 
 .lodestone-badge-confirmed {
-  color: #6bcb8b;
-  background: rgba(107, 203, 139, 0.1);
+  color: var(--status-ok);
+  background: var(--status-ok-bg);
 }
 
 .lodestone-badge-proposed {
@@ -970,7 +980,7 @@
 
 .lodestone-delete-cat-btn {
   font-size: 0.7rem;
-  color: var(--error, #e85d5d);
+  color: var(--error);
   padding: 0.2rem 0;
   text-align: right;
   transition: opacity 0.15s;
@@ -1053,8 +1063,8 @@
   letter-spacing: 0.04em;
   padding: 0.15rem 0.5rem;
   border-radius: 8px;
-  color: #f0a84b;
-  background: rgba(240, 168, 75, 0.12);
+  color: var(--status-warn);
+  background: var(--status-warn-bg);
 }
 
 .dev-rebuilding-note {
@@ -1144,12 +1154,12 @@
 }
 
 .device-security-dot-enabled {
-  background: #6bcb8b;
+  background: var(--status-ok);
   box-shadow: 0 0 6px rgba(107, 203, 139, 0.4);
 }
 
 .device-security-dot-disabled {
-  background: #f0a84b;
+  background: var(--status-warn);
   box-shadow: 0 0 6px rgba(240, 168, 75, 0.4);
 }
 
