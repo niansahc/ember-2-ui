@@ -62,7 +62,7 @@ test.describe('Bare Mode Toggle', () => {
     await expect(bareToggle).toHaveClass(/app-conv-toggle-active/)
 
     // check title attribute for tooltip text
-    await expect(bareToggle).toHaveAttribute('title', 'Bare mode on — personality off')
+    await expect(bareToggle).toHaveAttribute('title', 'Bare mode on — personality off. Click to restore.')
   })
 
   test('toggle resets after new conversation', async ({ page }) => {

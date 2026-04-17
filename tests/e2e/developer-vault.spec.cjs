@@ -129,10 +129,8 @@ test.describe('Developer Vault Switcher', () => {
     const badge = page.locator('[data-testid="dev-vault-badge"]')
     await expect(badge).toContainText('demo')
 
-    // Rebuilding note should appear
-    const note = page.locator('[data-testid="dev-rebuilding-note"]')
-    await expect(note).toBeVisible()
-    await expect(note).toContainText('Indexes rebuilding')
+    // Swap completes — no rebuilding note (removed in dead code cleanup).
+    // Badge update confirms the swap took effect.
   })
 
   test('header badge shows vault label when dev mode active', async ({ page }) => {
@@ -169,7 +167,9 @@ test.describe('Developer Vault Switcher', () => {
     await expect(page.locator('[data-testid="settings-tab-developer"]')).toHaveCount(0)
   })
 
-  test('Switch Vault section shows "no alternate vaults" when list is empty', async ({ page }) => {
+  test('Switch Vault section always offers private_vault as swap-back option', async ({ page }) => {
+    // Even with an empty available_vaults list, the UI injects private_vault
+    // so there's always a swap-back option.
     const emptyVaultsStatus = {
       ...DEV_STATUS_ACTIVE,
       available_vaults: [],
@@ -184,7 +184,8 @@ test.describe('Developer Vault Switcher', () => {
 
     const switcher = page.locator('[data-testid="dev-vault-switcher"]')
     await expect(switcher).toBeVisible()
-    await expect(page.locator('[data-testid="dev-vault-empty"]')).toContainText('No alternate vaults configured')
+    // private_vault is injected as the swap-back option
+    await expect(page.locator('[data-testid="dev-vault-option-private_vault"]')).toBeVisible()
   })
 
   test('Memory tab vault path reflects active dev vault, not hardcoded default', async ({ page }) => {

@@ -2,6 +2,8 @@
 // The vault toggle lets users disable vault storage for a single
 // conversation. When off, a banner warns that the conversation
 // won't be saved.
+// Both bare mode and vault toggles are always visible — vault is the
+// second .app-conv-toggle (bare mode is first).
 
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
@@ -14,13 +16,12 @@ test.describe('Vault Toggle', () => {
   })
 
   test('vault toggle is visible in chat header by default', async ({ page }) => {
-    // when bare mode is not enabled, vault toggle is the only .app-conv-toggle
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await expect(vaultToggle).toBeVisible()
   })
 
   test('clicking toggles vault off and adds active class', async ({ page }) => {
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await expect(vaultToggle).not.toHaveClass(/app-conv-toggle-active/)
 
     await vaultToggle.click()
@@ -28,7 +29,7 @@ test.describe('Vault Toggle', () => {
   })
 
   test('vault off shows banner warning', async ({ page }) => {
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await vaultToggle.click()
 
     const banner = page.locator('.app-vault-banner')
@@ -37,7 +38,7 @@ test.describe('Vault Toggle', () => {
   })
 
   test('vault back on hides the banner', async ({ page }) => {
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
 
     // toggle off
     await vaultToggle.click()
@@ -49,7 +50,7 @@ test.describe('Vault Toggle', () => {
   })
 
   test('sends vault_enabled: false in POST body when vault is off', async ({ page }) => {
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await vaultToggle.click()
     await expect(vaultToggle).toHaveClass(/app-conv-toggle-active/)
 
@@ -75,7 +76,7 @@ test.describe('Vault Toggle', () => {
   })
 
   test('resets on new conversation', async ({ page }) => {
-    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const vaultToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await vaultToggle.click()
     await expect(vaultToggle).toHaveClass(/app-conv-toggle-active/)
     await expect(page.locator('.app-vault-banner')).toBeVisible()
@@ -85,7 +86,7 @@ test.describe('Vault Toggle', () => {
     await newConvoBtn.click()
 
     // vault toggle should reset
-    const resetToggle = page.locator('.app-header-actions .app-conv-toggle')
+    const resetToggle = page.locator('.app-header-actions .app-conv-toggle').last()
     await expect(resetToggle).not.toHaveClass(/app-conv-toggle-active/)
     await expect(page.locator('.app-vault-banner')).not.toBeVisible()
   })
