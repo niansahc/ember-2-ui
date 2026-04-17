@@ -1,0 +1,19 @@
+/* ════════════════════════════════════════════════════════════════
+   Style Pack: Hearth
+
+   Late-night study. Serif display, tonal layering, halo atmospherics.
+   Color-agnostic — references theme color tokens only.
+
+   STUB — populated in a follow-up commit. Kept as an empty file so
+   the import graph resolves and users who select Hearth before it
+   lands see the OG aesthetic (graceful degradation).
+   ════════════════════════════════════════════════════════════════ */
+
+[data-style-pack="hearth"] {
+  /* MVP override — serif body for an editorial, journal-like feel.
+     Full decorative pass (halos, gradient buttons, pseudo-elements)
+     lands in the follow-up commit. */
+  --font-body: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --lh-body: 1.65;
+}

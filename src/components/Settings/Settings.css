@@ -1197,6 +1197,99 @@
   text-decoration: underline;
 }
 
+/* ── Style pack picker ───────────────────────────────────────────
+   4 horizontal rows (1 per pack). Each row has a small "Aa" preview
+   tile on the left (rendered in the pack's signature display font)
+   plus the pack name + description on the right. Compact — about
+   66px per row so the whole picker fits comfortably below the theme
+   swatches without forcing a scroll. No hover preview; click commits. */
+
+.style-pack-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.style-pack-card {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--duration-base) var(--ease-standard),
+    background   var(--duration-base) var(--ease-standard);
+  font-family: var(--font-body);
+}
+
+.style-pack-card:hover {
+  background: var(--bg-surface-hover);
+}
+
+.style-pack-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.style-pack-card-active {
+  border-color: var(--accent);
+  background: var(--bg-surface-hover);
+}
+
+.style-pack-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.style-pack-preview-text {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* Pack-specific preview fonts so the tile hints at the feel. */
+.style-pack-preview-og       .style-pack-preview-text { font-family: var(--font-body); }
+.style-pack-preview-hearth   .style-pack-preview-text { font-family: 'Fraunces Variable', Georgia, serif; font-style: italic; font-weight: 500; }
+.style-pack-preview-hacker   .style-pack-preview-text { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; letter-spacing: 0.05em; }
+.style-pack-preview-clean    .style-pack-preview-text { font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+
+.style-pack-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.style-pack-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.style-pack-card-active .style-pack-name {
+  color: var(--accent);
+}
+
+.style-pack-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .device-security-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

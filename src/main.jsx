@@ -18,6 +18,16 @@ import '@fontsource/inter/600.css'
 
 import './index.css'
 
+// ─── Style pack stylesheets ──────────────────────────────────────
+// Each pack registers its overrides under [data-style-pack="..."].
+// OG is the baseline (no overrides); the others are populated over
+// subsequent commits. Import order matters only if two packs
+// target the same selector — none do today, so alphabetical is fine.
+import './styles/packs/pack-og.css'
+import './styles/packs/pack-clean.css'
+import './styles/packs/pack-hacker.css'
+import './styles/packs/pack-hearth.css'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

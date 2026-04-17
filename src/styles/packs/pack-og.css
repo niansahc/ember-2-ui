@@ -1,0 +1,16 @@
+/* ════════════════════════════════════════════════════════════════
+   Style Pack: OG (Ember — the original)
+
+   The shipped default aesthetic. System font, familiar radii,
+   original motion. This pack exists as an explicit option so users
+   can always switch back after exploring others.
+
+   The file is intentionally near-empty — all tokens are inherited
+   from :root in index.css, which IS the OG configuration. A pack
+   stylesheet needs to exist per pack for the architecture to be
+   symmetric, so here it is.
+   ════════════════════════════════════════════════════════════════ */
+
+[data-style-pack="og"] {
+  /* No overrides. The root token values are the OG pack. */
+}
