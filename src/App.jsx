@@ -23,6 +23,7 @@ import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferenc
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
 import { useTheme } from './hooks/useTheme.js'
+import { useStylePack } from './hooks/useStylePack.js'
 import { useTour } from './hooks/useTour.js'
 import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
@@ -155,6 +156,7 @@ export default function App() {
     }
   }, [messages.length, sessionId, activeConversation])
   const { theme, setTheme, themes, customColors, setCustomColors } = useTheme()
+  const { stylePack, setStylePack, packs: stylePacks } = useStylePack()
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -491,6 +493,9 @@ export default function App() {
         themes={themes}
         customColors={customColors}
         setCustomColors={setCustomColors}
+        stylePack={stylePack}
+        setStylePack={setStylePack}
+        stylePacks={stylePacks}
       />
 
       <BugReport

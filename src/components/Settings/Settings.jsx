@@ -28,6 +28,7 @@ import {
   getVaultStorage,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
+import StylePackPicker from './StylePackPicker.jsx'
 import './Settings.css'
 
 /** Human-readable byte size (e.g. 1024 → "1.0 KB"). Used for vault storage display. */
@@ -84,6 +85,8 @@ const PLATFORM_TO_METHOD = {
 // Order here = order in the UI. Developer tab is added dynamically when devMode is true.
 const TABS = [
   { id: 'general', label: 'General', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
+  // Appearance tab — four swatch-style squares hint at the theme-picker grid inside.
+  { id: 'appearance', label: 'Appearance', icon: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z' },
   { id: 'security', label: 'Security', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
   { id: 'memory', label: 'Memory', icon: 'M21 5c0-1.1-4-2-9-2S3 3.9 3 5m18 0v14c0 1.1-4 2-9 2s-9-.9-9-2V5m18 0c0 1.1-4 2-9 2s-9-.9-9-2m18 7c0 1.1-4 2-9 2s-9-.9-9-2' },
   { id: 'features', label: 'Features', icon: 'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' },
@@ -92,7 +95,7 @@ const TABS = [
 
 // React.memo prevents re-render when App.jsx re-renders (e.g. modal
 // state changes) but Settings props haven't changed.
-export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
+export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors, stylePack, setStylePack, stylePacks }) {
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
 
@@ -597,15 +600,19 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                 </div>
               </div>
 
-              <hr className="settings-divider" />
+            </div>
+          )}
 
-              <div className="settings-section-label">Appearance</div>
+          {/* ── Appearance tab ─────────────────────────────────────
+             Theme, custom colors, and style pack selector. Moved out
+             of General so that tab can focus on behavior defaults
+             (models + conversation style), and so the theming surface
+             has room to grow (font scale, density, reduced motion
+             land in follow-up commits). */}
+          {activeTab === 'appearance' && (
+            <div id="settings-panel-appearance" role="tabpanel" className="settings-tab-panel">
+              <div className="settings-section-label">Theme</div>
 
-              <div className="settings-row">
-                <div className="settings-row-info">
-                  <span className="settings-row-label">Theme</span>
-                </div>
-              </div>
               <div className="theme-picker" role="radiogroup" aria-label="Choose a theme">
                 {themes?.map((t) => (
                   <button
@@ -653,6 +660,22 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
                   </label>
                 </div>
               )}
+
+              <hr className="settings-divider" />
+
+              <div className="settings-section-label">Style Pack</div>
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <span className="settings-row-hint">
+                    Changes typography and styling. Colors come from your theme above.
+                  </span>
+                </div>
+              </div>
+              <StylePackPicker
+                stylePack={stylePack}
+                setStylePack={setStylePack}
+                packs={stylePacks}
+              />
 
             </div>
           )}
