@@ -59,14 +59,14 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
   }
 
   // Walk backward to find the last assistant message — only that message
-  // gets the regenerate button and "isLast" styling. IIFE so it runs
-  // inline as a derived value on every render.
-  const lastAssistantIdx = (() => {
+  // gets the regenerate button and "isLast" styling. Memoized on messages
+  // so streaming-chunk re-renders don't re-scan the full thread each frame.
+  const lastAssistantIdx = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'assistant') return i
     }
     return -1
-  })()
+  }, [messages])
 
   return (
     <div className="chat">
