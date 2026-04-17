@@ -1,3 +1,5 @@
+/* ── Chat — message list, typing indicator, scroll-to-bottom fab ── */
+
 .chat {
   display: flex;
   flex-direction: column;

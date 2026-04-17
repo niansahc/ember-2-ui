@@ -8,12 +8,20 @@ import { getPreferences, updatePreferences } from '../api/ember.js'
  * Uses Shepherd.js for step-by-step walkthrough.
  * Completion stored in vault preferences (first_run_tour_complete: true).
  */
+/**
+ * @param {boolean} isReady — true when the main app is mounted and the
+ *   sidebar DOM elements exist for Shepherd to attach to. Typically:
+ *   `view === 'chat' && !isLocked && !showPinSetup`.
+ */
 export function useTour(isReady) {
+  // Stored in a ref so the cleanup function can cancel an in-progress tour
   const tourRef = useRef(null)
 
   useEffect(() => {
     if (!isReady) return
 
+    // Cancellation flag prevents a stale async operation from starting
+    // the tour after the component unmounts mid-fetch.
     let cancelled = false
 
     async function maybeStartTour() {
@@ -22,7 +30,8 @@ export function useTour(isReady) {
         if (prefs.first_run_tour_complete) return
         if (cancelled) return
 
-        // Delay to let UI settle
+        // 1s delay — sidebar DOM elements need to exist for Shepherd's
+        // attachTo selectors. Without this, steps attach to nothing.
         await new Promise((r) => setTimeout(r, 1000))
         if (cancelled) return
 
@@ -66,7 +75,8 @@ export function useTour(isReady) {
           ],
         })
 
-        // Only show task step if tasks exist in the sidebar
+        // Conditional: task tray only renders when there are tasks.
+        // If we attach Shepherd to a non-existent element, it breaks.
         if (document.querySelector('.sidebar-tasks')) {
           tour.addStep({
             id: 'tasks',
@@ -104,6 +114,7 @@ export function useTour(isReady) {
         }
 
         tour.on('complete', markComplete)
+        // Cancel = skip — still mark complete so we never show the tour again
         tour.on('cancel', markComplete)
 
         tour.start()

@@ -30,7 +30,8 @@ export function useModal(isOpen, onClose) {
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement
-      // Focus first focusable element in modal after render
+      // rAF defers the query to the next paint — React may not have flushed
+      // DOM updates by the time this effect fires synchronously.
       requestAnimationFrame(() => {
         if (modalRef.current) {
           const focusable = modalRef.current.querySelector(
@@ -41,7 +42,7 @@ export function useModal(isOpen, onClose) {
       })
     } else if (previousFocusRef.current) {
       previousFocusRef.current.focus()
-      previousFocusRef.current = null
+      previousFocusRef.current = null  // prevent holding a stale DOM reference
     }
   }, [isOpen])
 

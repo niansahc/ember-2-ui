@@ -1,5 +1,9 @@
+/* ── App — root layout, header, feature icons, per-conversation toggles ── */
+
 .app-layout {
   display: flex;
+  /* 100vh then 100dvh: progressive enhancement — dvh accounts for mobile
+     browser chrome (address bar), vh doesn't. Both lines are intentional. */
   height: 100vh;
   height: 100dvh;
   width: 100vw;

@@ -1,8 +1,12 @@
+/* ── InputBar — message composer at the bottom of the chat view ── */
+
+/* ── Container ── */
 .input-bar {
   padding: 0.75rem 1rem;
   background: var(--bg-primary);
 }
 
+/* ── File chips — thumbnail previews of attached files ── */
 .input-files {
   display: flex;
   flex-wrap: wrap;
@@ -53,6 +57,7 @@
   color: var(--text-muted);
 }
 
+/* Dashed border for document chips — visual cue that these go to vault, not inline */
 .input-file-chip-document {
   border-color: var(--accent);
   border-style: dashed;
@@ -69,6 +74,7 @@
   color: #e85d5d;
 }
 
+/* ── Compose row — attach button, textarea, send/stop ── */
 .input-row {
   display: flex;
   align-items: flex-end;
@@ -92,11 +98,12 @@
   background: var(--accent-dim);
 }
 
+/* ── Textarea — auto-grows via field-sizing: content ── */
 .input-textarea {
   flex: 1;
   resize: none;
   min-height: 40px;
-  max-height: 160px;
+  max-height: 160px;                /* cap height so the input bar doesn't eat the chat */
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-md);
   background: var(--bg-input);
@@ -105,7 +112,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   overflow-y: auto;
-  field-sizing: content;
+  field-sizing: content;            /* CSS auto-grow — non-standard but supported in Chromium */
 }
 
 .input-textarea::placeholder {
@@ -118,6 +125,7 @@
   outline: none;
 }
 
+/* ── Send button (doubles as stop button during streaming) ── */
 .input-send {
   flex-shrink: 0;
   width: 40px;
@@ -136,6 +144,7 @@
   box-shadow: 0 0 12px rgba(255, 140, 0, 0.2);
 }
 
+/* Stop state — red to signal "click to cancel" */
 .input-stop {
   background: #e85d5d;
 }
@@ -145,6 +154,7 @@
   box-shadow: 0 0 15px rgba(232, 93, 93, 0.4);
 }
 
+/* ── Mobile ── */
 @media (max-width: 767px) {
   .input-bar {
     padding: 0.5rem;

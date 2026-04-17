@@ -10,6 +10,12 @@ import { useEffect, useRef, useCallback } from 'react'
  * touchstart) with no debounce, causing measurable overhead on high-DPI
  * displays where mousemove fires hundreds of times per second.
  */
+/**
+ * @param {number} minutes — idle duration before firing. 0 disables the timer.
+ * @param {Function} onIdle — called once when the timeout fires.
+ * @param {boolean} enabled — master switch (false = no listeners, no timer).
+ * @returns {Function} resetTimer — manually reset the idle clock (e.g. after PIN entry).
+ */
 export function useIdleTimeout(minutes, onIdle, enabled = true) {
   const timerRef = useRef(null)
   const debounceRef = useRef(null)

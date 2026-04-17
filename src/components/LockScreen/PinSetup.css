@@ -1,3 +1,7 @@
+/* ── PinSetup — first-run PIN creation wizard ── */
+
+/* z-10001 = one above LockScreen (z-10000) so this renders on top when
+   both are mounted during the first-run setup sequence. */
 .pin-setup-overlay {
   position: fixed;
   inset: 0;

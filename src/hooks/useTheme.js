@@ -93,6 +93,7 @@ function buildCustomVars(colors) {
   }
 }
 
+/** Load saved custom colors from localStorage; graceful fallback on corrupt JSON. */
 function loadCustomColors() {
   try {
     const stored = localStorage.getItem(CUSTOM_COLORS_KEY)
@@ -101,6 +102,11 @@ function loadCustomColors() {
   return DEFAULT_CUSTOM
 }
 
+/**
+ * Returns { theme, setTheme, themes, customColors, setCustomColors }.
+ * `themes` includes a live preview swatch for the custom theme entry
+ * (third color = derived text color based on background luminance).
+ */
 export function useTheme() {
   const [theme, setThemeState] = useState(() => {
     return localStorage.getItem(STORAGE_KEY) || 'ember'
@@ -114,12 +120,16 @@ export function useTheme() {
     Object.entries(vars).forEach(([prop, val]) => root.style.setProperty(prop, val))
   }, [])
 
+  // To clear custom vars, we build a DEFAULT_CUSTOM set just to get the key
+  // list, then remove every property. Avoids hardcoding the var names twice.
   const clearCustomVars = useCallback(() => {
     const root = document.documentElement
     const vars = buildCustomVars(DEFAULT_CUSTOM)
     Object.keys(vars).forEach((prop) => root.style.removeProperty(prop))
   }, [])
 
+  // Apply theme on change. customColors is in the dep array so the custom
+  // theme preview updates live as the user picks colors.
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem(STORAGE_KEY, theme)

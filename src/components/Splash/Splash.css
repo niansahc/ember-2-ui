@@ -1,3 +1,5 @@
+/* ── Splash — boot screen shown while connecting to the backend ── */
+
 .splash {
   display: flex;
   flex-direction: column;

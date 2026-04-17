@@ -1,3 +1,13 @@
+/**
+ * Settings — full-page tabbed settings panel.
+ *
+ * Tabs: General, Security, Memory, Features, About (+ Developer when dev mode is on).
+ * Wrapped in React.memo because App.jsx re-renders often (modal state, streaming)
+ * and we don't want to re-render the settings panel when its props haven't changed.
+ *
+ * Data fetching is deferred per-tab: each tab only fetches its data when activated,
+ * not on mount. This keeps the initial open fast and avoids unnecessary API calls.
+ */
 import { useState, useEffect, memo } from 'react'
 import { mockGetOllamaModels } from '../../api/mock.js'
 import {
@@ -20,6 +30,7 @@ import {
 import { useModal } from '../../hooks/useModal.js'
 import './Settings.css'
 
+/** Human-readable byte size (e.g. 1024 → "1.0 KB"). Used for vault storage display. */
 function formatBytes(bytes) {
   if (bytes == null) return '—'
   if (bytes < 1024) return `${bytes} B`
@@ -28,7 +39,8 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-// Cloud models by provider (matches CLOUD_MODELS in config.py)
+// Cloud models by provider — hardcoded copy of CLOUD_MODELS from backend config.py.
+// If G adds new models, this list must be updated manually to match.
 const CLOUD_MODELS = {
   anthropic: [
     { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', desc: 'Best value. 8.7/10, fastest, cheapest.' },
@@ -68,6 +80,8 @@ const PLATFORM_TO_METHOD = {
   linux: 'luks',
 }
 
+// Tab definitions — icon is an SVG path rendered inline in the tab bar.
+// Order here = order in the UI. Developer tab is added dynamically when devMode is true.
 const TABS = [
   { id: 'general', label: 'General', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
   { id: 'security', label: 'Security', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
@@ -81,6 +95,8 @@ const TABS = [
 export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, theme, setTheme, themes, customColors, setCustomColors }) {
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
+
+  // ── General tab state ──
   const [webSearch, setWebSearch] = useState(true)
   const [tone, setTone] = useState('balanced')
   const [currentModel, setCurrentModel] = useState('')
@@ -92,36 +108,45 @@ export default memo(function Settings({ isOpen, initialTab, onClose, onOpenBugRe
   })
   const [localModels, setLocalModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(false)
-  const [modelTab, setModelTab] = useState('local') // 'local' | 'cloud'
+  const [modelTab, setModelTab] = useState('local')              // 'local' | 'cloud'
 
-  // Cloud provider state
-  const [providerStatus, setProviderStatus] = useState({}) // { anthropic: { configured: true }, ... }
-  const [addingKeyFor, setAddingKeyFor] = useState(null) // provider id or null
+  // ── Cloud provider key state ──
+  const [providerStatus, setProviderStatus] = useState({})        // { anthropic: { configured: true }, ... }
+  const [addingKeyFor, setAddingKeyFor] = useState(null)          // provider id being configured, or null
   const [keyInput, setKeyInput] = useState('')
   const [keySaving, setKeySaving] = useState(false)
   const [keyError, setKeyError] = useState('')
-  const [confirmingRemove, setConfirmingRemove] = useState(null) // provider id or null
+  const [confirmingRemove, setConfirmingRemove] = useState(null)  // provider id pending removal confirm
+
+  // ── Memory tab state ──
   const [vaultPathRevealed, setVaultPathRevealed] = useState(false)
   const [vaultCopied, setVaultCopied] = useState(false)
   const [vaultStorage, setVaultStorage] = useState(null)
+
+  // ── Security tab state ──
   const [securityPinSet, setSecurityPinSet] = useState(false)
-  const [diskEncryption, setDiskEncryption] = useState(null) // null = not yet fetched; { ok, enabled, platform, method } once loaded
+  const [diskEncryption, setDiskEncryption] = useState(null)      // null = not yet fetched
   const [lockOnLaunch, setLockOnLaunch] = useState(false)
   const [idleLockEnabled, setIdleLockEnabled] = useState(false)
   const [idleTimeout, setIdleTimeout] = useState(15)
-  // Developer mode state
+
+  // ── Developer tab state ──
   const [devMode, setDevMode] = useState(false)
-  const [devActiveVault, setDevActiveVault] = useState(null) // { label, path }
+  const [devActiveVault, setDevActiveVault] = useState(null)      // { label, path }
   const [devAvailableVaults, setDevAvailableVaults] = useState([])
   const [devSwapping, setDevSwapping] = useState(false)
+
+  // ── Features tab state ──
   const [deviationEnabled, setDeviationEnabled] = useState(false)
   const [webSearchAutonomous, setWebSearchAutonomous] = useState(false)
   const [contextLength, setContextLength] = useState(8192)
+
+  // ── Lodestone panel state (Memory tab) ──
   const [lodestoneRecords, setLodestoneRecords] = useState([])
   const [lodestoneLoading, setLodestoneLoading] = useState(false)
-  const [lodestoneEditing, setLodestoneEditing] = useState(null) // { id, value }
+  const [lodestoneEditing, setLodestoneEditing] = useState(null)  // { id, value } when editing inline
   const [lodestoneExpanded, setLodestoneExpanded] = useState(false)
-  const [lodestoneAdding, setLodestoneAdding] = useState(null) // category key or null
+  const [lodestoneAdding, setLodestoneAdding] = useState(null)    // category key when adding a new record
   const [lodestoneAddValue, setLodestoneAddValue] = useState('')
   const [lodestoneCustomCat, setLodestoneCustomCat] = useState(false)
   const [lodestoneCustomName, setLodestoneCustomName] = useState('')

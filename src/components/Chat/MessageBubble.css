@@ -1,8 +1,10 @@
+/* ── MessageBubble — individual chat messages (user + assistant) ── */
+
 .bubble-row {
   display: flex;
   gap: 0.75rem;
   padding: 0.25rem 0;
-  max-width: 85%;
+  max-width: 85%;                    /* classic chat width constraint */
 }
 
 .bubble-row-user {

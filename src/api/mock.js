@@ -16,8 +16,12 @@ const EMBER_RESPONSES = [
   "```python\ndef calculate_streak(entries):\n    \"\"\"Count consecutive days with journal entries.\"\"\"\n    if not entries:\n        return 0\n    \n    sorted_dates = sorted(set(e.date for e in entries), reverse=True)\n    streak = 1\n    \n    for i in range(1, len(sorted_dates)):\n        diff = (sorted_dates[i-1] - sorted_dates[i]).days\n        if diff == 1:\n            streak += 1\n        else:\n            break\n    \n    return streak\n```\n\nHere's a clean implementation. It sorts unique entry dates and counts backward from the most recent, breaking on any gap.",
 ]
 
+// Module-level counter — cycles deterministically through EMBER_RESPONSES
+// so each mock message is different. Persists across calls within the same
+// page session (useful for testing multiple exchanges).
 let responseIndex = 0
 
+/** Round-robin through mock responses. */
 function getNextResponse() {
   const response = EMBER_RESPONSES[responseIndex % EMBER_RESPONSES.length]
   responseIndex++
@@ -35,6 +39,7 @@ export async function* mockStreamChat(messages) {
   const words = response.split(' ')
 
   for (let i = 0; i < words.length; i++) {
+    // Re-add the space between words since split(' ') strips them
     const chunk = (i === 0 ? '' : ' ') + words[i]
     yield chunk
     await sleep(20 + Math.random() * 30)
@@ -98,6 +103,8 @@ export async function mockGetOllamaModels() {
 /**
  * Get messages for a conversation by ID.
  */
+// Mock conversation histories keyed by conversation ID. IDs match the ones
+// returned by mockGetConversations() — the coupling is invisible but required.
 const MOCK_HISTORIES = {
   '1': [
     { id: 'h1a', role: 'user', content: "Let's plan out my week. I have three big things I need to get done.", timestamp: '2026-03-24T10:30:00Z' },
@@ -123,6 +130,7 @@ const MOCK_HISTORIES = {
   ],
 }
 
+/** Load mock message history for a conversation. Returns [] for unknown IDs. */
 export async function mockGetMessages(conversationId) {
   await sleep(200)
   return MOCK_HISTORIES[conversationId] || []
@@ -142,6 +150,7 @@ export async function mockCheckUpdate() {
   }
 }
 
+/** Promise-based delay. */
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
