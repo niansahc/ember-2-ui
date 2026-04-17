@@ -78,8 +78,7 @@
 }
 
 /* ── Lodestone category names: serif display ── */
-[data-style-pack="hearth"] .lodestone-category-header h3,
-[data-style-pack="hearth"] .lodestone-category-name {
+[data-style-pack="hearth"] .lodestone-category-title {
   font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
