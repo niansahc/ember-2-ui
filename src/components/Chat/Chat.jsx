@@ -10,6 +10,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import MessageBubble from './MessageBubble.jsx'
 import InputBar from './InputBar.jsx'
 import emberMascot from '../../../assets/ember-mascot.png'
+import { getGreeting, extractFirstName } from '../../utils/greeting.js'
 import './Chat.css'
 
 // Maps streaming status codes from the backend to user-facing labels.
@@ -21,9 +22,20 @@ const STATUS_LABELS = {
   analyzing: 'Analyzing image\u2026',
 }
 
-export default function Chat({ messages, isStreaming, streamingStatus, onSend, onStop, onRegenerate, onEdit }) {
+export default function Chat({ messages, isStreaming, streamingStatus, onSend, onStop, onRegenerate, onEdit, userName, hasOnboarded }) {
   const scrollRef = useRef(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+
+  // Compute the session greeting once when Chat mounts. Using lazy
+  // useState initializer so the random picks happen exactly once —
+  // otherwise the greeting would flicker on every re-render.
+  // First-time users (!hasOnboarded) see the static Welcome copy; the
+  // personalized time-of-day greeting is only for returning users.
+  const [greeting] = useState(() =>
+    hasOnboarded
+      ? getGreeting({ name: extractFirstName(userName) })
+      : null,
+  )
 
   // Auto-scroll to bottom whenever messages change (new message or streaming chunk)
   useEffect(() => {
@@ -65,14 +77,29 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
         role="log"
         aria-label="Conversation"
       >
-        {/* ── Empty state — shown before the first message ── */}
+        {/* ── Empty state — shown before the first message ─────────
+           First-time users (pre-onboarding) see the stable Welcome
+           copy that introduces Ember. Returning users get a time-of-
+           day greeting in Ember's voice, varied per session, with
+           the user's first name ~40% of the time. */}
         {messages.length === 0 && (
           <div className="chat-empty">
             <img src={emberMascot} alt="" className="chat-empty-logo" aria-hidden="true" />
-            <h2 className="chat-empty-title">Hi, I'm Ember.</h2>
-            <p className="chat-empty-text">
-              Ask me anything, write a journal entry, or just tell me what's on your mind.
-            </p>
+            {greeting ? (
+              <>
+                <h2 className="chat-empty-title">{greeting.title}</h2>
+                {greeting.subtitle && (
+                  <p className="chat-empty-text">{greeting.subtitle}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="chat-empty-title">Hi, I'm Ember.</h2>
+                <p className="chat-empty-text">
+                  Ask me anything, write a journal entry, or just tell me what's on your mind.
+                </p>
+              </>
+            )}
           </div>
         )}
 

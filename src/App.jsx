@@ -61,6 +61,12 @@ export default function App() {
   const [showPinChange, setShowPinChange] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingInitial, setOnboardingInitial] = useState({ profile: {}, lodestone: {} })
+  // Returning-user greeting — populated from prefs after first load.
+  // `userName` is parsed from onboarding's free-form identity answer.
+  // `hasOnboarded` gates between the welcome copy (first-timers) and
+  // the personalized time-of-day greeting (returning users).
+  const [userName, setUserName] = useState(null)
+  const [hasOnboarded, setHasOnboarded] = useState(false)
   const [pinIsSet, setPinIsSet] = useState(false)
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
   const [devMode, setDevMode] = useState(false)
@@ -103,6 +109,12 @@ export default function App() {
           })
           setShowOnboarding(true)
         }
+        // For returning users, capture data used by the personalized
+        // chat-empty greeting. `identity` is a free-form string like
+        // "Alex, they/them" — the Chat component parses out the first
+        // name at render time.
+        setHasOnboarded(!!prefs.onboarding_complete)
+        setUserName(prefs.onboarding_profile_answers?.identity || null)
 
         // Show PIN setup prompt for new users (once, after tour)
         if (!pinStatus.pin_set && !prefs.pin_setup_dismissed && prefs.first_run_tour_complete) {
@@ -473,6 +485,8 @@ export default function App() {
           onStop={stopStreaming}
           onRegenerate={regenerate}
           onEdit={editAndResend}
+          userName={userName}
+          hasOnboarded={hasOnboarded}
         />
       </main>
 
