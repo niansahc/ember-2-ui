@@ -27,8 +27,13 @@ async function readVar(page, name) {
 
 test.describe('Style packs — token overrides via ?style-pack param', () => {
   test.beforeEach(async ({ page }) => {
+    // One-time storage clear so no stale ember-style-pack biases the URL
+    // param test. addInitScript would re-fire on every navigation, defeating
+    // tests that themselves trigger a load.
     await mockBootstrap(page)
-    await page.addInitScript(() => { try { localStorage.clear() } catch {} })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.evaluate(() => { try { localStorage.clear() } catch {} })
   })
 
   test('OG pack writes its attribute but adds no font/shadow overrides', async ({ page }) => {

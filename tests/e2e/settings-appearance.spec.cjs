@@ -15,13 +15,14 @@ const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 test.describe('Settings — Appearance tab', () => {
   test.beforeEach(async ({ page }) => {
     // Each test starts with a clean localStorage so hook defaults are
-    // observable. Must be set BEFORE goto so readInitial() sees a clean
-    // storage on hook mount.
+    // observable. We clear once after first load (not via addInitScript,
+    // which would re-fire on reload and break the persistence test) and
+    // then reload so hook useState(readInitial) sees the cleaned storage.
     await mockBootstrap(page)
-    await page.addInitScript(() => {
-      try { localStorage.clear() } catch {}
-    })
     await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.evaluate(() => { try { localStorage.clear() } catch {} })
+    await page.reload()
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
     // Open settings and navigate to Appearance
@@ -115,15 +116,20 @@ test.describe('Settings — Appearance tab', () => {
   })
 
   test('reduced motion toggle adds and removes the attribute', async ({ page }) => {
+    // The <input type="checkbox"> is absolutely-positioned, opacity 0, and sized
+    // 0×0 by the custom .toggle-track styling — Playwright's visibility gate
+    // rejects even with force:true. dispatchEvent fires the click directly
+    // without geometry checks, matching how a screen-reader or keyboard-Space
+    // activation would reach it.
     const toggle = page.locator('input[aria-label="Force reduced motion"]')
 
     // Turn on
-    await toggle.check()
+    await toggle.dispatchEvent('click')
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduce')
     expect(await page.evaluate(() => localStorage.getItem('ember-reduced-motion'))).toBe('on')
 
     // Turn off — attribute should be fully removed (not just empty)
-    await toggle.uncheck()
+    await toggle.dispatchEvent('click')
     const motion = await page.locator('html').getAttribute('data-motion')
     expect(motion).toBeNull()
     expect(await page.evaluate(() => localStorage.getItem('ember-reduced-motion'))).toBe('off')
@@ -140,7 +146,7 @@ test.describe('Settings — Appearance tab', () => {
       .locator('.settings-segmented[aria-label="Density"]')
       .locator('.settings-segmented-btn', { hasText: 'Compact' })
       .click()
-    await page.locator('input[aria-label="Force reduced motion"]').check()
+    await page.locator('input[aria-label="Force reduced motion"]').dispatchEvent('click')
 
     // Reload — hooks read from localStorage on mount
     await page.reload()
@@ -155,12 +161,16 @@ test.describe('Settings — Appearance tab', () => {
 })
 
 test.describe('Settings — Appearance URL-param pack override', () => {
-  test('?style-pack=hacker applies without writing to localStorage', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    // One-time storage clear: first goto to a stable path to establish
+    // origin, clear, then the real test navigate happens below.
     await mockBootstrap(page)
-    // Ensure storage starts clean so we can assert the URL param didn't write
-    await page.addInitScript(() => {
-      try { localStorage.clear() } catch {}
-    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.evaluate(() => { try { localStorage.clear() } catch {} })
+  })
+
+  test('?style-pack=hacker applies without writing to localStorage', async ({ page }) => {
     await page.goto('/?style-pack=hacker')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
@@ -174,10 +184,6 @@ test.describe('Settings — Appearance URL-param pack override', () => {
   })
 
   test('invalid ?style-pack value falls through to default', async ({ page }) => {
-    await mockBootstrap(page)
-    await page.addInitScript(() => {
-      try { localStorage.clear() } catch {}
-    })
     await page.goto('/?style-pack=nonsense')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
