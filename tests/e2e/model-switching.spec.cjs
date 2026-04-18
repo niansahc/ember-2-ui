@@ -74,10 +74,4 @@ test.describe('Model Switching', () => {
     const displayedModel = await indicator.textContent()
     expect(displayedModel.length).toBeGreaterThan(0)
   })
-
-  // Cloud model switching requires a real API key — skip in automated tests
-  test.skip('switching to cloud model shows pulse indicator', async ({ page }) => {
-    // This test requires ANTHROPIC_API_KEY to be configured.
-    // When cloud model switching is testable in CI, enable this test.
-  })
 })
