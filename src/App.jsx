@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, HelpCircle, CheckCircle, GitBranch, Database, Flame, X } from 'lucide-react'
+import { Search, GitBranch, Database, Flame, X } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -72,7 +72,7 @@ export default function App() {
   const [devMode, setDevMode] = useState(false)
   const [devVaultLabel, setDevVaultLabel] = useState(null)
   const [webSearchOn, setWebSearchOn] = useState(false)
-  const [searchAutonomous, setSearchAutonomous] = useState(false)
+
   const [deviationOn, setDeviationOn] = useState(false)
 
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
@@ -123,7 +123,6 @@ export default function App() {
 
         // feature flags for header icons
         setWebSearchOn(prefs.web_search !== false)
-        setSearchAutonomous(prefs.web_search_autonomous || false)
         setDeviationOn(prefs.deviation_enabled || false)
       } catch {}
     }
@@ -377,26 +376,6 @@ export default function App() {
                 <Search size={15} aria-hidden="true" />
               </button>
             )}
-            {webSearchOn && !searchAutonomous && (
-              <button
-                className="app-feature-icon"
-                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
-                title="Ask-first mode — Ember asks before searching"
-                aria-label="Ask-first mode is on. Click to open Features settings."
-              >
-                <HelpCircle size={15} aria-hidden="true" />
-              </button>
-            )}
-            {webSearchOn && searchAutonomous && (
-              <button
-                className="app-feature-icon"
-                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
-                title="Auto-search — Ember searches without asking"
-                aria-label="Autonomous search is on. Click to open Features settings."
-              >
-                <CheckCircle size={15} aria-hidden="true" />
-              </button>
-            )}
             {bareMode && (
               <button
                 className="app-feature-icon"
@@ -500,7 +479,6 @@ export default function App() {
           realGetModel().then((data) => { if (data.model) setModel(data.model) }).catch(() => {})
           getPreferences().then((prefs) => {
             setWebSearchOn(prefs.web_search !== false)
-            setSearchAutonomous(prefs.web_search_autonomous || false)
             setDeviationOn(prefs.deviation_enabled || false)
           }).catch(() => {})
         }}

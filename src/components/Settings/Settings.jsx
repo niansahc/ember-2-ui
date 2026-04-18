@@ -1240,24 +1240,19 @@ export default memo(function Settings({
                 </label>
               </div>
 
-              <div className={`settings-row settings-row-nested ${!webSearch ? 'settings-row-disabled' : ''}`}>
+              <div className="settings-row settings-row-nested settings-row-disabled">
                 <div className="settings-row-info">
                   <span className="settings-row-label">Search automatically when uncertain</span>
                   <span className="settings-row-hint">
-                    {webSearchAutonomous
-                      ? 'Ember searches without asking'
-                      : 'Ask-first — Ember asks before searching'}
+                    Ember searches without asking — ask-first coming in a future update
                   </span>
                 </div>
-                <label className="toggle" aria-label="Toggle autonomous web search" title={!webSearch ? 'Enable web search first' : webSearchAutonomous ? 'Click to disable' : 'Click to enable'}>
+                <label className="toggle" aria-label="Toggle autonomous web search" title="Autonomous search is always on when web search is enabled">
                   <input
                     type="checkbox" role="switch"
-                    checked={webSearchAutonomous}
-                    disabled={!webSearch}
-                    onChange={(e) => {
-                      setWebSearchAutonomous(e.target.checked)
-                      updatePreferences({ web_search_autonomous: e.target.checked })
-                    }}
+                    checked={true}
+                    disabled
+                    readOnly
                   />
                   <span className="toggle-track" />
                 </label>
