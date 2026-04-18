@@ -26,14 +26,22 @@ async function readVar(page, name) {
 }
 
 test.describe('Style packs — token overrides via ?style-pack param', () => {
+  // Each test does two navigations: the beforeEach goto('/') to reach a
+  // clean origin for localStorage.clear(), then the test's own goto with
+  // the ?style-pack param. Vite's HMR client can emit a reconnect burst
+  // after the clear that races with the second navigation, occasionally
+  // producing net::ERR_ABORTED on the test's page.goto. 60s test timeout
+  // + networkidle wait absorbs this without hiding a real regression.
+  test.setTimeout(60_000)
+
   test.beforeEach(async ({ page }) => {
-    // One-time storage clear so no stale ember-style-pack biases the URL
-    // param test. addInitScript would re-fire on every navigation, defeating
-    // tests that themselves trigger a load.
     await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
     await page.evaluate(() => { try { localStorage.clear() } catch {} })
+    // Let any HMR / React-effect noise settle before the test fires its
+    // own navigation; prevents the load-race described above.
+    await page.waitForLoadState('networkidle')
   })
 
   test('OG pack writes its attribute but adds no font/shadow overrides', async ({ page }) => {
