@@ -15,8 +15,15 @@ dist/
 playwright-report/
 test-results/
 
-# Claude Code local settings (machine-specific, not shared)
+# Claude Code local settings and session artifacts (machine-specific, not shared)
 .claude/settings.local.json
+.claude/launch.json
+.claude/plans/
+.claude/worktrees/
+.claude/skills/
+
+# Aesthetic / IA mockups — local design exploration, not production
+public/mockups/
 
 # OS-generated junk
 .DS_Store
