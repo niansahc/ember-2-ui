@@ -117,6 +117,8 @@ test.describe('Edge Cases — Layout Stability', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
+    // Theme swatches moved to the Appearance tab in the style-pack work.
+    await page.locator('.settings-tab', { hasText: 'Appearance' }).click()
 
     const themes = ['Midnight', 'Forest', 'Ocean', 'Bloom', 'Ember']
     for (const name of themes) {
