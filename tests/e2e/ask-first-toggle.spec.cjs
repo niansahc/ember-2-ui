@@ -40,7 +40,9 @@ test.describe('Ask-First Toggle', () => {
     await expect(toggleInput).toBeDisabled()
   })
 
-  test('toggle is enabled when web search is on', async ({ page }) => {
+  test('toggle is locked on when web search is on', async ({ page }) => {
+    // v0.16.0: autonomous search is always on when web search is enabled —
+    // ask-first is not yet available. Toggle stays disabled regardless.
     await mockBootstrap(page, {
       preferences: { web_search: true },
     })
@@ -54,7 +56,7 @@ test.describe('Ask-First Toggle', () => {
     await featuresTab.click()
 
     const toggleInput = page.locator('label[aria-label="Toggle autonomous web search"] input')
-    await expect(toggleInput).not.toBeDisabled()
+    await expect(toggleInput).toBeDisabled()
   })
 
   test('hint text shows "Ask-first" when autonomous is off', async ({ page }) => {

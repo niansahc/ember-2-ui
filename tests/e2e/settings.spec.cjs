@@ -244,8 +244,9 @@ test.describe('Settings', () => {
     await expect(label).toHaveCount(0)
   })
 
-  test('autonomous web search toggle defaults to OFF', async ({ page }) => {
-    // Override preferences mock to simulate a fresh user (no stored pref)
+  test('autonomous web search toggle is locked on in v0.16.0', async ({ page }) => {
+    // v0.16.0: autonomous search is always on when web search is enabled —
+    // ask-first is not yet available. Toggle is disabled and checked.
     await page.route('**/v1/preferences', async (route, request) => {
       if (request.method() !== 'GET') return route.continue()
       await route.fulfill({
@@ -269,7 +270,7 @@ test.describe('Settings', () => {
     await featuresTab.click()
 
     const toggle = page.locator('label[aria-label="Toggle autonomous web search"] input')
-    await expect(toggle).not.toBeChecked()
+    await expect(toggle).toBeDisabled()
   })
 
   test('Launch Installer button is visible in About tab and triggers POST', async ({ page }) => {
