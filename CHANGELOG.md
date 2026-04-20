@@ -1,24 +1,72 @@
 # Changelog
 
-## v0.8.0 — 2026-04-19
+## v0.8.0 — 2026-04-20
+
+Coordinated release with ember-2 v0.16.0 (backend vision pipeline, bare mode, stateless vault toggle, autonomous web search default).
 
 ### Features
-- Lock autonomous web search toggle ON (ask-first is coming in a future update) — header question-mark and check icons removed; Settings toggle greyed out with explanatory hint
-- Business hours push protection hook — local pre-push hook + GitHub Actions check (EST/EDT-aware)
+
+**Appearance & Style**
+- New Appearance tab in Settings with style-pack selector (Clean, Hearth, Hacker) and MVP pack overrides
+- Full decorative pass: Hearth halos, Hacker brackets, Clean restraint
+- Font scale, density, and reduced-motion preferences
+- Design token system: typography, spacing, motion, status tokens; self-hosted fonts bundled
+- Bare mode icon swapped to flame/X toggle
+
+**Chat & Greeting**
+- Personalized time-of-day greeting for returning users (180-title variety, scrubbed of cliches)
+
+**Top Bar**
+- Reworked top bar with feature status icons
+- Amber/slow state for service status dot; red dot requires 2 consecutive health failures
+- Autonomous web search toggle locked ON (ask-first coming in a future update) — Settings toggle greyed out with explanatory hint
+
+**Per-Conversation Controls**
+- Bare mode and vault toggles surfaced in the chat header, always visible
+- Source attribution badges aligned with backend response headers (vault citation, vision, web search)
+- Context length control in Settings
+
+**Backend Integration (matched with ember-2 v0.16.0)**
+- Launch Installer button wired to `/launch-installer`
+- Vault storage display pulls current size and 30-day projection
+- Ask-first settings toggle wired to backend preferences
+- Image preview, vision processing indicator, source attribution
+
+**Dev Tools**
+- `private_vault` injected as swap option in Developer tab
+- Business hours push protection hook (local pre-push + GitHub Actions check)
 
 ### Bug Fixes
-- Playwright config retries=1 to tolerate transient connection pool flakes under parallel workers
-- Tests updated for always-visible bare-mode and vault toggles, removed dead-code assertions
-- Developer Vault tests use private_vault as default swap-back option; empty-vaults test asserts it's always injected
-- ask-first-toggle and settings tests updated for the locked-on autonomous search behavior
+- Vite proxy port corrected; Chat greeting recomputes on prefs load
+- Lodestone and vault-path selectors corrected in Hearth and Hacker packs
+- Tooltip clipping in Settings resolved; service status redesigned
+- Bare mode visibility conditions corrected
+- Per-conversation toggles now always visible (removed global gates)
 
-### Tests
-- 131 Playwright tests passing with workers=1; 3 task-tray specs and 1 model-switching spec marked `test.fixme` — they pass in isolation but flake in full-suite mode due to cross-test task_detector state in the shared test vault. Cross-suite task state isolation is follow-up work.
+### Performance
+- Memoize last-assistant index across streaming renders
 
 ### Maintenance
-- Tests harness updated to match current product behavior post-locked-autonomous-search
-- Connection pool flake retry config tightened
+- React bumped to 19.2.5; Playwright bumped to 1.59.1
+- Vite security patch; dead code removal; gitignore cleanup
+- Comment pass on high-debt JS/JSX files, CSS, hooks, utils
+- `settings.css` tokens: hardcoded values promoted to tokens; `!important` hacks removed
 - `.release-please-manifest.json` drift fixed — bumped from 0.7.0 to 0.8.0
+
+### Tests
+- Playwright coverage added for v0.16.0 features
+- Test vault guard and per-test cleanup for backend-hitting tests
+- `globalTeardown` swaps back to `private_vault` after suite
+- Stale tests updated for v0.16.0 UI changes
+- `retries=1` in Playwright config to tolerate transient connection-pool flakes under parallel workers
+- Tests updated for always-visible bare-mode and vault toggles
+- `ask-first-toggle` and `settings` specs updated for locked-on autonomous search behavior
+- 131 tests passing with `workers=1`; 3 task-tray specs and 1 model-switching spec marked `test.fixme` — they pass in isolation but flake in full-suite mode due to cross-test `task_detector` state in the shared test vault. Cross-suite task state isolation is follow-up work.
+
+### Documentation
+- Docs synced to v0.15.x reality
+- Explicit release process and gates added to CLAUDE.md
+- Test skip count updated
 
 ---
 
