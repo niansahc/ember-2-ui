@@ -219,3 +219,73 @@
     display: none;
   }
 }
+
+/* ── Overflow menu (mobile only) ─────────────────────────────── */
+
+.app-overflow {
+  position: relative;
+  display: none; /* hidden by default; shown at ≤600px via the mobile block below */
+}
+
+.app-overflow-panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  padding: 0.25rem;
+  z-index: 50;
+  animation: app-overflow-slide 150ms ease-out;
+}
+
+@keyframes app-overflow-slide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.app-overflow-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.app-overflow-item:hover {
+  background: var(--bg-surface-hover);
+}
+
+.app-overflow-state {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Mobile collapse rules (≤600px) ──────────────────────────── */
+
+@media (max-width: 600px) {
+  .app-header {
+    padding: 0 0.5rem;
+  }
+  .app-header-title {
+    font-size: 1rem;
+  }
+  .dev-vault-header-badge,
+  .app-model-indicator,
+  .app-header-title-group .app-feature-icon,
+  .app-header-actions .app-conv-toggle,
+  .app-header-btn-export {
+    display: none;
+  }
+  .app-overflow {
+    display: inline-flex;
+  }
+}

@@ -5,7 +5,7 @@
  * PIN setup, sidebar/settings modals, keyboard shortcuts, and
  * session restore from localStorage.
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Splash from './components/Splash/Splash.jsx'
 import Sidebar from './components/Sidebar/Sidebar.jsx'
 import Chat from './components/Chat/Chat.jsx'
@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, GitBranch, Database, Flame, X } from 'lucide-react'
+import { Search, GitBranch, Database, Flame, X, MoreVertical } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -78,6 +78,22 @@ export default function App() {
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
   const [bareMode, setBareMode] = useState(false)
   const [vaultOff, setVaultOff] = useState(false)
+
+  // Mobile-only overflow menu — collapses per-conversation actions at ≤600px.
+  // Mirrors the ServiceStatus outside-click dismiss pattern (ServiceStatus.jsx:59–68).
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const overflowRef = useRef(null)
+
+  useEffect(() => {
+    if (!overflowOpen) return
+    function handleClick(e) {
+      if (overflowRef.current && !overflowRef.current.contains(e.target)) {
+        setOverflowOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClick)
+    return () => document.removeEventListener('pointerdown', handleClick)
+  }, [overflowOpen])
 
   // Guided first-run tour — shows once for new users, only when not locked
   useTour(view === 'chat' && !isLocked && !showPinSetup)
@@ -376,16 +392,6 @@ export default function App() {
                 <Search size={15} aria-hidden="true" />
               </button>
             )}
-            {bareMode && (
-              <button
-                className="app-feature-icon"
-                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
-                title="Bare mode — personality off for this conversation"
-                aria-label="Bare mode is on for this conversation. Click to open Features settings."
-              >
-                <X size={15} aria-hidden="true" />
-              </button>
-            )}
             {deviationOn && (
               <button
                 className="app-feature-icon"
@@ -424,7 +430,7 @@ export default function App() {
             </button>
             {messages.length > 0 && (
               <button
-                className="app-header-btn"
+                className="app-header-btn app-header-btn-export"
                 onClick={exportConversation}
                 aria-label="Export conversation"
                 title="Export (Ctrl+Shift+E)"
@@ -436,6 +442,59 @@ export default function App() {
                 </svg>
               </button>
             )}
+            {/* Mobile-only overflow menu — collapses conv toggles + export at ≤600px.
+                Rendered unconditionally; CSS hides on desktop. */}
+            <div className="app-overflow" ref={overflowRef}>
+              <button
+                className="app-header-btn app-overflow-btn"
+                onClick={() => setOverflowOpen(v => !v)}
+                aria-label="More actions"
+                aria-expanded={overflowOpen}
+                aria-haspopup="menu"
+                title="More actions"
+              >
+                <MoreVertical size={18} aria-hidden="true" />
+              </button>
+              {overflowOpen && (
+                <div className="app-overflow-panel" role="menu">
+                  <button
+                    className="app-overflow-item"
+                    role="menuitem"
+                    onClick={() => {
+                      const next = !bareMode
+                      setBareMode(next)
+                      setChatOptions({ bareMode: next })
+                      setOverflowOpen(false)
+                    }}
+                  >
+                    <span>Bare mode</span>
+                    <span className="app-overflow-state">{bareMode ? 'On' : 'Off'}</span>
+                  </button>
+                  <button
+                    className="app-overflow-item"
+                    role="menuitem"
+                    onClick={() => {
+                      const next = !vaultOff
+                      setVaultOff(next)
+                      setChatOptions({ vaultEnabled: !next })
+                      setOverflowOpen(false)
+                    }}
+                  >
+                    <span>Save to vault</span>
+                    <span className="app-overflow-state">{vaultOff ? 'Off' : 'On'}</span>
+                  </button>
+                  {messages.length > 0 && (
+                    <button
+                      className="app-overflow-item"
+                      role="menuitem"
+                      onClick={() => { exportConversation(); setOverflowOpen(false) }}
+                    >
+                      <span>Export conversation</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           <button
             className="app-header-btn"
             onClick={() => setSettingsOpen(true)}

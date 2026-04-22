@@ -63,9 +63,11 @@ test.describe('Mobile Viewport', () => {
     await expect(panel).not.toBeVisible()
   })
 
-  test('model indicator is visible in top bar on mobile', async ({ page }) => {
+  // Contract change (header-mobile-collision fix): model indicator is now
+  // collapsed on mobile. Users still see the active model via the Settings gear.
+  test('model indicator is hidden on mobile', async ({ page }) => {
     const indicator = page.locator('.app-model-indicator')
-    await expect(indicator).toBeVisible({ timeout: 5000 })
+    await expect(indicator).toBeHidden()
   })
 
   test('send button is tappable size on mobile', async ({ page }) => {
@@ -76,5 +78,62 @@ test.describe('Mobile Viewport', () => {
     // Touch target should be at least 36x36 for accessibility
     expect(box.width).toBeGreaterThanOrEqual(36)
     expect(box.height).toBeGreaterThanOrEqual(36)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Header mobile collision fix (spec: M_bug_header_mobile_collision.md)
+  // ─────────────────────────────────────────────────────────────────
+
+  test('header has no horizontal overflow at 360px', async ({ page }) => {
+    // Tightest supported mobile viewport per the spec.
+    await page.setViewportSize({ width: 360, height: 780 })
+    // Allow CSS reflow to settle after the resize.
+    await page.waitForTimeout(100)
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+    expect(scrollWidth).toBeLessThanOrEqual(360)
+  })
+
+  test('overflow button opens panel with bare-mode and vault rows', async ({ page }) => {
+    const overflowBtn = page.locator('.app-overflow-btn')
+    await expect(overflowBtn).toBeVisible()
+
+    await overflowBtn.click()
+
+    const panel = page.locator('.app-overflow-panel')
+    await expect(panel).toBeVisible()
+    // Bare mode + Save to vault are always rendered; Export only when there's
+    // a message history (mockBootstrap starts with none, so we don't assert it).
+    await expect(panel.locator('.app-overflow-item', { hasText: 'Bare mode' })).toBeVisible()
+    await expect(panel.locator('.app-overflow-item', { hasText: 'Save to vault' })).toBeVisible()
+  })
+
+  test('outside click dismisses the overflow panel', async ({ page }) => {
+    const overflowBtn = page.locator('.app-overflow-btn')
+    await overflowBtn.click()
+
+    const panel = page.locator('.app-overflow-panel')
+    await expect(panel).toBeVisible()
+
+    // Click on the header title — outside the overflow container.
+    await page.locator('.app-header-title').click()
+    await expect(panel).toBeHidden()
+  })
+
+  test('feature indicators hide inside the title group on mobile', async ({ page }) => {
+    // `webSearchOn` defaults to true when prefs.web_search is undefined
+    // (App.jsx line 141: `prefs.web_search !== false`), so the feature icon
+    // renders in the DOM. The mobile CSS rule hides it with display:none —
+    // so we assert visibility, not DOM count. Any icon that is rendered
+    // must be hidden at ≤600px.
+    const featureIcon = page.locator('.app-header-title-group .app-feature-icon').first()
+    await expect(featureIcon).toBeHidden()
+  })
+
+  test('overflow button is hidden at desktop width', async ({ page }) => {
+    // Override the describe-level mobile viewport for this one assertion.
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.waitForTimeout(100)
+    const overflowBtn = page.locator('.app-overflow-btn')
+    await expect(overflowBtn).toBeHidden()
   })
 })

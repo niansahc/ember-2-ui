@@ -30,25 +30,31 @@ test.describe('Top Bar Feature Icons', () => {
     await expect(bareIcon).not.toBeVisible()
   })
 
-  test('bare mode icon appears when per-conversation bare mode is ON', async ({ page }) => {
-    // the bare mode icon only appears when the per-conversation toggle is active.
-    // Activating the toggle requires bare_mode_enabled capability in prefs.
+  test('bare mode toggle activates without adding a redundant feature icon', async ({ page }) => {
+    // Contract change (spec: M_bug_bare_mode_redundant_icons.md, Option A):
+    // When bare mode is ON, the per-conversation toggle button alone
+    // communicates the active state. The old duplicate status `.app-feature-icon`
+    // in the title group has been removed — two × glyphs side by side read
+    // as a bug.
     await mockBootstrap(page, {
       preferences: { bare_mode_enabled: true },
     })
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-    // initially no bare mode icon in feature icons (toggle is off by default)
     const bareIcon = page.locator('.app-feature-icon[title*="Bare mode"]')
-    await expect(bareIcon).not.toBeVisible()
-
-    // click the per-conversation bare mode toggle in header actions
     const bareToggle = page.locator('.app-header-actions .app-conv-toggle').first()
+
+    // off by default — neither a title-group feature icon nor an active toggle
+    await expect(bareIcon).toHaveCount(0)
+    await expect(bareToggle).not.toHaveClass(/app-conv-toggle-active/)
+
+    // activate bare mode via the header-actions toggle
     await bareToggle.click()
 
-    // now the feature icon should appear
-    await expect(bareIcon).toBeVisible()
+    // the toggle alone carries the active state; no redundant feature icon appears
+    await expect(bareToggle).toHaveClass(/app-conv-toggle-active/)
+    await expect(bareIcon).toHaveCount(0)
   })
 
   test('deviation engine on shows GitBranch icon', async ({ page }) => {

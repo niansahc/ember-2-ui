@@ -96,6 +96,45 @@ test.describe('Service Status Indicator', () => {
     expect(shutdownCalls).toBe(1)
   })
 
+  test('shutdown shows error feedback when backend endpoint is missing (404)', async ({ page }) => {
+    // Contract: the backend shutdown endpoint hasn't shipped yet (G-side
+    // TODO). Until it does, clicking Shut Down must tell the user something
+    // went wrong instead of failing silently.
+    await mockBootstrap(page)
+    await page.route('**/service/shutdown', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Not Found' }),
+      })
+    })
+    await loadApp(page)
+
+    const dotsBtn = page.locator('[data-testid="service-dots"]')
+    await dotsBtn.click()
+
+    await page.locator('[data-testid="service-shutdown"]').click()
+
+    const errorEl = page.locator('[data-testid="service-shutdown-error"]')
+    await expect(errorEl).toBeVisible()
+    // Either the thrown error message or our fallback copy — both are acceptable.
+    await expect(errorEl).toContainText(/Not Found|404|Shutdown failed/i)
+  })
+
+  test('restart button shows the visible text label "Restart"', async ({ page }) => {
+    // The circular-arrow icon alone reads as "refresh" — a visible text label
+    // removes that ambiguity without touching behaviour.
+    await mockBootstrap(page)
+    await loadApp(page)
+
+    const dotsBtn = page.locator('[data-testid="service-dots"]')
+    await dotsBtn.click()
+
+    const restartBtn = page.locator('[data-testid="service-restart-api"]')
+    await expect(restartBtn).toBeVisible()
+    await expect(restartBtn).toContainText('Restart')
+  })
+
   test('panel closes on outside click', async ({ page }) => {
     await mockBootstrap(page)
     await loadApp(page)
