@@ -219,3 +219,94 @@
     display: none;
   }
 }
+
+/* ── Mobile header collapse (<= 600px) ──────────────────────────
+   Header fit at 360px: hide low-priority status + move per-conversation
+   actions into the overflow menu. Desktop layout is unchanged.          */
+
+@media (max-width: 600px) {
+  /* Low-priority status — recoverable via gear / sidebar / Settings. */
+  .dev-vault-header-badge,
+  .app-model-indicator,
+  .app-header-title-group .app-feature-icon {
+    display: none;
+  }
+
+  /* Per-conversation action cluster moves into the "⋯" overflow panel. */
+  .app-header-actions .app-conv-toggle,
+  .app-header-actions > .app-header-btn[aria-label="Export conversation"] {
+    display: none;
+  }
+
+  /* Small breathing-room tweaks so hamburger + title + dot + ⋯ + gear fit. */
+  .app-header { padding: 0 0.5rem; }
+  .app-header-actions { gap: 0.15rem; }
+  .app-header-title { font-size: 1rem; }
+}
+
+/* ── Overflow menu ("⋯") ────────────────────────────────────────
+   Mobile-only replacement for the bare/vault/export buttons that
+   get hidden above. Mirrors the ServiceStatus ss-panel pattern.      */
+
+.app-overflow {
+  position: relative;
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .app-overflow {
+    display: inline-flex;
+  }
+}
+
+.app-overflow-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  padding: 0.35rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  z-index: 100;
+  animation: app-overflow-in 0.15s ease-out;
+}
+
+@keyframes app-overflow-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.app-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-overflow-item:hover,
+.app-overflow-item:focus-visible {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.app-overflow-state {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
