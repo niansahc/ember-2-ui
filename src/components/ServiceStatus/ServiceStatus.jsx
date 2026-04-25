@@ -30,6 +30,10 @@ export default function ServiceStatus() {
   const [expanded, setExpanded] = useState(false)
   const [restarting, setRestarting] = useState(false)
   const [shuttingDown, setShuttingDown] = useState(false)
+  // Surfaced when shutdownService() rejects — currently expected because the
+  // backend endpoint (POST /v1/service/shutdown) has not shipped yet. Keeps
+  // the user from clicking into silence. Cleared on next attempt or panel close.
+  const [shutdownError, setShutdownError] = useState(null)
   const containerRef = useRef(null)
   const pollRef = useRef(null)
   const failCountRef = useRef(0)
@@ -61,6 +65,9 @@ export default function ServiceStatus() {
     function handleClick(e) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setExpanded(false)
+        // Drop any stale shutdown error when the panel closes so it doesn't
+        // reappear when the user opens it again later.
+        setShutdownError(null)
       }
     }
     document.addEventListener('pointerdown', handleClick)
@@ -81,11 +88,15 @@ export default function ServiceStatus() {
 
   async function handleShutdown() {
     setShuttingDown(true)
+    setShutdownError(null)
     try {
       await shutdownService()
       setHealth({ api: 'down' })
-    } catch {
-      // next poll will update
+    } catch (err) {
+      // Previously a silent catch — the user clicked Shut Down and got no
+      // feedback. Now we surface the message in the panel. The backend
+      // endpoint currently 404s (G repo TODO), so this fires every time.
+      setShutdownError(err?.message || 'Shutdown failed — the backend may be unreachable.')
     } finally {
       setShuttingDown(false)
     }
@@ -129,12 +140,22 @@ export default function ServiceStatus() {
               data-testid="service-restart-api"
             >
               {restarting ? (
-                <span className="ss-spinner" />
+                <>
+                  <span className="ss-spinner" aria-hidden="true" />
+                  <span className="ss-restart-label">Restarting…</span>
+                </>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                </svg>
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+                  </svg>
+                  {/* Visible label — the circular-arrow icon alone reads as
+                      "refresh," which is ambiguous. Spelling it out removes
+                      the guesswork for sighted users. aria-label stays on
+                      the button for screen readers. */}
+                  <span className="ss-restart-label">Restart</span>
+                </>
               )}
             </button>
           </div>
@@ -147,6 +168,16 @@ export default function ServiceStatus() {
           >
             {shuttingDown ? 'Stopping...' : 'Shut down Ember'}
           </button>
+
+          {shutdownError && (
+            <div
+              className="ss-shutdown-error"
+              role="alert"
+              data-testid="service-shutdown-error"
+            >
+              {shutdownError}
+            </div>
+          )}
         </div>
       )}
     </div>

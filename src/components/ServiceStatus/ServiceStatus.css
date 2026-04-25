@@ -147,16 +147,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  gap: 0.35rem;
+  /* Pill shape now that the button carries a visible "Restart" text label
+     next to its circular-arrow icon. min-height keeps the 44px touch target. */
   min-width: 44px;
   min-height: 44px;
-  border-radius: 50%;
+  padding: 0 0.6rem;
+  border-radius: 999px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0;
   transition: background 0.15s, color 0.15s;
+}
+
+.ss-restart-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .ss-restart-btn:hover:not(:disabled) {
@@ -215,6 +222,20 @@
 .ss-shutdown-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ── Shutdown error (surfaced when POST /v1/service/shutdown fails) ── */
+
+.ss-shutdown-error {
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--radius-sm);
+  text-align: left;
 }
 
 /* ── Mobile ─────────────────────────────────────────────────── */
