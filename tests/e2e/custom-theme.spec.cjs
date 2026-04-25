@@ -14,6 +14,10 @@ test.describe('Custom Theme', () => {
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
+    // Theme swatches live on the Appearance tab (moved from General in the
+    // style-pack / font-scale work — see commit fefaccd).
+    await page.locator('.settings-tab', { hasText: 'Appearance' }).click()
+
     // Check that "Custom" swatch exists in the theme picker
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
     await expect(customSwatch).toBeVisible()
@@ -25,6 +29,7 @@ test.describe('Custom Theme', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
+    await page.locator('.settings-tab', { hasText: 'Appearance' }).click()
 
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
     await customSwatch.click()
@@ -62,6 +67,7 @@ test.describe('Custom Theme', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
+    await page.locator('.settings-tab', { hasText: 'Appearance' }).click()
 
     const customSwatch = page.locator('.theme-swatch[aria-label="Custom"]')
     await customSwatch.click()

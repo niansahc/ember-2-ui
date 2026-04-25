@@ -16,6 +16,14 @@
 //     await page.waitForSelector('.app-layout', { timeout: 15000 })
 //   })
 //
+// Per-test overrides are spread-merged onto the defaults:
+//   await mockBootstrap(page, {
+//     preferences: { onboarding_complete: false },               // first-run path
+//     preferences: {                                             // named greeting
+//       onboarding_profile_answers: { identity: 'Alex, they/them' },
+//     },
+//   })
+//
 // For tests that DO need real backend data (e.g. model switch flows),
 // put them in a separate test.describe with its own beforeEach that skips
 // mockBootstrap.
@@ -48,6 +56,11 @@ async function mockBootstrap(page, overrides = {}) {
     conversational_style: 'balanced',
     deviation_enabled: false,
     web_search_autonomous: false,
+    // Identity drives the personalized-greeting name extraction in Chat.jsx.
+    // Defaults to null (returning user, no name) so existing tests that
+    // didn't stub this field see the same behavior as before. Override via
+    // `preferences: { onboarding_profile_answers: { identity: '...' } }`.
+    onboarding_profile_answers: { identity: null },
     ...overrides.preferences,
   }
 

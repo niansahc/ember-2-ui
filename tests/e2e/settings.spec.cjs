@@ -148,12 +148,62 @@ test.describe('Settings', () => {
     }
   })
 
-  // Remove key confirmation requires a configured provider — skip in automated tests
-  test.skip('Remove key shows confirmation dialog', async () => {
-    // Requires a real provider key to be configured. When testable, verify:
-    // - "Remove key" button visible below models
-    // - Click shows confirmation text mentioning the provider name
-    // - Cancel dismisses, Remove calls DELETE endpoint
+  test('Remove key shows confirmation dialog and fires DELETE', async ({ page }) => {
+    // Stub the provider-key GET to return configured for Anthropic so the
+    // Remove key affordance is visible. Also stub DELETE to count calls and
+    // not actually touch any backend state.
+    let deleteCalls = 0
+    await page.route('**/provider-key/anthropic', async (route, request) => {
+      if (request.method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ configured: true }),
+        })
+      } else if (request.method() === 'DELETE') {
+        deleteCalls += 1
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Open settings and navigate to Security (providerStatus is fetched on
+    // Settings mount so the configured state is populated by the time we click).
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+    await page.locator('.settings-tab', { hasText: 'Security' }).click()
+
+    // Anthropic's section will now render the Remove key button because
+    // providerStatus.anthropic.configured === true.
+    const anthropicSection = page
+      .locator('.cloud-provider-section')
+      .filter({ has: page.locator('.cloud-provider-name', { hasText: 'Anthropic' }) })
+
+    const removeBtn = anthropicSection.locator('.cloud-remove-key-btn')
+    await expect(removeBtn).toBeVisible({ timeout: 5000 })
+    await removeBtn.click()
+
+    // Confirmation text should mention the provider by name
+    const confirmText = anthropicSection.locator('.cloud-remove-confirm-text')
+    await expect(confirmText).toBeVisible()
+    await expect(confirmText).toContainText('Anthropic')
+
+    // Cancel dismisses, Remove button returns
+    await anthropicSection.locator('.cloud-key-actions .settings-action-btn', { hasText: 'Cancel' }).click()
+    await expect(confirmText).not.toBeVisible()
+    await expect(removeBtn).toBeVisible()
+
+    // Click Remove → confirmation → click Remove
+    await removeBtn.click()
+    await anthropicSection.locator('.cloud-remove-confirm-btn').click()
+
+    // DELETE should have fired exactly once
+    await expect.poll(() => deleteCalls).toBe(1)
   })
 
   test('vault path is masked by default', async ({ page }) => {

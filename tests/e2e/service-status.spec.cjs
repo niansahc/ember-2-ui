@@ -48,12 +48,6 @@ test.describe('Service Status Indicator', () => {
     await expect(page.locator('[data-testid="service-restart-docker"]')).toHaveCount(0)
   })
 
-  test.skip('API down: dot goes dark, no breathing', async ({ page }) => {
-    // skipped: when health returns failure the splash screen never transitions
-    // to chat, so the service status dot is not rendered. This scenario is
-    // only testable via the production build served by the backend.
-  })
-
   test('restart button triggers POST for API', async ({ page }) => {
     let restartCalls = 0
     await mockBootstrap(page)
