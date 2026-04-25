@@ -394,16 +394,6 @@ export default function App() {
                 <Search size={15} aria-hidden="true" />
               </button>
             )}
-            {bareMode && (
-              <button
-                className="app-feature-icon"
-                onClick={() => { setSettingsOpen(true); setSettingsInitialTab('features') }}
-                title="Bare mode — personality off for this conversation"
-                aria-label="Bare mode is on for this conversation. Click to open Features settings."
-              >
-                <X size={15} aria-hidden="true" />
-              </button>
-            )}
             {deviationOn && (
               <button
                 className="app-feature-icon"
