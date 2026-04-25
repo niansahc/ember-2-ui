@@ -1240,19 +1240,37 @@ export default memo(function Settings({
                 </label>
               </div>
 
-              <div className="settings-row settings-row-nested settings-row-disabled">
+              {/* Ask-first toggle — re-enabled in v0.17 once the ADR-034
+                  classifier shipped on the backend. When web search is off
+                  the row stays disabled (the question doesn't apply). */}
+              <div className={`settings-row settings-row-nested${webSearch ? '' : ' settings-row-disabled'}`}>
                 <div className="settings-row-info">
                   <span className="settings-row-label">Search automatically when uncertain</span>
                   <span className="settings-row-hint">
-                    Ember searches without asking — ask-first coming in a future update
+                    {webSearchAutonomous
+                      ? 'Ember searches without asking'
+                      : 'Ember will ask before searching'}
                   </span>
                 </div>
-                <label className="toggle" aria-label="Toggle autonomous web search" title="Autonomous search is always on when web search is enabled">
+                <label
+                  className="toggle"
+                  aria-label="Toggle autonomous web search"
+                  title={
+                    !webSearch
+                      ? 'Enable web search to use this'
+                      : webSearchAutonomous
+                        ? 'Click to require ask-first'
+                        : 'Click to enable autonomous search'
+                  }
+                >
                   <input
                     type="checkbox" role="switch"
-                    checked={true}
-                    disabled
-                    readOnly
+                    checked={webSearchAutonomous}
+                    disabled={!webSearch}
+                    onChange={(e) => {
+                      setWebSearchAutonomous(e.target.checked)
+                      updatePreferences({ web_search_autonomous: e.target.checked })
+                    }}
                   />
                   <span className="toggle-track" />
                 </label>

@@ -244,9 +244,11 @@ test.describe('Settings', () => {
     await expect(label).toHaveCount(0)
   })
 
-  test('autonomous web search toggle is locked on in v0.16.0', async ({ page }) => {
-    // v0.16.0: autonomous search is always on when web search is enabled —
-    // ask-first is not yet available. Toggle is disabled and checked.
+  test('autonomous web search toggle is enabled and unchecked for a fresh user', async ({ page }) => {
+    // v0.17 (ADR-034): the ask-first toggle is functional whenever web
+    // search is on. A fresh user with no `web_search_autonomous` field
+    // should see the toggle enabled and unchecked (default false), reading
+    // the "Ember will ask before searching" hint.
     await page.route('**/v1/preferences', async (route, request) => {
       if (request.method() !== 'GET') return route.continue()
       await route.fulfill({
@@ -270,7 +272,8 @@ test.describe('Settings', () => {
     await featuresTab.click()
 
     const toggle = page.locator('label[aria-label="Toggle autonomous web search"] input')
-    await expect(toggle).toBeDisabled()
+    await expect(toggle).not.toBeDisabled()
+    await expect(toggle).not.toBeChecked()
   })
 
   test('Launch Installer button is visible in About tab and triggers POST', async ({ page }) => {
