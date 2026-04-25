@@ -5,7 +5,7 @@
  * PIN setup, sidebar/settings modals, keyboard shortcuts, and
  * session restore from localStorage.
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Splash from './components/Splash/Splash.jsx'
 import Sidebar from './components/Sidebar/Sidebar.jsx'
 import Chat from './components/Chat/Chat.jsx'
@@ -18,7 +18,7 @@ import PinSetup from './components/LockScreen/PinSetup.jsx'
 import PinChange from './components/LockScreen/PinChange.jsx'
 import ServiceStatus from './components/ServiceStatus/ServiceStatus.jsx'
 import Onboarding from './components/Onboarding/Onboarding.jsx'
-import { Search, GitBranch, Database, Flame, X } from 'lucide-react'
+import { Search, GitBranch, Database, Flame, X, MoreVertical } from 'lucide-react'
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
@@ -78,6 +78,12 @@ export default function App() {
   const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
   const [bareMode, setBareMode] = useState(false)
   const [vaultOff, setVaultOff] = useState(false)
+
+  // Mobile overflow menu ("⋯") — collapses the right-side action cluster
+  // below 600px so the header fits a single row on phones. Mirrors the
+  // ServiceStatus open/outside-click pattern; hidden on desktop via CSS.
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const overflowRef = useRef(null)
 
   // Guided first-run tour — shows once for new users, only when not locked
   useTour(view === 'chat' && !isLocked && !showPinSetup)
@@ -174,6 +180,18 @@ export default function App() {
   const { scale: fontScale, setScale: setFontScale, scales: fontScales } = useFontScale()
   const { density, setDensity, densities } = useDensity()
   const { reduced: motionReduced, setReduced: setMotionReduced } = useReducedMotion()
+
+  // Close overflow menu on outside tap/click. Mirrors ServiceStatus.
+  useEffect(() => {
+    if (!overflowOpen) return
+    function handleClick(e) {
+      if (overflowRef.current && !overflowRef.current.contains(e.target)) {
+        setOverflowOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClick)
+    return () => document.removeEventListener('pointerdown', handleClick)
+  }, [overflowOpen])
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -436,6 +454,70 @@ export default function App() {
                 </svg>
               </button>
             )}
+            {/* Overflow "⋯" — mobile only (CSS-gated). Surfaces the three
+                actions above so the header can fit a single row at 360px. */}
+            <div className="app-overflow" ref={overflowRef}>
+              <button
+                className="app-header-btn app-overflow-btn"
+                onClick={() => setOverflowOpen((v) => !v)}
+                aria-label="More actions"
+                aria-expanded={overflowOpen}
+                aria-haspopup="menu"
+                title="More actions"
+                data-testid="overflow-btn"
+              >
+                <MoreVertical size={18} aria-hidden="true" />
+              </button>
+              {overflowOpen && (
+                <div className="app-overflow-panel" role="menu" data-testid="overflow-panel">
+                  <button
+                    role="menuitem"
+                    className="app-overflow-item"
+                    onClick={() => {
+                      const next = !bareMode
+                      setBareMode(next)
+                      setChatOptions({ bareMode: next })
+                      setOverflowOpen(false)
+                    }}
+                  >
+                    {bareMode ? <X size={16} aria-hidden="true" /> : <Flame size={16} aria-hidden="true" />}
+                    <span>Bare mode</span>
+                    <span className="app-overflow-state">{bareMode ? 'On' : 'Off'}</span>
+                  </button>
+                  <button
+                    role="menuitem"
+                    className="app-overflow-item"
+                    onClick={() => {
+                      const next = !vaultOff
+                      setVaultOff(next)
+                      setChatOptions({ vaultEnabled: !next })
+                      setOverflowOpen(false)
+                    }}
+                  >
+                    <Database size={16} aria-hidden="true" />
+                    <span>Save to vault</span>
+                    <span className="app-overflow-state">{vaultOff ? 'Off' : 'On'}</span>
+                  </button>
+                  {messages.length > 0 && (
+                    <button
+                      role="menuitem"
+                      className="app-overflow-item"
+                      onClick={() => {
+                        exportConversation()
+                        setOverflowOpen(false)
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      <span>Export conversation</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           <button
             className="app-header-btn"
             onClick={() => setSettingsOpen(true)}
