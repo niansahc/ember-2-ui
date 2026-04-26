@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 const { assertTestVault } = require('./helpers/testvault.cjs')
+const { skipIfBackendDown } = require('./helpers/skip-if-backend-down.cjs')
 
 // Read API key from .env file for direct API calls in tests
 function readApiKey() {
@@ -55,6 +56,10 @@ async function cleanupAllActiveTasks() {
 
 test.describe('Task Tray', () => {
   test.beforeEach(async ({ page, request }) => {
+    // Backend is required for createTask + assertTestVault. Skip cleanly if
+    // the API isn't reachable rather than letting page.goto error out with
+    // ERR_ABORTED (BUG-M-002).
+    await skipIfBackendDown(test)
     // guard: createTask hits the real backend. Assert test vault first.
     await assertTestVault(request)
     // Cancel any leftover active tasks from prior failed runs — the
