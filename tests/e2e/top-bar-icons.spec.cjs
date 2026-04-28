@@ -4,8 +4,16 @@
 
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
+const { skipIfBackendDown } = require('./helpers/skip-if-backend-down.cjs')
 
 test.describe('Top Bar Feature Icons', () => {
+  // When run against the built UI on :8000, page.goto('/') hits the FastAPI
+  // server and fails with ERR_ABORTED if the backend is offline. Skip cleanly
+  // rather than reporting a false failure (BUG-M-002).
+  test.beforeEach(async () => {
+    await skipIfBackendDown(test)
+  })
+
   test('web search on shows Search icon with correct title', async ({ page }) => {
     await mockBootstrap(page, {
       preferences: { web_search: true },

@@ -6,9 +6,14 @@
 
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
+const { skipIfBackendDown } = require('./helpers/skip-if-backend-down.cjs')
 
 test.describe('Streaming Signals & Sources', () => {
   test.beforeEach(async ({ page }) => {
+    // page.goto('/') against the built UI on :8000 fails with ERR_ABORTED if
+    // the backend is offline; the streaming-signals tests trigger send
+    // attempts that also hit /v1/chat. Skip cleanly when offline (BUG-M-002).
+    await skipIfBackendDown(test)
     await mockBootstrap(page)
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })

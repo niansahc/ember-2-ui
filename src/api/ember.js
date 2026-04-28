@@ -7,23 +7,32 @@
  *   • /...     — Ember-native endpoints (model, ingest, memory, health)
  * Functions here use API_URL (/v1) for the first and bare paths for the second.
  *
+ * URL strategy: every endpoint is same-origin. In dev (Vite on :3000) the
+ * proxy block in vite.config.js forwards /v1, /model, /ingest, etc. to the
+ * FastAPI backend on :8000. In production the FastAPI server itself serves
+ * the built UI from / and the API from the same origin. So we deliberately
+ * do NOT hardcode http://localhost:8000 — that would create a cross-origin
+ * request from a UI loaded over 127.0.0.1 (which CSP `connect-src 'self'`
+ * would correctly reject) and break the partner-install scenario where the
+ * backend listens on a different host.
+ *
  * Auth: every request includes an X-API-Key header via authHeaders().
- * The key comes from either:
- *   1. window.__EMBER_API_KEY__ — injected by the FastAPI backend into
- *      the served HTML at startup (production path), or
- *   2. VITE_EMBER_API_KEY env var — for local dev with `npm run dev`
+ * The key is baked into the bundle at build time from the system keyring
+ * by scripts/build-with-key.js — it lives in import.meta.env.VITE_EMBER_API_KEY
+ * after Vite's compile-time env replacement. We no longer rely on the
+ * backend injecting an inline `<script>window.__EMBER_API_KEY__=...</script>`
+ * into the served HTML; that was incompatible with `script-src 'self'` CSP.
  */
 
-const API_URL = import.meta.env.VITE_EMBER_API_URL || 'http://localhost:8000/v1'
-// window.__EMBER_API_KEY__ is set by the backend's HTML template injection —
-// it's the production auth path so the key doesn't live in .env files.
-const API_KEY = window.__EMBER_API_KEY__ || import.meta.env.VITE_EMBER_API_KEY || ''
+const API_URL = import.meta.env.VITE_EMBER_API_URL || '/v1'
+const API_KEY = import.meta.env.VITE_EMBER_API_KEY || ''
 
 if (!API_KEY) {
   console.warn(
-    '[ember.js] VITE_EMBER_API_KEY is not set. Authenticated API calls will fail.\n' +
-    'Add it to .env: VITE_EMBER_API_KEY=your_key\n' +
-    'Get your key from: python scripts/set_api_key.py (in the ember-2 repo)',
+    '[ember.js] VITE_EMBER_API_KEY was not baked into this build.\n' +
+    'Authenticated API calls will fail.\n' +
+    'Run `npm run build` (which pulls the key from the system keyring) instead\n' +
+    'of bare `vite build`, or set VITE_EMBER_API_KEY in .env for `npm run dev`.',
   )
 }
 
