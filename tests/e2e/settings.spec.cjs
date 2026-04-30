@@ -296,25 +296,21 @@ test.describe('Settings', () => {
 
   test('autonomous web search toggle is enabled and unchecked for a fresh user', async ({ page }) => {
     // v0.17 (ADR-034): the ask-first toggle is functional whenever web
-    // search is on. A fresh user with no `web_search_autonomous` field
-    // should see the toggle enabled and unchecked (default false), reading
-    // the "Ember will ask before searching" hint.
-    await page.route('**/v1/preferences', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          first_run_tour_complete: true,
-          onboarding_complete: true,
-          pin_setup_dismissed: true,
-          // web_search_autonomous intentionally omitted — fresh user
-        }),
-      })
-    })
-    await page.goto('/')
-    await page.waitForSelector('.app-layout', { timeout: 15000 })
-
+    // search is on. A fresh user (no `web_search_autonomous` field) should
+    // see the toggle enabled and unchecked.
+    //
+    // mockBootstrap (in beforeEach) already gives us this exact state:
+    //   - web_search defaults to undefined, so Settings.jsx evaluates
+    //     `web_search !== false` → true → toggle ENABLED
+    //   - web_search_autonomous defaults to false, and Settings.jsx applies
+    //     `prefs.web_search_autonomous || false`, which collapses both
+    //     `undefined` and `false` to the same UNCHECKED state
+    //
+    // So the assertions below cover the fresh-user path without needing a
+    // redundant route override + second page.goto. The previous version
+    // double-navigated, which under parallel-worker load exceeded the 30s
+    // test budget and made this test reproducibly flaky on the v0.17.1
+    // prerelease run.
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
