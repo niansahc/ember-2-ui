@@ -108,6 +108,50 @@
   to { opacity: 1; }
 }
 
+/* ── Review pending: single breathing dot ─────────────────────────
+   The grounded path generates a full response and runs it through a
+   review pass before any tokens reach the user. On heavier reviews
+   that pass takes a moment, and the default three-bounce indicator
+   reads the same as a brief network pause. The breathing dot uses a
+   slower beat (2.4s vs typing-bounce's 1.4s) and a single shape
+   instead of three to telegraph a different mode of waiting — Ember
+   thinking, not Ember mid-token. The cadence carries the meaning;
+   the label next to it just confirms.
+
+   The shape footprint matches .typing-dot (8px, var(--text-secondary)
+   rather than --text-muted because there is only one of them and it
+   needs to read as present, not faded). Theme-safe — the pulse uses
+   only opacity + a small scale so we don't have to compose rgba()
+   from CSS-var-defined hex colors across all six themes. */
+
+.review-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: review-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes review-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-dot {
+    /* Honour reduced-motion: keep a steady, fully-visible dot rather
+       than animating opacity/scale. The label still signals state. */
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* ── Scroll to bottom ──────────────────────────────────────────── */
 
 .chat-scroll-btn {
