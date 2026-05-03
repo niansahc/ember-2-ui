@@ -92,8 +92,9 @@ export default function PinChange({ onDone, onCancel }) {
 
           <form onSubmit={handleVerifyNext} className="pin-setup-form">
             <div className="pin-setup-group">
-              <label className="pin-setup-label">Current PIN</label>
+              <label className="pin-setup-label" htmlFor="pin-change-current">Current PIN</label>
               <input
+                id="pin-change-current"
                 type="password"
                 className="pin-setup-input"
                 data-testid="pin-change-current"
@@ -126,8 +127,9 @@ export default function PinChange({ onDone, onCancel }) {
 
         <form onSubmit={handleSubmit} className="pin-setup-form">
           <div className="pin-setup-group">
-            <label className="pin-setup-label">New PIN (4+ characters)</label>
+            <label className="pin-setup-label" htmlFor="pin-change-new">New PIN (4+ characters)</label>
             <input
+              id="pin-change-new"
               type="password"
               className="pin-setup-input"
               data-testid="pin-change-new"
@@ -139,8 +141,9 @@ export default function PinChange({ onDone, onCancel }) {
           </div>
 
           <div className="pin-setup-group">
-            <label className="pin-setup-label">Confirm new PIN</label>
+            <label className="pin-setup-label" htmlFor="pin-change-confirm">Confirm new PIN</label>
             <input
+              id="pin-change-confirm"
               type="password"
               className="pin-setup-input"
               data-testid="pin-change-confirm"

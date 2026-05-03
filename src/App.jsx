@@ -338,6 +338,9 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      {/* Skip link — first focusable element on the page so keyboard /
+          screen-reader users can bypass the sidebar + header on Tab. */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <Sidebar
         isOpen={sidebarOpen}
         isStreaming={isStreaming}
@@ -354,7 +357,7 @@ export default function App() {
         devVaultLabel={devMode ? devVaultLabel : null}
       />
 
-      <main className="app-main">
+      <main className="app-main" id="main-content" tabIndex={-1}>
         {/* Mobile header */}
         <header className="app-header">
           <button

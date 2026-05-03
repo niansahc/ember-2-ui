@@ -111,6 +111,7 @@ export default function LockScreen({ onUnlock }) {
                 value={recoveryPhrase}
                 onChange={(e) => setRecoveryPhrase(e.target.value)}
                 autoFocus
+                aria-label="Recovery passphrase"
               />
               <input
                 type="password"
@@ -118,6 +119,7 @@ export default function LockScreen({ onUnlock }) {
                 placeholder="New PIN"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
+                aria-label="New PIN"
               />
               <input
                 type="password"
@@ -125,6 +127,7 @@ export default function LockScreen({ onUnlock }) {
                 placeholder="Confirm new PIN"
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
+                aria-label="Confirm new PIN"
               />
               {recoveryError && <p className="lock-error">{recoveryError}</p>}
               <button type="submit" className="lock-btn">Reset PIN</button>

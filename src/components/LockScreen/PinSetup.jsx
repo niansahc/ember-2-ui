@@ -110,8 +110,9 @@ export default function PinSetup({ onComplete, onSkip }) {
 
         <form onSubmit={handleSubmit} className="pin-setup-form">
           <div className="pin-setup-group">
-            <label className="pin-setup-label">PIN (4+ characters)</label>
+            <label className="pin-setup-label" htmlFor="pin-setup-pin">PIN (4+ characters)</label>
             <input
+              id="pin-setup-pin"
               type="password"
               className="pin-setup-input"
               value={pin}
@@ -122,8 +123,9 @@ export default function PinSetup({ onComplete, onSkip }) {
           </div>
 
           <div className="pin-setup-group">
-            <label className="pin-setup-label">Confirm PIN</label>
+            <label className="pin-setup-label" htmlFor="pin-setup-pin-confirm">Confirm PIN</label>
             <input
+              id="pin-setup-pin-confirm"
               type="password"
               className="pin-setup-input"
               value={confirmPin}
@@ -133,8 +135,9 @@ export default function PinSetup({ onComplete, onSkip }) {
           </div>
 
           <div className="pin-setup-group">
-            <label className="pin-setup-label">Recovery passphrase (20+ characters)</label>
+            <label className="pin-setup-label" htmlFor="pin-setup-passphrase">Recovery passphrase (20+ characters)</label>
             <input
+              id="pin-setup-passphrase"
               type="password"
               className="pin-setup-input"
               value={passphrase}
@@ -149,8 +152,9 @@ export default function PinSetup({ onComplete, onSkip }) {
           </div>
 
           <div className="pin-setup-group">
-            <label className="pin-setup-label">Confirm recovery passphrase</label>
+            <label className="pin-setup-label" htmlFor="pin-setup-passphrase-confirm">Confirm recovery passphrase</label>
             <input
+              id="pin-setup-passphrase-confirm"
               type="password"
               className="pin-setup-input"
               value={confirmPassphrase}
