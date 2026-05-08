@@ -1214,7 +1214,7 @@ export default memo(function Settings({
                 <div className="settings-row-info">
                   <span className="settings-row-label">
                     Can Ember search the web?
-                    <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Web search privacy information">
+                    <button type="button" className="settings-info-icon" aria-label="Web search privacy information">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="16" x2="12" y2="12" />
@@ -1223,7 +1223,7 @@ export default memo(function Settings({
                       <span className="settings-info-tooltip">
                         Web search queries are sent through a local SearXNG instance running on your machine. SearXNG forwards queries to external search engines without exposing your IP address or identity. Your queries are not stored. Disable web search here to keep all processing fully local.
                       </span>
-                    </span>
+                    </button>
                   </span>
                   <span className="settings-row-hint">Enables live web results via SearXNG</span>
                 </div>
@@ -1337,6 +1337,7 @@ export default memo(function Settings({
                     setContextLength(val)
                     updatePreferences({ context_length: val })
                   }}
+                  aria-label="Context length tokens"
                 >
                   <option value="2048">2048</option>
                   <option value="4096">4096</option>
@@ -1352,7 +1353,7 @@ export default memo(function Settings({
                 <div className="settings-row-info">
                   <span className="settings-row-label">
                     Deviation Engine
-                    <span className="settings-info-icon" tabIndex={0} role="button" aria-label="Deviation engine information">
+                    <button type="button" className="settings-info-icon" aria-label="Deviation engine information">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="16" x2="12" y2="12" />
@@ -1361,7 +1362,7 @@ export default memo(function Settings({
                       <span className="settings-info-tooltip">
                         Ember tracks when she responds differently than her training would normally produce and records those choices to your vault. Over time, recorded deviations outweigh default patterns in retrieval. Off by default.
                       </span>
-                    </span>
+                    </button>
                   </span>
                 </div>
                 <label className="toggle" aria-label="Toggle deviation detection" title={deviationEnabled ? 'Click to disable' : 'Click to enable'}>

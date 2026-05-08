@@ -134,7 +134,7 @@ export default function InputBar({ onSend, isStreaming, onStop }) {
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
           </svg>
         </button>
-        <input type="file" ref={fileRef} className="sr-only" onChange={handleFileChange} multiple accept=".pdf,.docx,.csv,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp" />
+        <input type="file" ref={fileRef} className="sr-only" onChange={handleFileChange} multiple accept=".pdf,.docx,.csv,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp" aria-label="Attach files (images or documents)" />
         <textarea
           ref={inputRef}
           className="input-textarea"

@@ -68,8 +68,23 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
     return -1
   }, [messages])
 
+  // Visible-status text for the always-mounted aria-live region. Lives on a
+  // stable parent so screen readers reliably announce changes (status code
+  // transitions: searching → verifying → analyzing). aria-label on a
+  // conditionally-mounted live region misses updates because re-mounts are
+  // unreliable triggers in some AT.
+  const liveStatus = isStreaming
+    ? (STATUS_LABELS[streamingStatus] || 'Ember is typing')
+    : ''
+
   return (
     <div className="chat">
+      {/* Stable always-mounted polite live region. Empty when idle so AT
+          stays quiet; populated on stream start and on status transitions. */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {liveStatus}
+      </div>
+
       <div
         className="chat-messages"
         ref={scrollRef}
@@ -114,9 +129,12 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
           />
         ))}
 
-        {/* ── Typing indicator — visible while Ember is streaming ── */}
+        {/* ── Typing indicator — visible while Ember is streaming ──
+            aria-hidden because the announcement is delivered via the
+            stable sr-only live region above; this element is purely the
+            visual presentation and would otherwise be announced twice. */}
         {isStreaming && (
-          <div className="chat-typing" aria-live="polite" aria-label={STATUS_LABELS[streamingStatus] || 'Ember is typing'}>
+          <div className="chat-typing" aria-hidden="true">
             <span className="typing-dot" />
             <span className="typing-dot" />
             <span className="typing-dot" />

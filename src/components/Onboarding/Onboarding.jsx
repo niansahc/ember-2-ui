@@ -356,18 +356,22 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
           </div>
 
           <div className="onboarding-fields">
-            {PROFILE_QUESTIONS.map((q) => (
-              <div key={q.key} className="onboarding-field">
-                <label className="onboarding-label">{q.label}</label>
-                <textarea
-                  className="onboarding-input"
-                  placeholder={q.placeholder}
-                  value={profileAnswers[q.key] || ''}
-                  onChange={(e) => updateProfile(q.key, e.target.value)}
-                  rows={2}
-                />
-              </div>
-            ))}
+            {PROFILE_QUESTIONS.map((q) => {
+              const fieldId = `onboarding-profile-${q.key}`
+              return (
+                <div key={q.key} className="onboarding-field">
+                  <label className="onboarding-label" htmlFor={fieldId}>{q.label}</label>
+                  <textarea
+                    id={fieldId}
+                    className="onboarding-input"
+                    placeholder={q.placeholder}
+                    value={profileAnswers[q.key] || ''}
+                    onChange={(e) => updateProfile(q.key, e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              )
+            })}
           </div>
 
           <div className="onboarding-actions">
@@ -458,31 +462,36 @@ export default function Onboarding({ onComplete, initialProfile, initialLodeston
             {LODESTONE_SECTIONS.map((section) => (
               <div key={section.title} className="onboarding-section">
                 <h2 className="onboarding-section-title">{section.title}</h2>
-                {section.questions.map((q) => (
-                  <div key={q.key} className="onboarding-field">
-                    <div className="onboarding-label-row">
-                      <label className="onboarding-label">{q.label}</label>
-                      <button
-                        className="onboarding-help-btn"
-                        onClick={() => setExpandedHelp(expandedHelp === q.key ? null : q.key)}
-                        aria-label="More information"
-                        title="More information"
-                      >
-                        ?
-                      </button>
+                {section.questions.map((q) => {
+                  const fieldId = `onboarding-lodestone-${q.key}`
+                  return (
+                    <div key={q.key} className="onboarding-field">
+                      <div className="onboarding-label-row">
+                        <label className="onboarding-label" htmlFor={fieldId}>{q.label}</label>
+                        <button
+                          type="button"
+                          className="onboarding-help-btn"
+                          onClick={() => setExpandedHelp(expandedHelp === q.key ? null : q.key)}
+                          aria-label="More information"
+                          title="More information"
+                        >
+                          ?
+                        </button>
+                      </div>
+                      {expandedHelp === q.key && (
+                        <p className="onboarding-help-text">{q.help}</p>
+                      )}
+                      <textarea
+                        id={fieldId}
+                        className="onboarding-input"
+                        placeholder={q.placeholder}
+                        value={lodestoneAnswers[q.key] || ''}
+                        onChange={(e) => updateLodestone(q.key, e.target.value)}
+                        rows={2}
+                      />
                     </div>
-                    {expandedHelp === q.key && (
-                      <p className="onboarding-help-text">{q.help}</p>
-                    )}
-                    <textarea
-                      className="onboarding-input"
-                      placeholder={q.placeholder}
-                      value={lodestoneAnswers[q.key] || ''}
-                      onChange={(e) => updateLodestone(q.key, e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ))}
           </div>

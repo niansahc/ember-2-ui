@@ -18,7 +18,7 @@ export default function BugReport({ isOpen, onClose }) {
         <div className="bugreport-header">
           <h2 className="bugreport-title">
             Report a Bug
-            <span className="bugreport-info-icon" tabIndex={0} role="button" aria-label="Privacy information">
+            <button type="button" className="bugreport-info-icon" aria-label="Privacy information">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
@@ -27,7 +27,7 @@ export default function BugReport({ isOpen, onClose }) {
               <span className="bugreport-info-tooltip">
                 This opens GitHub Issues in your browser. You write and submit the report directly on GitHub — Ember does not send any data on your behalf.
               </span>
-            </span>
+            </button>
           </h2>
           <button
             className="bugreport-close"

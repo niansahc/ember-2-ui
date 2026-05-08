@@ -687,8 +687,10 @@
 }
 
 .cloud-provider-not-configured {
-  color: var(--text-muted);
-  opacity: 0.7;
+  /* text-secondary (not muted) and no opacity dim — keeps the status
+     readable at WCAG AA 4.5:1+ across themes. Italic carries the
+     "less prominent" visual signal without dropping below contrast. */
+  color: var(--text-secondary);
   font-style: italic;
 }
 

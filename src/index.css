@@ -332,6 +332,33 @@ body {
   outline-offset: 2px;
 }
 
+/* ── Skip-to-content link (WCAG 2.4.1 Bypass Blocks) ──────────────
+   Hidden until focused. Becomes the first stop on Tab from page load
+   so keyboard users can leap past the sidebar + header into <main>. */
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Slide off-screen until focused; opacity:0 alone wouldn't move it
+     out of the layout flow on some screen readers. */
+  transform: translateY(-200%);
+  z-index: 10000;
+  padding: 0.6rem 1rem;
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-sm) 0;
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--bg-primary);
+  outline-offset: 2px;
+}
+
 /* ── Scrollbar ─────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {

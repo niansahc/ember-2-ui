@@ -55,6 +55,7 @@ These exist and must not be re-implemented:
 - Do not use axios — use native fetch
 - Mobile must work — test viewport behavior for any UI changes
 - Do not use the word "shape" in any output
+- Never add Co-authored-by: Claude or any Claude attribution to commit messages or PR bodies. Attribution is acknowledged in docs/BUILDING_EMBER.md.
 
 ---
 
