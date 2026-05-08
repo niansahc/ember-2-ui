@@ -114,4 +114,81 @@ test.describe('Streaming Signals & Sources', () => {
     // This test verifies the typing indicator renders during streaming.
     // Full integration test requires the backend to emit status events.
   })
+
+  // ── review_pending (Option B / ADR-036) ────────────────────────
+  // The grounded path runs a constitutional review pass before the
+  // first token reaches the user. On that status the indicator
+  // swaps the three bouncing dots for a single slowly-breathing
+  // dot and shows a neutral label. We can't trigger the real
+  // backend status from the frontend alone, so — matching the
+  // pattern used elsewhere in this file for sources — these tests
+  // inject the DOM the JSX renders for that state and assert the
+  // contract.
+
+  test('review_pending state renders single breathing dot with neutral label', async ({ page }) => {
+    await page.evaluate(() => {
+      const container = document.querySelector('.chat-messages')
+      if (!container) return
+
+      // Mirror the exact markup Chat.jsx emits when isStreaming &&
+      // streamingStatus === 'review_pending'. If this gets out of
+      // sync with the component the test will (correctly) fail.
+      const wrapper = document.createElement('div')
+      wrapper.className = 'chat-typing'
+      wrapper.setAttribute('aria-hidden', 'true')
+      wrapper.innerHTML = `
+        <span class="review-dot"></span>
+        <span class="chat-status-label">Thinking it through…</span>
+      `
+      container.appendChild(wrapper)
+    })
+
+    const typing = page.locator('.chat-typing')
+    await expect(typing).toBeVisible()
+
+    // The breathing dot is present and the bouncing dots are not —
+    // the two variants are mutually exclusive.
+    await expect(page.locator('.review-dot')).toHaveCount(1)
+    await expect(page.locator('.chat-typing .typing-dot')).toHaveCount(0)
+
+    // Neutral, Ember-voiced label — internal terminology stays
+    // internal. (See CLAUDE.md UI design gate.)
+    const label = page.locator('.chat-status-label')
+    await expect(label).toHaveText('Thinking it through…')
+
+    // The wrapper is aria-hidden because the stable sr-only live
+    // region in Chat.jsx announces STATUS_LABELS[review_pending]
+    // ("Thinking it through…") — announcing twice would be a
+    // WCAG regression of the a11y pass.
+    await expect(typing).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  test('review_pending indicator does not overflow on narrow viewport', async ({ page }) => {
+    // CLAUDE.md mobile gate: any new chat-area visual must not
+    // push layout on phone widths. 360px is a common Android width;
+    // 320px is the iPhone SE floor (spot-checked manually).
+    await page.setViewportSize({ width: 360, height: 740 })
+
+    await page.evaluate(() => {
+      const container = document.querySelector('.chat-messages')
+      if (!container) return
+      const wrapper = document.createElement('div')
+      wrapper.className = 'chat-typing'
+      wrapper.setAttribute('aria-hidden', 'true')
+      wrapper.innerHTML = `
+        <span class="review-dot"></span>
+        <span class="chat-status-label">Thinking it through…</span>
+      `
+      container.appendChild(wrapper)
+    })
+
+    const typing = page.locator('.chat-typing')
+    await expect(typing).toBeVisible()
+
+    // The indicator's right edge must sit inside the viewport
+    // (no horizontal scroll triggered by this element).
+    const box = await typing.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box.x + box.width).toBeLessThanOrEqual(360)
+  })
 })

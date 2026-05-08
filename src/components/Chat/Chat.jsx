@@ -15,11 +15,19 @@ import './Chat.css'
 
 // Maps streaming status codes from the backend to user-facing labels.
 // These show next to the typing dots so the user knows what Ember is doing.
+//
+// `review_pending` is the slow, thoughtful one \u2014 it fires on the grounded
+// path while the full response is being checked before the first token
+// reaches the user. The copy is intentionally neutral and Ember-voiced;
+// internal terminology stays internal. The indicator also swaps from
+// three bouncing dots to a single breathing dot (see render below) so
+// the change is readable peripherally, not just by reading the label.
 const STATUS_LABELS = {
   searching: 'Searching the web\u2026',
   verifying: 'Verifying\u2026',
   refining: 'Refining\u2026',
   analyzing: 'Analyzing image\u2026',
+  review_pending: 'Thinking it through\u2026',
 }
 
 export default function Chat({ messages, isStreaming, streamingStatus, onSend, onStop, onRegenerate, onEdit, userName, hasOnboarded }) {
@@ -132,12 +140,30 @@ export default function Chat({ messages, isStreaming, streamingStatus, onSend, o
         {/* ── Typing indicator — visible while Ember is streaming ──
             aria-hidden because the announcement is delivered via the
             stable sr-only live region above; this element is purely the
-            visual presentation and would otherwise be announced twice. */}
+            visual presentation and would otherwise be announced twice.
+            Two visual variants share the same wrapper so the surrounding
+            layout stays still on transitions:
+            - Default: three small dots that bounce on a quick 1.4s beat
+              ("tokens are coming in").
+            - review_pending: a single dot that breathes on a slower 2.4s
+              beat ("Ember is taking a moment to think it through"),
+              rendered while the grounded-path response is being checked
+              before any tokens are released. The cadence shift is the
+              primary signal — readable peripherally, even before the
+              label is parsed.
+            The `.chat-status-label` block is unchanged and renders for
+            any STATUS_LABELS-mapped status, including review_pending. */}
         {isStreaming && (
           <div className="chat-typing" aria-hidden="true">
-            <span className="typing-dot" />
-            <span className="typing-dot" />
-            <span className="typing-dot" />
+            {streamingStatus === 'review_pending' ? (
+              <span className="review-dot" />
+            ) : (
+              <>
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </>
+            )}
             {streamingStatus && STATUS_LABELS[streamingStatus] && (
               <span className="chat-status-label">{STATUS_LABELS[streamingStatus]}</span>
             )}
