@@ -1,10 +1,12 @@
-// Requires Ember API running at localhost:8000 (start_api.bat)
+// Live-backend lane (ADR 0001): requires Ember API at localhost:8000 with
+// Ollama models. Excluded from the default lane; run pre-release with
+//   $env:EMBER_LIVE_BACKEND=1; npx playwright test --grep @needs-live-backend
 // Must run against the test vault -- these tests change the active model.
 
 const { test, expect } = require('@playwright/test')
 const { assertTestVault } = require('./helpers/testvault.cjs')
 
-test.describe('Model Switching', () => {
+test.describe('Model Switching', { tag: '@needs-live-backend' }, () => {
   test.beforeEach(async ({ page, request }) => {
     await assertTestVault(request)
     await page.goto('/')
@@ -16,14 +18,9 @@ test.describe('Model Switching', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    // Wait for models to load — skip if no local models available
+    // Models must be available in this lane (live backend + Ollama).
     const modelItem = page.locator('.model-list-item').first()
-    try {
-      await expect(modelItem).toBeVisible({ timeout: 5000 })
-    } catch {
-      test.skip(true, 'No local models available — Ollama may not be running')
-      return
-    }
+    await expect(modelItem).toBeVisible({ timeout: 5000 })
 
     // Get the model name from the first item
     const modelName = await modelItem.locator('.model-list-item-name').textContent()
@@ -44,13 +41,7 @@ test.describe('Model Switching', () => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
 
-    // Wait for model list — skip if no models loaded
-    try {
-      await page.locator('.model-list-item').first().waitFor({ timeout: 5000 })
-    } catch {
-      test.skip(true, 'No local models available — Ollama may not be running')
-      return
-    }
+    await page.locator('.model-list-item').first().waitFor({ timeout: 5000 })
 
     // At least one model should have the active badge
     const activeBadge = page.locator('.model-list-item-check')
@@ -58,9 +49,10 @@ test.describe('Model Switching', () => {
     await expect(activeBadge.first()).toContainText('Active')
   })
 
-  // FIXME(v0.8.0): Flaky in full-suite mode — occasional 5s indicator timeout
-  // after reload when backend is under Playwright load. Passes in isolation.
-  test.fixme('model selection persists after reload', async ({ page }) => {
+  // Previously fixme'd for full-suite flake under Playwright load. Now in the
+  // isolated @needs-live-backend lane (ADR 0001), it runs without that
+  // contention, so it's a live test again.
+  test('model selection persists after reload', async ({ page }) => {
     // Get current model from API
     const apiResponse = await page.request.get('/model')
     const data = await apiResponse.json()

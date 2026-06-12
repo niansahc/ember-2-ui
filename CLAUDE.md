@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.7.4 (published). 163 Playwright tests, 2 conditional skips. Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.8.1 (published). 192 Playwright tests — 187 in the default lane, 5 tagged `@needs-live-backend` (ADR 0001). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -88,7 +88,17 @@ npm run dev
 
 ### Testing Discipline
 
-When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or marked skip-with-condition before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
+**The default lane is green-by-construction.** Only deterministic capability gates may skip (e.g. "Vite dev server required for ESM import"). Zero backend-dependent runtime skips, zero `test.fixme` — a test that skips itself when the backend is slow or absent is masking an infrastructure failure as a pass, which is exactly what the no-flaky rule forbids.
+
+**Backend-dependent tests are tagged, not skipped.** Specs that genuinely require a live backend (Ollama, real model round-trips) are tagged `@needs-live-backend` and excluded from the default lane via `grepInvert` (see ADR 0001 — `docs/adr/0001-ui-test-backend-boundary.md`). Run them before a release:
+
+```powershell
+$env:EMBER_LIVE_BACKEND=1; npx playwright test --grep "@needs-live-backend"
+```
+
+The UI's default lane proves rendering/interaction against a known API contract using mocked endpoints (synthetic fixtures only — Vault Privacy Rule). It deliberately does not prove the backend honors that contract; that is the backend repo's job plus the pre-release `@needs-live-backend` run.
+
+When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or moved to the `@needs-live-backend` lane before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
 
 ---
 

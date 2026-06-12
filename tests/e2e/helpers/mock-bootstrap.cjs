@@ -69,6 +69,17 @@ async function mockBootstrap(page, overrides = {}) {
     ...overrides.pinStatus,
   }
 
+  // List endpoints — default to empty so the sidebar renders deterministically
+  // with no live backend. Per ADR 0001, the UI's default lane proves rendering
+  // against a known contract using synthetic fixtures (Vault Privacy Rule).
+  // Override per-test:
+  //   conversations: [{ id, title, updated_at, project_id }]
+  //   projects:      [{ id, name, color, conversation_count }]
+  //   tasks:         { active: [...], proposed: [...] }
+  const conversations = overrides.conversations || []
+  const projects = overrides.projects || []
+  const tasks = overrides.tasks || { active: [], proposed: [] }
+
   // /api/health — splash handshake + sidebar version fetch
   await page.route('**/api/health', async (route) => {
     await route.fulfill({
@@ -111,6 +122,40 @@ async function mockBootstrap(page, overrides = {}) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(pinStatus),
+    })
+  })
+
+  // GET /v1/conversations?limit=... — the list (has a query string). Scoped to
+  // GET and to the bare collection path so /conversations/{id} (turns, rename,
+  // delete) still flows through to a per-test route or the real backend.
+  await page.route(/\/conversations(\?|$)/, async (route, request) => {
+    if (request.method() !== 'GET') return route.continue()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations }),
+    })
+  })
+
+  // GET /v1/projects — POST (createProject) still hits the backend.
+  await page.route(/\/projects$/, async (route, request) => {
+    if (request.method() !== 'GET') return route.continue()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ projects }),
+    })
+  })
+
+  // GET /v1/tasks?status=... — returns the list for the requested status;
+  // PATCH/DELETE on /tasks/{id} still flow through.
+  await page.route(/\/tasks(\?|$)/, async (route, request) => {
+    if (request.method() !== 'GET') return route.continue()
+    const status = new URL(request.url()).searchParams.get('status')
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tasks: tasks[status] || [] }),
     })
   })
 }

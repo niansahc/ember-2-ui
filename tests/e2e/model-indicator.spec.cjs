@@ -50,21 +50,18 @@ test.describe('Model Indicator — rendering', () => {
 
 const { assertTestVault, snapshotVault, cleanupSinceSnapshot } = require('./helpers/testvault.cjs')
 
-test.describe('Model Indicator — real backend', () => {
+test.describe('Model Indicator — real backend', { tag: '@needs-live-backend' }, () => {
   // No mocks — these tests compare the displayed model against the live
   // /model response. Must run against the 'test' vault (asserted in beforeEach)
-  // and any writes are cleaned up in afterEach.
+  // and any writes are cleaned up in afterEach. Excluded from the default lane
+  // (ADR 0001); run pre-release with EMBER_LIVE_BACKEND=1 --grep @needs-live-backend.
   let vaultSnapshot = null
 
   test.beforeEach(async ({ page, request }) => {
     await assertTestVault(request)
     vaultSnapshot = await snapshotVault(request)
     await page.goto('/')
-    try {
-      await page.waitForSelector('.app-layout', { timeout: 20000 })
-    } catch {
-      test.skip(true, 'app-layout did not appear — backend may be unreachable')
-    }
+    await page.waitForSelector('.app-layout', { timeout: 20000 })
   })
 
   test.afterEach(async ({ request }) => {
@@ -77,15 +74,10 @@ test.describe('Model Indicator — real backend', () => {
   test('indicator matches API model after settings close', async ({ page }) => {
     // Open and close settings
     const settingsBtn = page.locator('.app-model-indicator')
-    try {
-      await expect(settingsBtn).toBeVisible({ timeout: 10000 })
-      // wait for model state to stabilize before clicking
-      await page.waitForTimeout(1000)
-      await settingsBtn.click()
-    } catch {
-      test.skip(true, 'Model indicator not stable — backend may be slow or model unknown')
-      return
-    }
+    await expect(settingsBtn).toBeVisible({ timeout: 10000 })
+    // wait for model state to stabilize before clicking
+    await page.waitForTimeout(1000)
+    await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
     const closeBtn = page.locator('.settings-close')
@@ -116,14 +108,9 @@ test.describe('Model Indicator — real backend', () => {
     await settingsBtn.click()
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 5000 })
 
-    // Check if models are available
+    // Models must be available in this lane (live backend + Ollama).
     const modelItem = page.locator('.model-list-item').first()
-    try {
-      await expect(modelItem).toBeVisible({ timeout: 5000 })
-    } catch {
-      test.skip(true, 'No local models available — Ollama may not be running or backend unreachable')
-      return
-    }
+    await expect(modelItem).toBeVisible({ timeout: 5000 })
 
     // Click the first model to select it
     await modelItem.click()
