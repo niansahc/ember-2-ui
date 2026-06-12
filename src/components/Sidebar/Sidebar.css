@@ -484,6 +484,14 @@
   font-style: italic;
 }
 
+/* Conversation row carrying a transient mutation error (rename/delete/move
+   failed). Mirrors the task-error treatment so failures read the same way
+   wherever they happen in the sidebar. */
+.sidebar-item-error .sidebar-item-title {
+  color: var(--error, #e85d5d);
+  font-style: italic;
+}
+
 .sidebar-task-delete {
   flex-shrink: 0;
   width: 20px;
