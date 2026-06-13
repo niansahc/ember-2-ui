@@ -7,6 +7,7 @@
  */
 import { useEffect, useState, useRef } from 'react'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
+import { useTransientError } from '../../hooks/useTransientError.js'
 import { mockGetConversations, mockGetProjects } from '../../api/mock.js'
 import {
   getConversations as realGetConversations,
@@ -49,8 +50,11 @@ export default function Sidebar({
   const [showAllTasks, setShowAllTasks] = useState(false)
   // Track tasks toggled done in this session (visual state, not removed)
   const [doneTasks, setDoneTasks] = useState(new Set())
-  // Track per-task error states (task id -> error message)
-  const [taskErrors, setTaskErrors] = useState({})
+  // Per-row transient error messages (task id / conversation id -> message).
+  // Every optimistic mutation that fails flashes here for a few seconds, then
+  // the message auto-clears. Shared across task rows and conversation rows —
+  // ids don't collide across the two namespaces.
+  const { errors: rowErrors, setError: setRowError, clearError: clearRowError } = useTransientError(4000)
 
   // Collapse state — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
@@ -163,8 +167,9 @@ export default function Sidebar({
   function handleTaskToggle(taskId) {
     const isDone = doneTasks.has(taskId)
     const newStatus = isDone ? 'active' : 'done'
+    const snapshot = doneTasks  // capture for rollback if the PATCH fails
 
-    // Toggle visual state
+    // Toggle visual state optimistically
     setDoneTasks((prev) => {
       const next = new Set(prev)
       if (isDone) {
@@ -175,20 +180,20 @@ export default function Sidebar({
       return next
     })
 
-    // PATCH in background
-    updateTaskStatus(taskId, newStatus).catch(() => {})
+    // PATCH in background — on failure, snap the checkbox back and say so
+    updateTaskStatus(taskId, newStatus).catch(() => {
+      setDoneTasks(snapshot)
+      setRowError(taskId, "Couldn't update — try again")
+    })
   }
 
   async function handleTaskDelete(taskId) {
-    // Clear any previous error for this task
-    setTaskErrors((prev) => { const next = { ...prev }; delete next[taskId]; return next })
+    clearRowError(taskId)
     try {
       await deleteTask(taskId)
       setTasks((prev) => prev.filter((t) => t.id !== taskId))
     } catch {
-      setTaskErrors((prev) => ({ ...prev, [taskId]: 'Failed to delete' }))
-      // Auto-clear error after 4 seconds
-      setTimeout(() => setTaskErrors((prev) => { const next = { ...prev }; delete next[taskId]; return next }), 4000)
+      setRowError(taskId, "Couldn't delete — try again")
     }
   }
 
@@ -274,47 +279,59 @@ export default function Sidebar({
 
   async function handleRename() {
     if (!contextMenu) return
-    const name = prompt('Rename conversation:', contextMenu.conv.title)
-    if (name && name.trim()) {
-      // Optimistic UI update
-      setConversations((prev) =>
-        prev.map((c) => c.id === contextMenu.conv.id ? { ...c, title: name.trim() } : c),
-      )
-      try {
-        await realRenameConversation(contextMenu.conv.id, name.trim())
-      } catch {
-        console.warn('[Sidebar] Rename API failed, local update only')
-      }
-      onRenameConversation?.(contextMenu.conv.id, name.trim())
-    }
+    const conv = contextMenu.conv
+    const name = prompt('Rename conversation:', conv.title)
     setContextMenu(null)
+    if (!name || !name.trim()) return
+    const snapshot = conversations  // capture for rollback
+    // Optimistic UI update
+    setConversations((prev) =>
+      prev.map((c) => c.id === conv.id ? { ...c, title: name.trim() } : c),
+    )
+    try {
+      await realRenameConversation(conv.id, name.trim())
+      // Only tell the parent once the rename actually landed.
+      onRenameConversation?.(conv.id, name.trim())
+    } catch {
+      setConversations(snapshot)  // revert the title
+      setRowError(conv.id, "Couldn't rename — try again")
+    }
   }
 
   async function handleDelete() {
     if (!contextMenu) return
-    // Optimistic UI update
-    setConversations((prev) => prev.filter((c) => c.id !== contextMenu.conv.id))
-    try {
-      await realDeleteConversation(contextMenu.conv.id)
-    } catch {
-      console.warn('[Sidebar] Delete API failed, local update only')
-    }
-    onDeleteConversation?.(contextMenu.conv.id)
+    const conv = contextMenu.conv
     setContextMenu(null)
+    const snapshot = conversations  // capture so a failed delete can restore the row
+    // Optimistic UI update
+    setConversations((prev) => prev.filter((c) => c.id !== conv.id))
+    try {
+      await realDeleteConversation(conv.id)
+      // Only clear the active chat etc. once the delete actually succeeded —
+      // otherwise a failed delete would yank the conversation out from under
+      // the user while the row is still sitting there on the server.
+      onDeleteConversation?.(conv.id)
+    } catch {
+      setConversations(snapshot)  // row comes back
+      setRowError(conv.id, "Couldn't delete — try again")
+    }
   }
 
   async function handleMoveToProject(projectId) {
     if (!contextMenu) return
+    const conv = contextMenu.conv
+    setContextMenu(null)
+    const snapshot = conversations  // capture for rollback
     // Optimistic UI update
     setConversations((prev) =>
-      prev.map((c) => c.id === contextMenu.conv.id ? { ...c, projectId } : c),
+      prev.map((c) => c.id === conv.id ? { ...c, projectId } : c),
     )
     try {
-      await realMoveConversationToProject(contextMenu.conv.id, projectId)
+      await realMoveConversationToProject(conv.id, projectId)
     } catch {
-      console.warn('[Sidebar] Move API failed, local update only')
+      setConversations(snapshot)  // back to its original group
+      setRowError(conv.id, "Couldn't move — try again")
     }
-    setContextMenu(null)
   }
 
   // Default project colors — cycles through these for new projects
@@ -354,15 +371,18 @@ export default function Sidebar({
 
   // Shared conversation item renderer
   function ConvoItem({ conv, projectId }) {
+    const convoError = rowErrors[conv.id]
     return (
       <li key={conv.id}>
         <button
-          className={`sidebar-item ${conv.id === activeConversationId ? 'sidebar-item-active' : ''}`}
+          className={`sidebar-item ${conv.id === activeConversationId ? 'sidebar-item-active' : ''} ${convoError ? 'sidebar-item-error' : ''}`}
           onClick={() => handleConvoClick(conv.id, projectId)}
           onContextMenu={(e) => handleContextMenu(e, conv)}
           aria-current={conv.id === activeConversationId ? 'true' : undefined}
         >
-          <span className="sidebar-item-title">{conv.title}</span>
+          {/* On a failed mutation the title slot briefly carries the error
+              (mirrors the task-row pattern), then auto-reverts to the title. */}
+          <span className="sidebar-item-title">{convoError || conv.title}</span>
         </button>
       </li>
     )
@@ -696,7 +716,7 @@ export default function Sidebar({
             <ul className="sidebar-convo-list" role="list">
               {(showAllTasks ? tasks : tasks.slice(0, 5)).map((task) => {
                 const isDone = doneTasks.has(task.id)
-                const taskError = taskErrors[task.id]
+                const taskError = rowErrors[task.id]
                 return (
                   <li key={task.id} className={`sidebar-task-row ${isDone ? 'sidebar-task-done' : ''} ${taskError ? 'sidebar-task-error' : ''}`}>
                     <input

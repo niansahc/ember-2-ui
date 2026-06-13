@@ -1,182 +1,81 @@
+// Task tray — visibility and the done/undone toggle.
+//
+// Per ADR 0001 these run in the default lane against mocked task endpoints, so
+// they're deterministic and need no live backend. This replaces the old
+// createTask-via-API approach, which (a) read the API key out of .env, and
+// (b) flaked in full-suite mode because other specs' chat traffic seeded tasks
+// into the shared test vault between cleanup and assertion. The backend's
+// task-creation round-trip is the backend repo's responsibility, not this one's.
+
 const { test, expect } = require('@playwright/test')
-const path = require('path')
-const fs = require('fs')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
-const { assertTestVault } = require('./helpers/testvault.cjs')
-const { skipIfBackendDown } = require('./helpers/skip-if-backend-down.cjs')
 
-// Read API key from .env file for direct API calls in tests
-function readApiKey() {
-  try {
-    const envPath = path.resolve(__dirname, '../../.env')
-    const content = fs.readFileSync(envPath, 'utf-8')
-    const match = content.match(/^VITE_EMBER_API_KEY=(.+)$/m)
-    return match ? match[1].trim() : ''
-  } catch { return '' }
-}
+const TASK = { id: 'task_tray01', title: 'Synthetic Task', status: 'active', metadata: {} }
 
-const API_URL = 'http://localhost:8000/v1'
-const API_KEY = readApiKey()
-
-function authHeaders() {
-  return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
-}
-
-async function createTask(title) {
-  const res = await fetch(`${API_URL}/tasks`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ title, status: 'active' }),
+// Let the task PATCH (done/undone toggle) succeed so the optimistic state
+// sticks — otherwise handleTaskToggle would roll back and clear the done class.
+async function mockTaskMutations(page) {
+  await page.route(/\/tasks\/[^/?]+$/, async (route, request) => {
+    if (request.method() === 'GET') return route.continue()
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
-  if (!res.ok) return null
-  return await res.json()
-}
-
-async function cleanupTask(taskId) {
-  try {
-    await fetch(`${API_URL}/tasks/${taskId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ status: 'cancelled' }),
-    })
-  } catch {}
-}
-
-async function cleanupAllActiveTasks() {
-  try {
-    const res = await fetch(`${API_URL}/tasks?status=active`, {
-      headers: authHeaders(),
-    })
-    if (!res.ok) return
-    const data = await res.json()
-    const list = Array.isArray(data) ? data : (data.tasks || [])
-    await Promise.all(list.map((t) => t && t.id ? cleanupTask(t.id) : Promise.resolve()))
-  } catch {}
 }
 
 test.describe('Task Tray', () => {
-  test.beforeEach(async ({ page, request }) => {
-    // Backend is required for createTask + assertTestVault. Skip cleanly if
-    // the API isn't reachable rather than letting page.goto error out with
-    // ERR_ABORTED (BUG-M-002).
-    await skipIfBackendDown(test)
-    // guard: createTask hits the real backend. Assert test vault first.
-    await assertTestVault(request)
-    // Cancel any leftover active tasks from prior failed runs — the
-    // "tray is hidden" test requires a clean vault.
-    await cleanupAllActiveTasks()
-    await mockBootstrap(page)
+  test('tray is hidden when no active tasks exist', async ({ page }) => {
+    await mockBootstrap(page, { tasks: { active: [], proposed: [] } })
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+    await expect(page.locator('.sidebar-tasks')).not.toBeVisible()
   })
 
-  // FIXME(v0.8.0): These 3 tray-visibility tests pass in isolation but flake
-  // in full-suite mode. Root cause: other specs' chat traffic fires
-  // task_detector and creates tasks in the shared test vault between
-  // beforeEach cleanup and assertion. Requires cross-suite task state
-  // isolation. Feature itself verified working via isolated spec runs.
-  test.fixme('task tray is hidden when no active tasks exist', async ({ page }) => {
+  test('tray shows active tasks', async ({ page }) => {
+    await mockBootstrap(page, { tasks: { active: [TASK], proposed: [] } })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+
     const taskTray = page.locator('.sidebar-tasks')
-    await expect(taskTray).not.toBeVisible()
+    await expect(taskTray).toBeVisible()
+    await expect(taskTray.locator('.sidebar-time-label')).toContainText('TASKS')
+    await expect(taskTray.locator('.sidebar-task-title').first()).toContainText('Synthetic Task')
   })
 
-  test.fixme('task tray appears when a task is created via API', async ({ page }) => {
-    test.setTimeout(60000)
-    const result = await createTask('Playwright test task')
-    if (!result || !result.id) {
-      test.skip(true, 'Task API unavailable — cannot create test task')
-      return
-    }
-    const taskId = result.id
+  test('checking a task shows strikethrough and stays visible', async ({ page }) => {
+    await mockBootstrap(page, { tasks: { active: [TASK], proposed: [] } })
+    await mockTaskMutations(page)
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-    try {
-      await page.reload()
-      await page.waitForSelector('.app-layout', { timeout: 15000 })
+    const taskTray = page.locator('.sidebar-tasks')
+    await expect(taskTray).toBeVisible()
 
-      const taskTray = page.locator('.sidebar-tasks')
-      await expect(taskTray).toBeVisible({ timeout: 35000 })
+    const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
+    await checkbox.check()
 
-      const header = taskTray.locator('.sidebar-time-label')
-      await expect(header).toContainText('TASKS')
-
-      const taskTitle = taskTray.locator('.sidebar-task-title')
-      await expect(taskTitle.first()).toContainText('Playwright test task')
-    } finally {
-      await cleanupTask(taskId)
-    }
-  })
-
-  test.fixme('checking a task shows strikethrough and stays visible', async ({ page }) => {
-    test.setTimeout(60000)
-    const result = await createTask('Task to check off')
-    if (!result || !result.id) {
-      test.skip(true, 'Task API unavailable — cannot create test task')
-      return
-    }
-    const taskId = result.id
-
-    try {
-      await page.reload()
-      await page.waitForSelector('.app-layout', { timeout: 15000 })
-
-      const taskTray = page.locator('.sidebar-tasks')
-      try {
-        await expect(taskTray).toBeVisible({ timeout: 35000 })
-      } catch {
-        test.skip(true, 'Task tray did not appear — sidebar may not be visible at this viewport')
-        return
-      }
-
-      // Click the checkbox
-      const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
-      await checkbox.click()
-
-      // Task row should get the done class (strikethrough + dimmed)
-      const taskRow = taskTray.locator('.sidebar-task-row').first()
-      await expect(taskRow).toHaveClass(/sidebar-task-done/, { timeout: 3000 })
-
-      // Task title should still be visible (not removed)
-      const taskTitle = taskTray.locator('.sidebar-task-title').first()
-      await expect(taskTitle).toBeVisible()
-      await expect(taskTitle).toContainText('Task to check off')
-    } finally {
-      await cleanupTask(taskId)
-    }
+    const taskRow = taskTray.locator('.sidebar-task-row').first()
+    await expect(taskRow).toHaveClass(/sidebar-task-done/)
+    const taskTitle = taskTray.locator('.sidebar-task-title').first()
+    await expect(taskTitle).toBeVisible()
+    await expect(taskTitle).toContainText('Synthetic Task')
   })
 
   test('unchecking a done task removes strikethrough', async ({ page }) => {
-    test.setTimeout(60000)
-    const result = await createTask('Task to toggle')
-    if (!result || !result.id) {
-      test.skip(true, 'Task API unavailable — cannot create test task')
-      return
-    }
-    const taskId = result.id
+    await mockBootstrap(page, { tasks: { active: [TASK], proposed: [] } })
+    await mockTaskMutations(page)
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
 
-    try {
-      await page.reload()
-      await page.waitForSelector('.app-layout', { timeout: 15000 })
+    const taskTray = page.locator('.sidebar-tasks')
+    await expect(taskTray).toBeVisible()
 
-      const taskTray = page.locator('.sidebar-tasks')
-      try {
-        await expect(taskTray).toBeVisible({ timeout: 35000 })
-      } catch {
-        test.skip(true, 'Task tray did not appear — sidebar may not be visible at this viewport')
-        return
-      }
+    const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
+    const taskRow = taskTray.locator('.sidebar-task-row').first()
 
-      const checkbox = taskTray.locator('.sidebar-task-checkbox').first()
-      const taskRow = taskTray.locator('.sidebar-task-row').first()
+    await checkbox.check()
+    await expect(taskRow).toHaveClass(/sidebar-task-done/)
 
-      // Check it
-      await checkbox.click()
-      await expect(taskRow).toHaveClass(/sidebar-task-done/, { timeout: 3000 })
-
-      // Uncheck it
-      await checkbox.click()
-      await expect(taskRow).not.toHaveClass(/sidebar-task-done/, { timeout: 3000 })
-    } finally {
-      await cleanupTask(taskId)
-    }
+    await checkbox.uncheck()
+    await expect(taskRow).not.toHaveClass(/sidebar-task-done/)
   })
 })

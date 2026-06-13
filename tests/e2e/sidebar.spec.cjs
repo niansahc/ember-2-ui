@@ -1,9 +1,18 @@
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
+// Synthetic project so the project-detail tests render a `.sidebar-project-row`
+// deterministically (per ADR 0001 — no live vault data required).
+const PROJECT = {
+  id: 'proj_sidebar01',
+  name: 'Synthetic Project',
+  color: '#ff8c00',
+  conversation_count: 0,
+}
+
 test.describe('Sidebar', () => {
   test.beforeEach(async ({ page }) => {
-    await mockBootstrap(page)
+    await mockBootstrap(page, { projects: [PROJECT] })
     await page.goto('/')
     await page.waitForSelector('.app-layout', { timeout: 15000 })
   })
@@ -63,14 +72,8 @@ test.describe('Sidebar', () => {
   test('project detail view has icon row when collapsed', async ({ page }) => {
     const sidebar = page.locator('.sidebar')
 
-    // Wait for projects to load — skip if none exist
     const projectRow = sidebar.locator('.sidebar-project-row').first()
-    try {
-      await projectRow.waitFor({ state: 'visible', timeout: 5000 })
-    } catch {
-      test.skip()
-      return
-    }
+    await expect(projectRow).toBeVisible()
 
     // Click into the project
     await projectRow.click()
@@ -99,12 +102,7 @@ test.describe('Sidebar', () => {
     const sidebar = page.locator('.sidebar')
 
     const projectRow = sidebar.locator('.sidebar-project-row').first()
-    try {
-      await projectRow.waitFor({ state: 'visible', timeout: 5000 })
-    } catch {
-      test.skip()
-      return
-    }
+    await expect(projectRow).toBeVisible()
 
     await projectRow.click()
 

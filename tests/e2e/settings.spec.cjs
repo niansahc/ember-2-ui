@@ -265,14 +265,9 @@ test.describe('Settings', () => {
   })
 
   test('version number in sidebar is not hardcoded', async ({ page }) => {
-    // This test runs late with 8 workers — allow extra time for app to load
-    try {
-      await page.waitForSelector('.app-layout', { timeout: 20000 })
-    } catch {
-      test.skip(true, 'app-layout did not appear — API may be unreachable under load')
-      return
-    }
-
+    // beforeEach already waited for .app-layout against mocked bootstrap, so the
+    // shell is guaranteed present — no runtime skip (ADR 0001: a slow shell is a
+    // failure to surface, not a skip to hide).
     const sidebarVersion = page.locator('.sidebar-version')
     await expect(sidebarVersion).toBeVisible({ timeout: 5000 })
 

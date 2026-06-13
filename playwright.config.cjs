@@ -10,6 +10,11 @@ module.exports = defineConfig({
   testMatch: '**/*.spec.cjs',
   timeout: 30000,
   retries: 1,
+  // Default lane excludes @needs-live-backend specs (Ollama / live model
+  // round-trips) so CI stays green-by-construction with no backend. Per ADR
+  // 0001, run those before a release with:
+  //   $env:EMBER_LIVE_BACKEND=1; npx playwright test --grep @needs-live-backend
+  grepInvert: process.env.EMBER_LIVE_BACKEND ? undefined : /@needs-live-backend/,
   globalSetup: require.resolve('./tests/e2e/global-setup.cjs'),
   globalTeardown: require.resolve('./tests/e2e/global-teardown.cjs'),
   use: {
