@@ -89,6 +89,11 @@
   --status-danger:       #e85d5d;
   --status-danger-bg:    rgba(232, 93, 93, 0.10);
   --status-danger-text:  #e85d5d;
+
+  /* ── Modal / dialog scrim ──────────────────────────────────── */
+  /* Single shared overlay for every modal, drawer, and tour cutout.
+     Normalized to 0.6 so dialogs read consistently across the app. */
+  --modal-overlay-bg: rgba(0, 0, 0, 0.6);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -159,6 +164,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(255, 140, 0, 0.1);
   --code-block-bg: #0a0318;
   --error: #e85d5d;
+  --error-hover: #f07575;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);
@@ -185,6 +191,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(255, 255, 255, 0.06);
   --code-block-bg: #0a0a0a;
   --error: #f06060;
+  --error-hover: #f47e7e;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);
@@ -211,6 +218,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(107, 203, 139, 0.08);
   --code-block-bg: #070f0a;
   --error: #e87070;
+  --error-hover: #f08a8a;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);
@@ -237,6 +245,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(91, 168, 245, 0.08);
   --code-block-bg: #070e1a;
   --error: #f06060;
+  --error-hover: #f47e7e;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);
@@ -263,6 +272,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(199, 91, 122, 0.08);
   --code-block-bg: #f5eff2;
   --error: #d44040;
+  --error-hover: #e05c5c;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);
@@ -291,6 +301,7 @@ html[data-motion="reduce"] {
   --code-bg: rgba(255, 140, 0, 0.1);
   --code-block-bg: #0a0318;
   --error: #e85d5d;
+  --error-hover: #f07575;
   --user-bubble-bg: var(--bg-surface);
   --user-bubble-border: var(--border);
   --user-bubble-text: var(--text-primary);

@@ -71,7 +71,7 @@
 }
 
 .input-file-remove:hover {
-  color: #e85d5d;
+  color: var(--error);
 }
 
 /* ── Compose row — attach button, textarea, send/stop ── */
@@ -146,11 +146,11 @@
 
 /* Stop state — red to signal "click to cancel" */
 .input-stop {
-  background: #e85d5d;
+  background: var(--error);
 }
 
 .input-stop:hover {
-  background: #ff7070;
+  background: var(--error-hover);
   box-shadow: 0 0 15px rgba(232, 93, 93, 0.4);
 }
 
