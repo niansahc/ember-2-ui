@@ -90,7 +90,7 @@
 
 /* ── Error, success, and hint text ── */
 .lock-error {
-  color: #e85d5d;
+  color: var(--error);
   font-size: 0.8rem;
   text-align: center;
   margin: 0;

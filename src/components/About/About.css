@@ -5,7 +5,7 @@
 .about-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--modal-overlay-bg);
   z-index: 200;
 }
 

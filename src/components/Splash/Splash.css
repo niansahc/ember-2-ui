@@ -57,7 +57,7 @@
 }
 
 .splash-error-text {
-  color: #e85d5d;
+  color: var(--error);
 }
 
 .splash-retry {

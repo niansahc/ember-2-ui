@@ -3,7 +3,7 @@
 .updates-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--modal-overlay-bg);
   z-index: 300;
 }
 
@@ -204,6 +204,6 @@
 }
 
 .updates-error p {
-  color: #e85d5d;
+  color: var(--error);
   font-size: 0.9rem;
 }

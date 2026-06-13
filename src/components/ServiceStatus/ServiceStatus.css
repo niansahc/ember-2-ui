@@ -43,19 +43,19 @@
 }
 
 .ss-dot-green {
-  background: #4ade80;
+  background: var(--status-ok);
   box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
   animation: ss-pulse-green 3s ease-in-out infinite;
 }
 
 .ss-dot-amber {
-  background: #fbbf24;
+  background: var(--status-warn);
   box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
   animation: ss-pulse-amber 2s ease-in-out infinite;
 }
 
 .ss-dot-red {
-  background: #f87171;
+  background: var(--status-danger);
   box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
 }
 
@@ -130,15 +130,15 @@
 }
 
 .ss-panel-status-ok {
-  color: #4ade80;
+  color: var(--status-ok);
 }
 
 .ss-panel-status-down {
-  color: #f87171;
+  color: var(--status-danger);
 }
 
 .ss-panel-status-unknown {
-  color: #fbbf24;
+  color: var(--status-warn);
 }
 
 /* ── Restart button ─────────────────────────────────────────── */
@@ -211,7 +211,7 @@
 }
 
 .ss-shutdown-btn:hover:not(:disabled) {
-  color: #f87171;
+  color: var(--status-danger);
 }
 
 .ss-shutdown-btn:disabled {
@@ -231,7 +231,7 @@
   padding: 0.3rem 0.45rem;
   font-size: 0.68rem;
   line-height: 1.3;
-  color: #f87171;
+  color: var(--status-danger);
   background: rgba(248, 113, 113, 0.08);
   border: 1px solid rgba(248, 113, 113, 0.25);
   border-radius: var(--radius-sm);

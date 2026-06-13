@@ -1,7 +1,7 @@
 /* Ember first-run tour — Shepherd.js overrides */
 
 .shepherd-modal-overlay-container {
-  fill: rgba(0, 0, 0, 0.6);
+  fill: var(--modal-overlay-bg);
 }
 
 .ember-tour-step.shepherd-element {
