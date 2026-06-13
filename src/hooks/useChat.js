@@ -239,10 +239,21 @@ export function useChat() {
           // that project now. Deferred to after streaming because the session ID
           // isn't created on the backend until the first message is sent.
           if (pendingProjectRef.current && !projectAssignedRef.current) {
-            try {
-              await realMoveToProject(sessionId, pendingProjectRef.current)
-              projectAssignedRef.current = true
-            } catch {}
+            // Retry once, then give up. A single retry covers a transient blip
+            // (the session was only just created server-side, so the very first
+            // PATCH can race the write) without spiralling into a queue — if the
+            // backend is genuinely down, two tries in a row is plenty to know it.
+            for (let attempt = 1; attempt <= 2; attempt++) {
+              try {
+                await realMoveToProject(sessionId, pendingProjectRef.current)
+                projectAssignedRef.current = true
+                break
+              } catch (err) {
+                if (attempt === 2) {
+                  console.warn('[useChat] Project assignment failed after retry:', err)
+                }
+              }
+            }
           }
           return
         } catch {
