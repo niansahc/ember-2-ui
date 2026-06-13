@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import { AppearanceProvider } from './contexts/AppearanceContext.jsx'
 
 // ─── Self-hosted fonts for style packs (zero-CDN, privacy-respecting) ───
 // Fraunces: variable serif for the Hearth pack's display type.
@@ -30,6 +31,8 @@ import './styles/packs/pack-hearth.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AppearanceProvider>
+      <App />
+    </AppearanceProvider>
   </StrictMode>,
 )
