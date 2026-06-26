@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.2](https://github.com/niansahc/ember-2-ui/compare/ember-2-ui-v0.8.1...ember-2-ui-v0.8.2) (2026-06-26)
+
+
+### Features
+
+* **a11y:** WCAG 2.1 AA pass — axe regression spec + 12 fixes ([d4ce32a](https://github.com/niansahc/ember-2-ui/commit/d4ce32a335d4a8b91d7b9e174d5cf2fd76e88aa8))
+* **chat:** surface review_pending with breathing-dot indicator ([#15](https://github.com/niansahc/ember-2-ui/issues/15)) ([cf2b8c4](https://github.com/niansahc/ember-2-ui/commit/cf2b8c4796055103685f07219a2ba64577dfb7ca))
+
+
+### Bug Fixes
+
+* **chat:** retry deferred project assignment once on failure ([#20](https://github.com/niansahc/ember-2-ui/issues/20)) ([#30](https://github.com/niansahc/ember-2-ui/issues/30)) ([66790b3](https://github.com/niansahc/ember-2-ui/commit/66790b37d6268b505aee4e991843dc080a8c97c4))
+
 ## [0.8.1](https://github.com/niansahc/ember-2-ui/compare/ember-2-ui-v0.8.0...ember-2-ui-v0.8.1) (2026-04-30)
 
 
