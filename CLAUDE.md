@@ -16,7 +16,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.8.1 (published). 192 Playwright tests — 187 in the default lane, 5 tagged `@needs-live-backend` (ADR 0001). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.8.1 (published). 185 default-lane Playwright tests + 5 tagged `@needs-live-backend` (ADR 0001) + 35 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -78,6 +78,9 @@ npx playwright test
 
 # Run with reduced workers to avoid crashing the API
 npx playwright test --workers=2
+
+# Run unit tests (Vitest — node env, pure utils + mock)
+npm run test:unit
 
 # Build for production
 npm run build
