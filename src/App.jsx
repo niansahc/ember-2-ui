@@ -22,11 +22,6 @@ import { Search, GitBranch, Database, Flame, X, MoreVertical } from 'lucide-reac
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
-import { useTheme } from './hooks/useTheme.js'
-import { useStylePack } from './hooks/useStylePack.js'
-import { useFontScale } from './hooks/useFontScale.js'
-import { useDensity } from './hooks/useDensity.js'
-import { useReducedMotion } from './hooks/useReducedMotion.js'
 import { useTour } from './hooks/useTour.js'
 import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
@@ -175,11 +170,8 @@ export default function App() {
       try { localStorage.setItem('ember_active_session', sessionId) } catch {}
     }
   }, [messages.length, sessionId, activeConversation])
-  const { theme, setTheme, themes, customColors, setCustomColors } = useTheme()
-  const { stylePack, setStylePack, packs: stylePacks } = useStylePack()
-  const { scale: fontScale, setScale: setFontScale, scales: fontScales } = useFontScale()
-  const { density, setDensity, densities } = useDensity()
-  const { reduced: motionReduced, setReduced: setMotionReduced } = useReducedMotion()
+  // Appearance state (theme / style pack / font scale / density / motion) now
+  // lives in AppearanceContext — App no longer instantiates or forwards it.
 
   // Close overflow menu on outside tap/click. Mirrors ServiceStatus.
   useEffect(() => {
@@ -561,22 +553,6 @@ export default function App() {
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
         onModelChange={setModel}
-        theme={theme}
-        setTheme={setTheme}
-        themes={themes}
-        customColors={customColors}
-        setCustomColors={setCustomColors}
-        stylePack={stylePack}
-        setStylePack={setStylePack}
-        stylePacks={stylePacks}
-        fontScale={fontScale}
-        setFontScale={setFontScale}
-        fontScales={fontScales}
-        density={density}
-        setDensity={setDensity}
-        densities={densities}
-        motionReduced={motionReduced}
-        setMotionReduced={setMotionReduced}
       />
 
       <BugReport

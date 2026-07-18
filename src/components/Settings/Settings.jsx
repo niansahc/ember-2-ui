@@ -28,6 +28,7 @@ import {
   getVaultStorage,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
+import { useAppearance } from '../../contexts/AppearanceContext.jsx'
 import StylePackPicker from './StylePackPicker.jsx'
 import Segmented from './Segmented.jsx'
 import './Settings.css'
@@ -99,12 +100,15 @@ const TABS = [
 export default memo(function Settings({
   isOpen, initialTab, onClose,
   onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange,
-  theme, setTheme, themes, customColors, setCustomColors,
-  stylePack, setStylePack, stylePacks,
-  fontScale, setFontScale, fontScales,
-  density, setDensity, densities,
-  motionReduced, setMotionReduced,
 }) {
+  // Appearance state/setters come from context now, not props (issue #24).
+  const {
+    theme, setTheme, themes, customColors, setCustomColors,
+    stylePack, setStylePack, stylePacks,
+    fontScale, setFontScale, fontScales,
+    density, setDensity, densities,
+    motionReduced, setMotionReduced,
+  } = useAppearance()
   const modalRef = useModal(isOpen, onClose)
   const [activeTab, setActiveTab] = useState(initialTab || 'general')
 
