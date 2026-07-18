@@ -5,7 +5,7 @@
  * Click/tap expands a panel with status, restart, and shutdown.
  * Polls GET /api/health every 15s.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { getServiceHealth, restartService, shutdownService } from '../../api/ember.js'
 import './ServiceStatus.css'
 
@@ -59,8 +59,19 @@ export default function ServiceStatus() {
     return () => clearInterval(pollRef.current)
   }, [poll])
 
-  // close on outside click/tap
-  useEffect(() => {
+  // Close on outside click/tap.
+  //
+  // useLayoutEffect (not useEffect) on purpose: the panel becomes visible in
+  // the same commit that flips `expanded` to true, but a *passive* effect
+  // (useEffect) flushes asynchronously AFTER the browser paints. That opened a
+  // window where the panel was painted and actionable but this pointerdown
+  // listener wasn't registered yet — an outside click landing in that window
+  // closed nothing, so the panel stayed open. That was the intermittent flake
+  // in service-status.spec ("panel closes on outside click", issue #32): it
+  // failed first-try and passed on retry once caches warmed. A layout effect
+  // flushes synchronously during commit, before paint, so the listener is
+  // guaranteed attached the instant the panel is observable. No timing race.
+  useLayoutEffect(() => {
     if (!expanded) return
     function handleClick(e) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
