@@ -99,6 +99,7 @@ const TABS = [
 // state changes) but Settings props haven't changed.
 export default memo(function Settings({
   isOpen, initialTab, onClose,
+  onRequestPinSetup, onRequestPinChange,
   onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange,
 }) {
   // Appearance state/setters come from context now, not props (issue #24).
@@ -800,7 +801,7 @@ export default memo(function Settings({
               {!securityPinSet && (
                 <button
                   className="settings-action-btn"
-                  onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-setup')) }}
+                  onClick={() => { onClose(); onRequestPinSetup() }}
                 >
                   Set up PIN
                 </button>
@@ -810,7 +811,7 @@ export default memo(function Settings({
                 <button
                   className="settings-action-btn"
                   data-testid="settings-change-pin"
-                  onClick={() => { onClose(); window.dispatchEvent(new Event('ember-show-pin-change')) }}
+                  onClick={() => { onClose(); onRequestPinChange() }}
                 >
                   Change PIN
                 </button>

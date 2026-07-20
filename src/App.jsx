@@ -140,20 +140,6 @@ export default function App() {
     checkDevMode()
   }, [view])
 
-  // Listen for PIN setup request from Settings
-  useEffect(() => {
-    function handlePinSetup() { setShowPinSetup(true) }
-    window.addEventListener('ember-show-pin-setup', handlePinSetup)
-    return () => window.removeEventListener('ember-show-pin-setup', handlePinSetup)
-  }, [])
-
-  // Listen for PIN change request from Settings
-  useEffect(() => {
-    function handlePinChange() { setShowPinChange(true) }
-    window.addEventListener('ember-show-pin-change', handlePinChange)
-    return () => window.removeEventListener('ember-show-pin-change', handlePinChange)
-  }, [])
-
   // Idle timeout — lock after N minutes of inactivity
   useIdleTimeout(
     lockPrefs.idle_timeout,
@@ -539,6 +525,8 @@ export default function App() {
       <Settings
         isOpen={settingsOpen}
         initialTab={settingsInitialTab}
+        onRequestPinSetup={() => setShowPinSetup(true)}
+        onRequestPinChange={() => setShowPinChange(true)}
         onClose={() => {
           setSettingsOpen(false)
           setSettingsInitialTab(null)
