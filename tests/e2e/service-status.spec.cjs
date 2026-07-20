@@ -137,8 +137,19 @@ test.describe('Service Status Indicator', () => {
     await dotsBtn.click()
     await expect(page.locator('[data-testid="service-panel"]')).toBeVisible()
 
-    // click outside the panel to close it
-    await page.locator('.chat-messages').click({ position: { x: 10, y: 10 } })
+    // Click well down inside the chat body to close the panel.
+    //
+    // The panel is an absolutely-positioned dropdown rendered INSIDE
+    // .app-header (ServiceStatus lives in the header title group), so it hangs
+    // ~116px BELOW the header into the top-left of the chat area. The old
+    // target (x:10, y:10) sat only ~30px clear of the panel's left edge. When
+    // async header content (model name) settled and nudged the dot — and the
+    // panel centred on it — leftward under parallel load, the panel (an
+    // .app-header descendant) covered that point and intercepted the click, so
+    // Playwright timed out with "app-header subtree intercepts pointer events".
+    // A point well below the panel band is immune to that horizontal shift.
+    // NB: this is distinct from #32/#35 (a listener-attach race, still fixed).
+    await page.locator('.chat-messages').click({ position: { x: 10, y: 200 } })
     await expect(page.locator('[data-testid="service-panel"]')).not.toBeVisible()
   })
 
