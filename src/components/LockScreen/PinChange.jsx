@@ -8,7 +8,7 @@
  *   2. form: user enters new PIN + confirmation.
  *   3. done: brief success state before onDone() closes the overlay.
  *
- * Triggered by the ember-show-pin-change event dispatched from Settings.
+ * Opened by App when Settings requests it via its onRequestPinChange prop.
  * Reuses PinSetup.css so the visual language matches the setup flow.
  */
 import { useState } from 'react'
