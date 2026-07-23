@@ -103,16 +103,21 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
             continue
           }
 
-          // Sources event: inline citations from web search
-          if (parsed.sources) {
-            yield { type: 'sources', sources: parsed.sources }
+          // Vault sources event: citations from vault-grounded responses.
+          // G ships this as { type: 'vault_sources', sources: [...] }.
+          // MUST be discriminated before the legacy web-search frame below:
+          // a vault_sources frame also carries `sources`, so a bare presence
+          // check would swallow it and mislabel vault citations as web search.
+          if (parsed.type === 'vault_sources' && parsed.sources) {
+            yield { type: 'vault_sources', sources: parsed.sources }
             continue
           }
 
-          // Vault sources event: citations from vault-grounded responses
-          // G ships this as { type: 'vault_sources', sources: [...] }
-          if (parsed.type === 'vault_sources' && parsed.sources) {
-            yield { type: 'vault_sources', sources: parsed.sources }
+          // Legacy web-search sources frame: `{ sources: [...] }` with no
+          // `type`. Kept as an explicit fallback for the type-less shape;
+          // reached only after the typed vault_sources branch above.
+          if (parsed.sources) {
+            yield { type: 'sources', sources: parsed.sources }
             continue
           }
 
