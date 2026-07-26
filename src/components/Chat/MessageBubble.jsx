@@ -60,6 +60,11 @@ function sourceLabel(msg) {
 // Each bubble only re-renders when its own message object changes.
 export default memo(function MessageBubble({ message, isLast, onRegenerate, onEdit }) {
   const isUser = message.role === 'user'
+  // UI-authored failure notice, not something the model produced. Set by
+  // useChat when a request fails. Suppresses the copy and regenerate icons in
+  // favour of one explicit Try again button, and keeps this turn out of the
+  // history sent back to the API. See ADR 0003.
+  const isError = !isUser && message.isError === true
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(message.content)
@@ -128,9 +133,14 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
       )}
       <div className="bubble-wrap">
         <div
-          className={`bubble ${isUser ? 'bubble-user' : 'bubble-ember'}`}
-          role="article"
-          aria-label={`${isUser ? 'You' : 'Ember'} said`}
+          className={`bubble ${isUser ? 'bubble-user' : 'bubble-ember'}${isError ? ' bubble-error' : ''}`}
+          // An error turn is UI-authored, so labelling it "Ember said" would be
+          // a small lie told to screen reader users specifically. role="status"
+          // also gets it announced, which matters when the alternative is
+          // silence where an answer was expected.
+          role={isError ? 'status' : 'article'}
+          aria-label={isError ? 'Ember could not respond' : `${isUser ? 'You' : 'Ember'} said`}
+          data-testid={isError ? 'chat-error' : undefined}
         >
           {isUser && editing ? (
             <div className="bubble-edit">
@@ -159,6 +169,22 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
               )}
               <p className="bubble-text">{message.content}</p>
             </>
+          ) : isError ? (
+            // Plain text, not markdown. These strings are ours, they contain no
+            // markup, and rendering them through the same pipeline as model
+            // output is exactly the conflation this variant exists to prevent.
+            <div className="bubble-error-body">
+              <p className="bubble-error-text">{message.content}</p>
+              {onRegenerate && (
+                <button
+                  className="bubble-error-retry"
+                  onClick={onRegenerate}
+                  aria-label="Try again"
+                >
+                  Try again
+                </button>
+              )}
+            </div>
           ) : (
             <div className="bubble-markdown">
               <ReactMarkdown
@@ -239,6 +265,7 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
                 </svg>
               </button>
             )}
+            {!isError && (
             <button
               className="bubble-action-btn"
               onClick={handleCopy}
@@ -256,7 +283,8 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
                 </svg>
               )}
             </button>
-            {!isUser && isLast && onRegenerate && (
+            )}
+            {!isUser && !isError && isLast && onRegenerate && (
               <button
                 className="bubble-action-btn"
                 onClick={onRegenerate}

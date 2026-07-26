@@ -37,6 +37,53 @@ if (!API_KEY) {
 }
 
 // ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+/**
+ * A failed call to the Ember API, carrying enough structure for the UI to say
+ * something specific about what went wrong.
+ *
+ * Before this existed, streamChat threw `new Error('API error 500: ...')` and
+ * useChat swallowed it with a bare catch, so a dead backend, a stale API key,
+ * a rate limit, and a broken generation pipeline were all the same event as
+ * far as the UI was concerned. They are not: each one has a different thing
+ * the user should go do about it.
+ *
+ * This class deliberately carries facts only (kind, status, body). The
+ * user-facing wording lives in src/utils/chatError.js so it can be unit
+ * tested without a browser, and so the API client does not accumulate
+ * opinions about copy. See ADR 0003.
+ */
+export class EmberApiError extends Error {
+  constructor(kind, { status = null, body = '', cause = undefined } = {}) {
+    super(`Ember API ${kind}${status ? ` (HTTP ${status})` : ''}`)
+    this.name = 'EmberApiError'
+    /** @type {'unreachable'|'generation_failed'|'unauthorized'|'rate_limited'|'unknown'} */
+    this.kind = kind
+    this.status = status
+    this.body = body
+    if (cause !== undefined) this.cause = cause
+  }
+}
+
+/**
+ * Classify an HTTP status into a failure kind.
+ *
+ * 5xx is `generation_failed` rather than a generic server error because in
+ * this app that is overwhelmingly what it means: the FastAPI process answered,
+ * so it is up, but something downstream (usually the model provider) did not.
+ * That distinction is the whole point — a 200 on /api/health tells you nothing
+ * about whether the model is reachable.
+ */
+function kindForStatus(status) {
+  if (status === 401 || status === 403) return 'unauthorized'
+  if (status === 429) return 'rate_limited'
+  if (status >= 500) return 'generation_failed'
+  return 'unknown'
+}
+
+// ---------------------------------------------------------------------------
 // Chat — streaming SSE
 // ---------------------------------------------------------------------------
 
@@ -49,20 +96,33 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
   if (bareMode != null) body.bare_mode = bareMode
   if (vaultEnabled != null) body.vault_enabled = vaultEnabled
 
-  const res = await fetch(`${API_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(sessionId && { 'X-Session-ID': sessionId }),
-    },
-    body: JSON.stringify(body),
-    signal,
-  })
+  let res
+  try {
+    res = await fetch(`${API_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...(sessionId && { 'X-Session-ID': sessionId }),
+      },
+      body: JSON.stringify(body),
+      signal,
+    })
+  } catch (err) {
+    // A user-initiated abort is not a failure and must not become an error
+    // bubble — let it propagate untouched so the caller can ignore it.
+    if (err?.name === 'AbortError') throw err
+    // fetch only rejects on transport-level problems: the process is not
+    // listening, DNS failed, the socket died. Nothing answered at all.
+    throw new EmberApiError('unreachable', { cause: err })
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`API error ${res.status}: ${text}`)
+    throw new EmberApiError(kindForStatus(res.status), {
+      status: res.status,
+      body: text,
+    })
   }
 
   // Transparency headers — canonical names from the backend (G).

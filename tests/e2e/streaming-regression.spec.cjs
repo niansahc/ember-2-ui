@@ -328,10 +328,12 @@ test.describe('Streaming regression — terminal short-circuit paths', () => {
 
     // A refusal is still a normal assistant turn: exactly one assistant
     // bubble, carrying our fixture text and nothing else. The equality check
-    // matters — useChat falls back to mockStreamChat when the real API call
-    // fails (useChat.js:259-266), and a mock-fallback reply would otherwise
-    // sail past a looser containment assertion and report a green test for a
-    // stream that never happened.
+    // was originally here because useChat fell back to mockStreamChat on
+    // failure, so a fabricated reply could sail past a looser containment
+    // assertion and report green for a stream that never happened. That
+    // fallback is gone (ADR 0003) and a failure now renders an error turn,
+    // but the exact-match still earns its place: it pins the refusal text
+    // rather than accepting any bubble that merely contains it.
     await expect(page.locator('.bubble-ember')).toHaveCount(1)
     await expect(emberText(page)).toHaveText(OVERRIDE_REPLY)
   })

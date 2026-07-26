@@ -4,8 +4,8 @@
 // real code paths and driven with the established mock patterns:
 //   - mockBootstrap() for the splash->chat handshake + list GETs
 //   - page.route('**/v1/chat/completions') fulfilling a synthetic SSE body,
-//     which keeps useChat on the REAL streaming branch (a non-200/abort would
-//     trip the mock fallback instead)
+//     which keeps useChat on the REAL streaming branch (a non-200/abort now
+//     renders an error turn instead — see ADR 0003)
 //   - per-mutation page.route for POST/PATCH/DELETE (mockBootstrap only mocks
 //     the GET lists; writes fall through by design)
 //
@@ -273,8 +273,13 @@ test.describe('User journeys', () => {
     await gotoApp(page)
 
     await send(page, 'hello')
-    // Real stream fails -> mock fallback yields a response -> stream ends.
-    await expect(emberText(page)).toBeVisible({ timeout: 15000 })
+    // Real stream fails -> visible error turn -> stream ends. This used to
+    // read "mock fallback yields a response", which is precisely the bug
+    // ADR 0003 removed: the fallback fabricated an answer and the UI could
+    // not be told apart from a working one. Full coverage of the failure
+    // surfaces lives in chat-failure.spec.cjs; this journey only cares that
+    // the app comes back to idle.
+    await expect(page.locator('[data-testid="chat-error"]')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('[aria-label="Send message"]')).toBeVisible() // back to idle, not stuck on Stop
     await expect(page.locator('.chat-typing')).toBeHidden()
   })
