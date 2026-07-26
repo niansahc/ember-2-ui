@@ -66,6 +66,9 @@ export default function App() {
   const [lockPrefs, setLockPrefs] = useState({ lock_on_launch: false, idle_timeout: 15 })
   const [devMode, setDevMode] = useState(false)
   const [devVaultLabel, setDevVaultLabel] = useState(null)
+  // Bumped on every vault swap; used as Sidebar's key so it remounts and
+  // reloads its vault-scoped lists. See handleVaultSwapped.
+  const [vaultEpoch, setVaultEpoch] = useState(0)
   const [webSearchOn, setWebSearchOn] = useState(false)
 
   const [deviationOn, setDeviationOn] = useState(false)
@@ -240,6 +243,37 @@ export default function App() {
     } catch {}
   }, [loadConversation])
 
+  /**
+   * Reset every vault-scoped surface after a developer vault swap.
+   *
+   * Swapping vaults used to update one piece of state inside Settings and
+   * nothing else, so the sidebar kept listing the previous vault's
+   * conversations, the open transcript stayed on screen, and
+   * `ember_active_session` still pointed at a session ID that does not exist
+   * in the vault now active. The UI looked like the swap had not happened.
+   *
+   * `vaultEpoch` is bumped to remount Sidebar, which is the cheapest way to
+   * re-run its conversation, project, and task loads without threading a
+   * refresh signal through each of them.
+   */
+  function handleVaultSwapped(label) {
+    setDevVaultLabel(label)
+    clearMessages()
+    setActiveConversation(null)
+    setActiveProject(null)
+    setBareMode(false)
+    setVaultOff(false)
+    setChatOptions({ bareMode: false, vaultEnabled: true })
+    // The stored session belongs to the vault we just left.
+    try { localStorage.removeItem('ember_active_session') } catch {}
+    setVaultEpoch((n) => n + 1)
+    // Preferences are per-vault, so the ones in hand are now the wrong ones.
+    getPreferences().then((prefs) => {
+      setWebSearchOn(prefs.web_search !== false)
+      setDeviationOn(prefs.deviation_enabled || false)
+    }).catch(() => {})
+  }
+
   function handleNewConversation(projectId) {
     clearMessages()
     setActiveConversation(null)
@@ -324,6 +358,7 @@ export default function App() {
           screen-reader users can bypass the sidebar + header on Tab. */}
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Sidebar
+        key={vaultEpoch}
         isOpen={sidebarOpen}
         isStreaming={isStreaming}
         onClose={() => setSidebarOpen(false)}
@@ -545,6 +580,7 @@ export default function App() {
         onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
         onModelChange={setModel}
+        onVaultSwapped={handleVaultSwapped}
       />
 
       <BugReport
