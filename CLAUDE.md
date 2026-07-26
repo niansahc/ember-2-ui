@@ -35,7 +35,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.8.1 (published). 202 default-lane Playwright tests + 5 tagged `@needs-live-backend` (ADR 0001) + 39 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.8.1 (published). 207 default-lane Playwright tests + 5 tagged `@needs-live-backend` (ADR 0001) + 39 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -119,6 +119,19 @@ $env:EMBER_LIVE_BACKEND=1; npx playwright test --grep "@needs-live-backend"
 ```
 
 The UI's default lane proves rendering/interaction against a known API contract using mocked endpoints (synthetic fixtures only — Vault Privacy Rule). It deliberately does not prove the backend honors that contract; that is the backend repo's job plus the pre-release `@needs-live-backend` run.
+
+**Streaming regression coverage (`tests/e2e/streaming-regression.spec.cjs`).**
+Five scenarios covering the normal generation path plus the four terminal
+short-circuits (empty / override / clarification / onboarding) that PR #106
+hardened. Each asserts the client requests `stream: true`, the ADR-040 v2
+frame families parse, the reply renders, and streaming terminates with no
+hang. Scope, stated plainly so the release gate is not overread: the chat
+endpoint is mocked, so these prove the **UI half** — that the client asks for
+SSE and correctly consumes terminal frames. They cannot fail because the
+backend regressed to JSON. Backend emission stays covered by G's
+`test_streaming_regression.py` (Tier 3) and the Tier 2 manual check in
+`ember-2/docs/BUILDING_EMBER.md`. Retiring that manual check is a backend-repo
+decision, not a UI one.
 
 When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or moved to the `@needs-live-backend` lane before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
 
