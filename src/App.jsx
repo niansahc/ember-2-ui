@@ -70,7 +70,11 @@ export default function App() {
 
   const [deviationOn, setDeviationOn] = useState(false)
 
-  const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat()
+  // `model` feeds useChat so a failed request can name the right provider in
+  // the error copy (Ollama vs Anthropic vs OpenAI). It is already in hand from
+  // the Splash /api/health handshake, so this costs no extra request. Null is
+  // fine: the copy falls back to provider-neutral wording.
+  const { messages, isStreaming, streamingStatus, sessionId, sendMessage, stopStreaming, clearMessages, loadConversation, regenerate, setProjectForNewConversation, setChatOptions, editAndResend } = useChat({ model })
   const [bareMode, setBareMode] = useState(false)
   const [vaultOff, setVaultOff] = useState(false)
 

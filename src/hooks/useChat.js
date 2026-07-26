@@ -1,10 +1,17 @@
 /**
  * useChat — the core conversation engine.
  *
- * Owns message state, session tracking, streaming, and the
- * API-first / mock-fallback pattern. Every chat interaction
- * flows through here: send, regenerate, edit-and-resend, load
- * history, and stop.
+ * Owns message state, session tracking, and streaming. Every chat
+ * interaction flows through here: send, regenerate, edit-and-resend,
+ * load history, and stop.
+ *
+ * There is no mock fallback. There used to be: when the real API failed,
+ * this hook quietly streamed canned text from api/mock.js and rendered it as
+ * Ember's reply, including invented journal entries and invented web search
+ * results, with only a console.warn to show for it. A model server that
+ * stopped overnight was enough to trigger it. Failures now surface as a
+ * visible error turn instead. Nothing fabricated reaches the transcript.
+ * See ADR 0003.
  *
  * File attachments are split by type:
  *   • Images → base64 data URLs, sent inline via OpenAI multipart format
@@ -21,7 +28,7 @@
  */
 import { useState, useCallback, useRef } from 'react'
 import { uuid } from '../utils/uuid.js'
-import { mockStreamChat, mockGetMessages } from '../api/mock.js'
+import { chatErrorMessage, CONVERSATION_LOAD_ERROR } from '../utils/chatError.js'
 import {
   streamChat as realStreamChat,
   getConversationTurns as realGetConversationTurns,
@@ -42,17 +49,25 @@ function fileToDataUrl(file) {
 /**
  * useChat — manages message state, session tracking, and streaming responses.
  *
- * Tries the real Ember API first. Falls back to mock on failure.
  * Handles split file attachments: images go with chat, documents go to /ingest/upload.
+ *
+ * @param {{model?: string|null}} opts  `model` is the active model id, passed
+ *   down from App (which already holds it from the Splash /api/health
+ *   handshake). It is used only to name the right provider in error copy, so
+ *   a null value degrades to provider-neutral wording rather than breaking.
  */
-export function useChat() {
+export function useChat({ model = null } = {}) {
   const [messages, setMessages] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingStatus, setStreamingStatus] = useState(null)  // 'searching' | 'verifying' | 'refining' | 'analyzing' | null
   const [sessionId, setSessionId] = useState(() => generateSessionId())
 
   const abortRef = useRef(false)                // set true by stopStreaming to break the stream loop
-  const apiAvailableRef = useRef(true)           // flips false on first API failure → mock fallback
+  // Deliberately no apiAvailableRef. It used to latch false on the first
+  // failure and was never reset, so one blip downgraded the entire session to
+  // fabricated replies until the page was reloaded. Every send now attempts
+  // the network. A genuinely dead backend costs one failed request per send,
+  // which is the price of telling the truth.
   // Project assignment is deferred: the backend doesn't create the session
   // until the first message, so we hold the project ID in a ref and assign
   // after the first successful stream completes.
@@ -78,6 +93,47 @@ export function useChat() {
         timestamp: new Date().toISOString(),
       },
     ])
+  }
+
+  /**
+   * Replace a pending assistant turn with a visible error.
+   *
+   * `isError: true` is what marks this as UI-authored rather than something
+   * Ember said. Two things key off it: MessageBubble renders the error variant
+   * with a Try again button and no copy affordance, and toApiHistory drops it
+   * before the next request so the model never sees our words as its own.
+   */
+  function markMessageFailed(assistantId, text) {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === assistantId
+          ? { ...m, content: text, isError: true }
+          : m,
+      ),
+    )
+  }
+
+  /**
+   * Build the message list sent to the API.
+   *
+   * Error turns are filtered out here. They are UI-authored text, so feeding
+   * them back would have Ember reading "I can't reach my backend right now" as
+   * something she said and potentially referring to it later. That is a milder
+   * version of the same fabrication problem, pointed the other way.
+   */
+  function toApiHistory(list) {
+    return list
+      .filter((m) => !m.isError)
+      .map((m) => {
+        if (m.imageDataUrls && m.imageDataUrls.length > 0) {
+          const parts = [{ type: 'text', text: m.content || '' }]
+          for (const dataUrl of m.imageDataUrls) {
+            parts.push({ type: 'image_url', image_url: { url: dataUrl } })
+          }
+          return { role: m.role, content: parts }
+        }
+        return { role: m.role, content: m.content }
+      })
   }
 
   /**
@@ -159,131 +215,103 @@ export function useChat() {
       // Rebuild the full conversation history for the API. We re-derive
       // from `messages` state (not the backend session) so edits and trims
       // are reflected. Images use the OpenAI vision multipart content format.
-      const allMessages = [...messages, userMsg].map((m) => {
-        if (m.imageDataUrls && m.imageDataUrls.length > 0) {
-          const parts = [{ type: 'text', text: m.content || '' }]
-          for (const dataUrl of m.imageDataUrls) {
-            parts.push({ type: 'image_url', image_url: { url: dataUrl } })
-          }
-          return { role: m.role, content: parts }
-        }
-        return { role: m.role, content: m.content }
-      })
+      const allMessages = toApiHistory([...messages, userMsg])
 
-      if (apiAvailableRef.current) {
-        try {
-          // Stream from real API — tokens arrive one at a time
-          // streamChat returns transparency headers so the UI can show
-          // indicators for web search, vault, and vision-grounded responses.
-          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
-          if (usedWebSearch) {
-            setStreamingStatus('searching')
-          }
-          for await (const chunk of stream) {
-            if (abortRef.current) break
-            // Status events: searching, verifying, refining
-            if (chunk && typeof chunk === 'object' && chunk.type === 'status') {
-              setStreamingStatus(chunk.content)
-              continue
-            }
-            // Sources event: inline citations (web search)
-            if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, sources: chunk.sources } : m,
-                ),
-              )
-              continue
-            }
-            // Vault sources event: citations from vault-grounded responses
-            if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m,
-                ),
-              )
-              continue
-            }
-            // Clear status once real content starts flowing
-            setStreamingStatus(null)
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
-              ),
-            )
-          }
-          // Mark transparency indicators after stream completes
-          if (usedWebSearch) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
-              ),
-            )
-          }
-          if (usedVault) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedVault: true } : m,
-              ),
-            )
-          }
-          // vision attribution -- from header or inferred when images were sent
-          if (usedVision || imageDataUrls.length > 0) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedVision: true } : m,
-              ),
-            )
-          }
-          // If this conversation was started from a project view, assign it to
-          // that project now. Deferred to after streaming because the session ID
-          // isn't created on the backend until the first message is sent.
-          if (pendingProjectRef.current && !projectAssignedRef.current) {
-            // Retry once, then give up. A single retry covers a transient blip
-            // (the session was only just created server-side, so the very first
-            // PATCH can race the write) without spiralling into a queue — if the
-            // backend is genuinely down, two tries in a row is plenty to know it.
-            for (let attempt = 1; attempt <= 2; attempt++) {
-              try {
-                await realMoveToProject(sessionId, pendingProjectRef.current)
-                projectAssignedRef.current = true
-                break
-              } catch (err) {
-                if (attempt === 2) {
-                  console.warn('[useChat] Project assignment failed after retry:', err)
-                }
-              }
-            }
-          }
-          return
-        } catch {
-          apiAvailableRef.current = false
-          console.warn('[useChat] Real API unreachable, falling back to mock')
-        }
+      // Stream from real API — tokens arrive one at a time
+      // streamChat returns transparency headers so the UI can show
+      // indicators for web search, vault, and vision-grounded responses.
+      const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+      if (usedWebSearch) {
+        setStreamingStatus('searching')
       }
-
-      // Mock fallback (also streams)
-      for await (const chunk of mockStreamChat(allMessages)) {
+      for await (const chunk of stream) {
         if (abortRef.current) break
+        // Status events: searching, verifying, refining
+        if (chunk && typeof chunk === 'object' && chunk.type === 'status') {
+          setStreamingStatus(chunk.content)
+          continue
+        }
+        // Sources event: inline citations (web search)
+        if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, sources: chunk.sources } : m,
+            ),
+          )
+          continue
+        }
+        // Vault sources event: citations from vault-grounded responses
+        if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m,
+            ),
+          )
+          continue
+        }
+        // Clear status once real content starts flowing
+        setStreamingStatus(null)
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: m.content + chunk } : m,
           ),
         )
       }
+      // Mark transparency indicators after stream completes
+      if (usedWebSearch) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedWebSearch: true } : m,
+          ),
+        )
+      }
+      if (usedVault) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedVault: true } : m,
+          ),
+        )
+      }
+      // vision attribution -- from header or inferred when images were sent
+      if (usedVision || imageDataUrls.length > 0) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedVision: true } : m,
+          ),
+        )
+      }
+      // If this conversation was started from a project view, assign it to
+      // that project now. Deferred to after streaming because the session ID
+      // isn't created on the backend until the first message is sent.
+      if (pendingProjectRef.current && !projectAssignedRef.current) {
+        // Retry once, then give up. A single retry covers a transient blip
+        // (the session was only just created server-side, so the very first
+        // PATCH can race the write) without spiralling into a queue — if the
+        // backend is genuinely down, two tries in a row is plenty to know it.
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            await realMoveToProject(sessionId, pendingProjectRef.current)
+            projectAssignedRef.current = true
+            break
+          } catch (err) {
+            if (attempt === 2) {
+              console.warn('[useChat] Project assignment failed after retry:', err)
+            }
+          }
+        }
+      }
     } catch (err) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: 'Something went wrong. Please try again.' }
-            : m,
-        ),
-      )
+      // A user-initiated abort is not a failure. stopStreaming uses abortRef
+      // rather than an AbortSignal today, but streamChat re-throws AbortError
+      // untouched, so guard here in case a signal is ever wired through.
+      if (err?.name === 'AbortError') return
+      console.warn('[useChat] Chat request failed:', err)
+      markMessageFailed(assistantId, chatErrorMessage(err, model))
     } finally {
       setIsStreaming(false)
       setStreamingStatus(null)
     }
-  }, [messages, isStreaming, sessionId])
+  }, [messages, isStreaming, sessionId, model])
 
   /** Signal the stream loop to stop after the current chunk. */
   const stopStreaming = useCallback(() => {
@@ -310,7 +338,15 @@ export function useChat() {
     projectAssignedRef.current = false
   }, [])
 
-  /** Load an existing conversation's message history by ID (API-first, mock-fallback). */
+  /**
+   * Load an existing conversation's message history by ID.
+   *
+   * On failure this shows an error turn rather than inventing a transcript.
+   * The old mock fallback was worse here than on the reply path: fabricated
+   * history reads as the user's own past conversations, not as one bad answer.
+   * The copy is provider-neutral because reading stored turns never touches
+   * the model provider.
+   */
   const loadConversation = useCallback(async (conversationId) => {
     try {
       const turns = await realGetConversationTurns(conversationId)
@@ -323,13 +359,19 @@ export function useChat() {
       }))
       setMessages(mapped)
       setSessionId(conversationId)
-      return
-    } catch {
-      // Fall back to mock
+    } catch (err) {
+      console.warn('[useChat] Conversation load failed:', err)
+      setMessages([
+        {
+          id: uuid(),
+          role: 'assistant',
+          content: CONVERSATION_LOAD_ERROR,
+          isError: true,
+          timestamp: new Date().toISOString(),
+        },
+      ])
+      setSessionId(conversationId)
     }
-    const history = await mockGetMessages(conversationId)
-    setMessages(history)
-    setSessionId(conversationId)
   }, [])
 
   /**
@@ -356,76 +398,56 @@ export function useChat() {
     ])
 
     try {
-      const allMessages = trimmed.map((m) => ({ role: m.role, content: m.content }))
+      const allMessages = toApiHistory(trimmed)
 
-      if (apiAvailableRef.current) {
-        try {
-          const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
-          for await (const chunk of stream) {
-            if (abortRef.current) break
-            // Handle object events (vault_sources, sources, status) same as main path
-            if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
-              setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m))
-              continue
-            }
-            if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
-              setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, sources: chunk.sources } : m))
-              continue
-            }
-            if (chunk && typeof chunk === 'object') continue // skip other object events
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
-              ),
-            )
-          }
-          if (usedWebSearch) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedWebSearch: true } : m,
-              ),
-            )
-          }
-          if (usedVault) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedVault: true } : m,
-              ),
-            )
-          }
-          if (usedVision) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, usedVision: true } : m,
-              ),
-            )
-          }
-          return
-        } catch {
-          apiAvailableRef.current = false
-        }
-      }
-
-      for await (const chunk of mockStreamChat(allMessages)) {
+      const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+      for await (const chunk of stream) {
         if (abortRef.current) break
+        // Handle object events (vault_sources, sources, status) same as main path
+        if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m))
+          continue
+        }
+        if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, sources: chunk.sources } : m))
+          continue
+        }
+        if (chunk && typeof chunk === 'object') continue // skip other object events
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: m.content + chunk } : m,
           ),
         )
       }
-    } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: 'Something went wrong. Please try again.' }
-            : m,
-        ),
-      )
+      if (usedWebSearch) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedWebSearch: true } : m,
+          ),
+        )
+      }
+      if (usedVault) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedVault: true } : m,
+          ),
+        )
+      }
+      if (usedVision) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, usedVision: true } : m,
+          ),
+        )
+      }
+    } catch (err) {
+      if (err?.name === 'AbortError') return
+      console.warn('[useChat] Regenerate failed:', err)
+      markMessageFailed(assistantId, chatErrorMessage(err, model))
     } finally {
       setIsStreaming(false)
     }
-  }, [messages, isStreaming, sessionId])
+  }, [messages, isStreaming, sessionId, model])
 
   /** Edit a previous user message and resend — trims everything after it and re-sends. */
   const editAndResend = useCallback(async (messageId, newText) => {

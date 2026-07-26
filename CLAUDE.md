@@ -35,7 +35,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.8.1 (published). 202 default-lane Playwright tests + 5 tagged `@needs-live-backend` (ADR 0001) + 39 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.8.1 (published). 212 default-lane Playwright tests + 5 tagged `@needs-live-backend` (ADR 0001) + 58 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -63,6 +63,7 @@ These exist and must not be re-implemented:
 - Deviation Engine toggle in Features tab
 - Bare mode per-conversation toggle (flame/X icon in chat header, strips personality)
 - Vault storage display in Settings Memory tab (current size + 30-day projection)
+- Provider-aware chat failure surface (error turn with Try again; names Ollama, Anthropic, or OpenAI per active model)
 
 ---
 
@@ -73,6 +74,7 @@ These exist and must not be re-implemented:
 - Do not hardcode API URLs — use the Vite proxy config
 - Do not use axios — use native fetch
 - Mobile must work — test viewport behavior for any UI changes
+- Never render content Ember did not produce as if she produced it. There is no chat mock and no mock fallback: when a request fails, surface the failure. See ADR 0003 (`docs/adr/0003-no-fabricated-content-in-chat.md`)
 - Do not use the word "shape" in any output
 - Never add Co-authored-by: Claude or any Claude attribution to commit messages or PR bodies. Attribution is acknowledged in docs/BUILDING_EMBER.md.
 

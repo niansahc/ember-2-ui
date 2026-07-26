@@ -351,3 +351,72 @@
     max-width: 92%;
   }
 }
+
+/* ── Error turn ────────────────────────────────────────────────────────────
+   A failure notice written by the UI, not a reply from the model. It has to
+   read as a different kind of thing at a glance, because the whole point of
+   removing the mock fallback was that users could not tell fabricated content
+   from real content. Hence the left rule and the muted panel: same column and
+   same avatar as Ember's other turns, visibly not one of them.
+
+   Deliberately not red-on-red alarm styling. Nothing is broken in the user's
+   data, a service is just not answering, and shouting about it every time
+   Ollama restarts would be its own kind of noise. */
+.bubble-error {
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+  border-left: 2px solid var(--error);
+  border-radius: 0 6px 6px 0;
+  padding: 0.7rem 0.9rem;
+}
+
+.bubble-error-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.bubble-error-text {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.bubble-error-retry {
+  background: transparent;
+  border: 1px solid var(--error);
+  border-radius: 5px;
+  color: var(--error);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.28rem 0.7rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bubble-error-retry:hover {
+  background: var(--error);
+  color: var(--bg-primary, #fff);
+}
+
+.bubble-error-retry:focus-visible {
+  outline: 2px solid var(--error);
+  outline-offset: 2px;
+}
+
+/* Phone widths: the button goes full width so it is a comfortable tap target
+   rather than a small pill floating in a panel. */
+@media (max-width: 600px) {
+  .bubble-error-retry {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    text-align: center;
+  }
+}
+
+/* Respect the reduced-motion preference the Appearance tab exposes. */
+@media (prefers-reduced-motion: reduce) {
+  .bubble-error-retry {
+    transition: none;
+  }
+}
