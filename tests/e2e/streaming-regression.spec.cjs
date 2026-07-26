@@ -48,9 +48,18 @@ const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
 // ── ADR-040 v2 wire contract frame builders ────────────────────────────────
-// Mirrors src/api/sse.py in the backend repo — that module is the single
-// producer of the real wire format, so these builders are its test-side twin.
-// If ADR-040 changes, both move in lockstep (per the ADR change procedure).
+// Mirrors the frame STRUCTURE of src/api/sse.py in the backend repo — that
+// module is the single producer of the real wire format, so these builders
+// are its test-side twin. If ADR-040 changes, both move in lockstep (per the
+// ADR change procedure).
+//
+// Not byte-identical, deliberately: the backend serializes with Python's
+// json.dumps, whose defaults put a space after every `:` and `,`
+// (`"finish_reason": "stop"`), while JSON.stringify emits neither. The UI
+// parser JSON.parses each frame so the difference is inert to it — but any
+// assertion made against raw SSE bytes must tolerate both spacings, or it
+// passes here and fails against the real backend. (It did. See the live
+// lane at the bottom of this file, which is what caught it.)
 
 const COMPLETION_ID = 'chatcmpl-streamreg-fixture'
 
@@ -77,6 +86,10 @@ const statusFrame = (value) =>
   'data: ' + JSON.stringify({ type: 'status', content: value }) + '\n\n'
 
 const DONE = 'data: [DONE]\n\n'
+
+// Spacing-agnostic so the same assertion holds against both JSON.stringify
+// (our fixtures) and Python json.dumps (the real backend).
+const STOP_CHUNK_RE = /"finish_reason":\s*"stop"/
 
 /**
  * The exact body `early_return_response(stream=True)` produces: one content
@@ -291,7 +304,7 @@ test.describe('Streaming regression — terminal short-circuit paths', () => {
 
     // The stop chunk must precede the terminator — a stream that ends without
     // finish_reason='stop' leaves OpenAI-compatible consumers hanging.
-    expect(wire.body).toContain('"finish_reason":"stop"')
+    expect(wire.body).toMatch(STOP_CHUNK_RE)
   })
 
   // ── 3. Override terminal ─────────────────────────────────────────────────
@@ -383,3 +396,190 @@ test.describe('Streaming regression — terminal short-circuit paths', () => {
     await expect(page.locator('[aria-label="Message input"]')).toBeEditable()
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LIVE BACKEND LANE — the half the mocked lane above structurally cannot prove
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Everything above mocks /v1/chat/completions, so its Content-Type assertions
+// pin the fixture rather than the backend. These tests remove the mock: they
+// speak to the real adapter and assert that IT emits SSE on the terminal
+// paths. This is the lane that would actually go red if A1 regressed.
+//
+// Only the two pure-function terminals are covered here — override and
+// clarification. Both are triggered by a regex/policy match on the message
+// text alone, with no vault state to arrange and no model round-trip to
+// wait on, which makes them deterministic enough for a release gate. The
+// other two are deliberately absent:
+//   - empty: unreachable from the client (guarded in InputBar/useChat) and
+//     forcing it would only re-test the adapter, not the UI contract.
+//   - onboarding: requires arranging fresh-vault state on a live backend.
+//     Mutating onboarding state in a test is a bigger blast radius than the
+//     coverage is worth; it stays with G's backend suite.
+//
+// Excluded from the default lane (ADR 0001). Run pre-release with:
+//   $env:EMBER_LIVE_BACKEND=1; npx playwright test --grep "@needs-live-backend"
+//
+// Requires the backend on the 'test' vault — assertTestVault throws with swap
+// instructions otherwise. Every turn these send is persisted, so each test
+// snapshots vault state and deletes anything new in afterEach. Prompts are
+// synthetic (Vault Privacy Rule).
+
+const {
+  assertTestVault,
+  snapshotVault,
+  cleanupSinceSnapshot,
+  API_URL,
+  authHeaders,
+} = require('./helpers/testvault.cjs')
+
+/**
+ * POST a streaming chat completion to the live backend and return the raw
+ * wire response. Deliberately does NOT use src/api/ember.js — this asserts
+ * the server's output, so going through the client's parser would hide
+ * exactly the bytes under test.
+ */
+async function liveStreamingPost(request, content) {
+  const res = await request.post(`${API_URL}/chat/completions`, {
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    data: { model: 'ember', messages: [{ role: 'user', content }], stream: true },
+    timeout: 60000,
+  })
+  return {
+    status: res.status(),
+    contentType: res.headers()['content-type'] || '',
+    body: await res.text(),
+  }
+}
+
+/**
+ * The A1 invariant, asserted against real backend output: a client that asked
+ * for a stream got an event-stream, correctly framed and correctly terminated.
+ */
+function expectLiveSseTerminal(wire) {
+  // Distinguish "the pipeline is down" from "the streaming contract broke"
+  // BEFORE asserting the contract. A 500 here means an unhandled exception
+  // somewhere downstream — most often Ollama not running, since the
+  // enrichment-dependent paths call the classifier before they can reach
+  // their terminal. Reading that as an A1 regression would send whoever runs
+  // the release gate hunting in entirely the wrong repo.
+  if (wire.status === 500) {
+    throw new Error(
+      `Backend returned 500 (${wire.contentType}) — the generation pipeline ` +
+        `is unavailable, NOT necessarily a streaming regression. Check that ` +
+        `Ollama is running and the configured model is pulled, then re-run. ` +
+        `Body: ${wire.body.slice(0, 200)}`,
+    )
+  }
+
+  expect(wire.status).toBe(200)
+
+  // THE assertion this whole suite exists for. A regression that returned a
+  // JSON ChatCompletionsResponse here renders as a blank bubble in the UI
+  // with nothing thrown and nothing logged client-side.
+  expect(
+    wire.contentType,
+    `expected text/event-stream, got "${wire.contentType}" — if this says ` +
+      `application/json, a terminal short-circuit has regressed past ` +
+      `early_return_response() and A1 is back`,
+  ).toContain('text/event-stream')
+  expect(wire.contentType).not.toContain('application/json')
+
+  // Correctly framed: SSE data lines, a stop chunk, and the literal
+  // terminator. A stream that ends without finish_reason='stop' or without
+  // [DONE] leaves OpenAI-compatible consumers waiting on a dead socket.
+  expect(wire.body).toContain('data: ')
+  expect(wire.body).toMatch(STOP_CHUNK_RE)
+  expect(wire.body.trimEnd().endsWith('data: [DONE]')).toBe(true)
+}
+
+/** Concatenate the delta content out of a raw SSE body. */
+function contentFromWire(body) {
+  return body
+    .split('\n')
+    .filter((line) => line.startsWith('data: ') && line.slice(6) !== '[DONE]')
+    .map((line) => {
+      try {
+        return JSON.parse(line.slice(6))?.choices?.[0]?.delta?.content || ''
+      } catch {
+        return ''
+      }
+    })
+    .join('')
+}
+
+test.describe(
+  'Streaming regression — live backend terminals',
+  { tag: '@needs-live-backend' },
+  () => {
+    let vaultSnapshot = null
+
+    test.beforeEach(async ({ request }) => {
+      await assertTestVault(request)
+      vaultSnapshot = await snapshotVault(request)
+    })
+
+    test.afterEach(async ({ request }) => {
+      if (vaultSnapshot) {
+        await cleanupSinceSnapshot(request, vaultSnapshot)
+        vaultSnapshot = null
+      }
+    })
+
+    test('override terminal emits SSE, not JSON', async ({ request }) => {
+      const wire = await liveStreamingPost(request, OVERRIDE_PROMPT)
+
+      expectLiveSseTerminal(wire)
+
+      // Exact-match the canned refusal. This is the pre-enrichment terminal —
+      // a regex hit on _OVERRIDE_PATTERNS with no model call — so the text is
+      // deterministic. A mismatch means either the constant changed (update
+      // the fixture above, which mirrors it) or the request stopped taking
+      // this path at all, both of which a release gate should surface.
+      expect(contentFromWire(wire.body)).toBe(OVERRIDE_REPLY)
+    })
+
+    test('clarification terminal emits SSE, not JSON', async ({ request }) => {
+      // Enrichment-dependent (ADR-042): unlike override, this one runs after
+      // the classify pass, so it is slower and worth its own timeout headroom.
+      //
+      // It also means this test needs Ollama up, where the override test above
+      // does not — override matches a regex and returns before any pipeline
+      // work, so it passes against a backend with no model at all. If this
+      // test errors with the 500 message from expectLiveSseTerminal while the
+      // override test passes, that asymmetry is the tell: the pipeline is
+      // down, the streaming contract is fine.
+      test.setTimeout(90000)
+
+      const wire = await liveStreamingPost(request, BARE_MARKER_PROMPT)
+
+      expectLiveSseTerminal(wire)
+
+      // If this assertion fails while the transport assertions above pass,
+      // the bare-marker query stopped routing to the clarification terminal
+      // and is being answered some other way — a policy regression, not a
+      // streaming one. Worth failing loudly either way.
+      expect(contentFromWire(wire.body)).toBe(CLARIFICATION_REPLY)
+    })
+
+    test('override refusal renders end to end with no mocks', async ({
+      page,
+      request,
+    }) => {
+      // The full chain: real backend SSE → src/api/ember.js parser → React
+      // render → streaming state cleared. The two tests above prove the
+      // bytes; this proves the bytes survive the trip to the screen.
+      await assertTestVault(request)
+      await page.goto('/')
+      await page.waitForSelector('.app-layout', { timeout: 20000 })
+
+      await send(page, OVERRIDE_PROMPT)
+
+      await expect(emberText(page)).toContainText(
+        "That's exactly what I'm not going to do.",
+        { timeout: 30000 },
+      )
+      await expectStreamTerminated(page)
+    })
+  },
+)
