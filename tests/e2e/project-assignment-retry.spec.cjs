@@ -26,7 +26,8 @@ test.describe('Deferred project assignment retry (#20)', () => {
     await mockBootstrap(page, { projects: [PROJECT] })
 
     // Streamable 200 so sendMessage stays in the real-API branch and reaches
-    // the deferred-assignment block (a non-200 would trip the mock fallback).
+    // the deferred-assignment block (a non-200 would render an error turn and
+    // skip the assignment entirely — see ADR 0003).
     await page.route('**/v1/chat/completions', async (route) => {
       await route.fulfill({
         status: 200,

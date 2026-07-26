@@ -4,8 +4,8 @@
 // real code paths and driven with the established mock patterns:
 //   - mockBootstrap() for the splash->chat handshake + list GETs
 //   - page.route('**/v1/chat/completions') fulfilling a synthetic SSE body,
-//     which keeps useChat on the REAL streaming branch (a non-200/abort would
-//     trip the mock fallback instead)
+//     which keeps useChat on the REAL streaming branch (a non-200/abort now
+//     renders an error turn instead — see ADR 0003)
 //   - per-mutation page.route for POST/PATCH/DELETE (mockBootstrap only mocks
 //     the GET lists; writes fall through by design)
 //
