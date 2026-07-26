@@ -100,7 +100,7 @@ const TABS = [
 export default memo(function Settings({
   isOpen, initialTab, onClose,
   onRequestPinSetup, onRequestPinChange,
-  onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange,
+  onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, onVaultSwapped,
 }) {
   // Appearance state/setters come from context now, not props (issue #24).
   const {
@@ -1477,7 +1477,14 @@ export default memo(function Settings({
                             setDevSwapping(true)
                             try {
                               const result = await swapVault(vault.label)
-                              setDevActiveVault({ label: result.label || vault.label, path: result.active_vault || vault.path })
+                              const label = result.label || vault.label
+                              setDevActiveVault({ label, path: result.active_vault || vault.path })
+                              // Everything vault-scoped in the app is now stale:
+                              // sidebar lists, the open transcript, the stored
+                              // session ID, per-vault preferences. App owns those,
+                              // so hand the swap up rather than trying to reach
+                              // across from here (ADR 0002: explicit props).
+                              onVaultSwapped?.(label)
                             } catch { /* next poll will correct state */ }
                             finally { setDevSwapping(false) }
                           }}
