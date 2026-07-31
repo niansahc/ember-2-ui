@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.18.0](https://github.com/niansahc/ember-2-ui/compare/v0.8.1...v0.18.0) (2026-07-31)
+
+
+### Features
+
+* **a11y:** WCAG 2.1 AA pass — axe regression spec + 12 fixes ([d4ce32a](https://github.com/niansahc/ember-2-ui/commit/d4ce32a335d4a8b91d7b9e174d5cf2fd76e88aa8))
+* **chat:** surface review_pending with breathing-dot indicator ([#15](https://github.com/niansahc/ember-2-ui/issues/15)) ([cf2b8c4](https://github.com/niansahc/ember-2-ui/commit/cf2b8c4796055103685f07219a2ba64577dfb7ca))
+
+
+### Bug Fixes
+
+* **chat:** discriminate vault_sources before legacy web-search frame ([#38](https://github.com/niansahc/ember-2-ui/issues/38)) ([f7b2b3d](https://github.com/niansahc/ember-2-ui/commit/f7b2b3dd766864a0a705e16d6fbd5ac025c7af6e))
+* **chat:** remove mock fallback, surface failures honestly ([#41](https://github.com/niansahc/ember-2-ui/issues/41)) ([926a821](https://github.com/niansahc/ember-2-ui/commit/926a821952b35ce08e4dd808f8d6beeecf8bcb7e))
+* **chat:** retry deferred project assignment once on failure ([#20](https://github.com/niansahc/ember-2-ui/issues/20)) ([#30](https://github.com/niansahc/ember-2-ui/issues/30)) ([66790b3](https://github.com/niansahc/ember-2-ui/commit/66790b37d6268b505aee4e991843dc080a8c97c4))
+* **service-status:** attach outside-click listener in layout effect ([#32](https://github.com/niansahc/ember-2-ui/issues/32)) ([#35](https://github.com/niansahc/ember-2-ui/issues/35)) ([7e93ee9](https://github.com/niansahc/ember-2-ui/commit/7e93ee951df2df19e88ce80da86e856c0966a428))
+* **settings:** reload vault-scoped state after a developer vault swap ([#42](https://github.com/niansahc/ember-2-ui/issues/42)) ([0355694](https://github.com/niansahc/ember-2-ui/commit/0355694362a101e1dfca6ad28959f9c4ff695f99))
+
+
+### Miscellaneous Chores
+
+* release 0.18.0 ([835dd40](https://github.com/niansahc/ember-2-ui/commit/835dd4059597230640aa364ab7d5da7494bc7f61))
+
 ## [0.8.1](https://github.com/niansahc/ember-2-ui/compare/ember-2-ui-v0.8.0...ember-2-ui-v0.8.1) (2026-04-30)
 
 
