@@ -35,7 +35,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.8.1 (published). 220 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 58 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.8.1 (published). 227 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 71 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -64,6 +64,7 @@ These exist and must not be re-implemented:
 - Bare mode per-conversation toggle (flame/X icon in chat header, strips personality)
 - Vault storage display in Settings Memory tab (current size + 30-day projection)
 - Provider-aware chat failure surface (error turn with Try again; names Ollama, Anthropic, or OpenAI per active model)
+- Vision settings (toggle + model picker in Features tab) persisted to the backend via `PATCH /v1/preferences` as `vision_enabled` / `vision_model`, with one-time promotion off the legacy localStorage keys. Note: the backend does not yet honor `vision_enabled` — it gates image analysis on image presence alone
 
 ---
 

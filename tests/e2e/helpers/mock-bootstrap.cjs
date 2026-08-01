@@ -56,6 +56,12 @@ async function mockBootstrap(page, overrides = {}) {
     conversational_style: 'balanced',
     deviation_enabled: false,
     web_search_autonomous: false,
+    // Vision moved from localStorage to preferences in #131. Present by
+    // default so specs that merely open Settings don't trip the one-time
+    // localStorage promotion PATCH. A spec that wants to exercise promotion
+    // must register its own /v1/preferences route omitting these two keys.
+    vision_enabled: true,
+    vision_model: 'llama3.2-vision:11b',
     // Identity drives the personalized-greeting name extraction in Chat.jsx.
     // Defaults to null (returning user, no name) so existing tests that
     // didn't stub this field see the same behavior as before. Override via
