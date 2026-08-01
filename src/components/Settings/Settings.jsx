@@ -28,6 +28,11 @@ import {
   getVaultStorage,
 } from '../../api/ember.js'
 import { useModal } from '../../hooks/useModal.js'
+import {
+  DEFAULT_VISION_MODEL,
+  readLegacyVisionSettings,
+  resolveVisionSettings,
+} from '../../utils/visionSettings.js'
 import { useAppearance } from '../../contexts/AppearanceContext.jsx'
 import StylePackPicker from './StylePackPicker.jsx'
 import Segmented from './Segmented.jsx'
@@ -117,12 +122,11 @@ export default memo(function Settings({
   const [webSearch, setWebSearch] = useState(true)
   const [tone, setTone] = useState('balanced')
   const [currentModel, setCurrentModel] = useState('')
-  const [visionEnabled, setVisionEnabled] = useState(() => {
-    try { return localStorage.getItem('ember-vision-enabled') !== 'false' } catch { return true }
-  })
-  const [visionModel, setVisionModel] = useState(() => {
-    try { return localStorage.getItem('ember-vision-model') || 'llama3.2-vision:11b' } catch { return 'llama3.2-vision:11b' }
-  })
+  // Vision now lives in backend preferences (issue #131), not localStorage.
+  // These are just the pre-fetch defaults; loadPreferences() below fills in
+  // the real values the same way tone/deviationEnabled/webSearch do.
+  const [visionEnabled, setVisionEnabled] = useState(true)
+  const [visionModel, setVisionModel] = useState(DEFAULT_VISION_MODEL)
   const [localModels, setLocalModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelTab, setModelTab] = useState('local')              // 'local' | 'cloud'
@@ -203,11 +207,12 @@ export default memo(function Settings({
         if (data.available && data.available.length > 0) {
           setLocalModels(data.available)
         }
-        // Check if vision model is configured
-        if (data.vision_model) {
-          setVisionEnabled(true)
-          setVisionModel(data.vision_model)
-        }
+        // Deliberately no vision handling here. /model used to be read for a
+        // `vision_model` field, which forced visionEnabled true and raced
+        // loadPreferences() below. The backend never actually sent that field,
+        // so the branch was dead — but it was a second writer to state that
+        // preferences now owns outright. Removed with issue #131; if /model
+        // ever starts returning vision_model, it still must not win here.
       } catch {
         if (ignore) return
         console.warn('[Settings] Model API unreachable, using mock')
@@ -248,6 +253,21 @@ export default memo(function Settings({
         setWebSearchAutonomous(prefs.web_search_autonomous || false)
         if (prefs.context_length) setContextLength(prefs.context_length)
         setSecurityPinSet(pinStatus.pin_set)
+
+        // Vision (issue #131). Preferences is the source of truth; the old
+        // localStorage keys are only a seed for users upgrading from the
+        // localStorage-only build. When prefs carries neither vision key we
+        // push the local values up once — see visionSettings.js for why we
+        // leave the localStorage keys in place rather than deleting them.
+        const vision = resolveVisionSettings(prefs, readLegacyVisionSettings())
+        setVisionEnabled(vision.enabled)
+        setVisionModel(vision.model)
+        if (vision.needsPromotion) {
+          updatePreferences({
+            vision_enabled: vision.enabled,
+            vision_model: vision.model,
+          })
+        }
       } catch {}
     }
     loadPreferences()
@@ -1294,7 +1314,10 @@ export default memo(function Settings({
                   <input
                     type="checkbox" role="switch"
                     checked={visionEnabled}
-                    onChange={(e) => { setVisionEnabled(e.target.checked); try { localStorage.setItem('ember-vision-enabled', String(e.target.checked)) } catch {} }}
+                    onChange={(e) => {
+                      setVisionEnabled(e.target.checked)
+                      updatePreferences({ vision_enabled: e.target.checked })
+                    }}
                   />
                   <span className="toggle-track" />
                 </label>
@@ -1309,7 +1332,10 @@ export default memo(function Settings({
                   <select
                     className="settings-select"
                     value={visionModel}
-                    onChange={(e) => { setVisionModel(e.target.value); try { localStorage.setItem('ember-vision-model', e.target.value) } catch {} }}
+                    onChange={(e) => {
+                      setVisionModel(e.target.value)
+                      updatePreferences({ vision_model: e.target.value })
+                    }}
                     aria-label="Vision model"
                   >
                     {visionModels.length > 0 ? (
