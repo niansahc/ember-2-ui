@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/niansahc/ember-2-ui/compare/v0.18.0...v0.18.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ci:** use PAT for release-please to trigger downstream workflows ([1d2a391](https://github.com/niansahc/ember-2-ui/commit/1d2a391ebc969a724a0261e3e9e530f6ee0495d7))
+* **ci:** use PAT for release-please to trigger downstream workflows ([c886f3a](https://github.com/niansahc/ember-2-ui/commit/c886f3ae80bdcaa609b85daed7e096dce1dd70e6))
+
 ## [0.18.0](https://github.com/niansahc/ember-2-ui/compare/v0.8.1...v0.18.0) (2026-07-31)
 
 
