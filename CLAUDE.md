@@ -64,7 +64,7 @@ These exist and must not be re-implemented:
 - Bare mode per-conversation toggle (flame/X icon in chat header, strips personality)
 - Vault storage display in Settings Memory tab (current size + 30-day projection)
 - Provider-aware chat failure surface (error turn with Try again; names Ollama, Anthropic, or OpenAI per active model)
-- Vision settings (toggle + model picker in Features tab) persisted to the backend via `PATCH /v1/preferences` as `vision_enabled` / `vision_model`, with one-time promotion off the legacy localStorage keys. Note: the backend does not yet honor `vision_enabled` — it gates image analysis on image presence alone
+- Vision settings (toggle + model picker in Features tab) persisted to the backend via `PATCH /v1/preferences` as `vision_enabled` / `vision_model`, with one-time promotion off the legacy localStorage keys. The backend honors `vision_enabled` at the image gate as of ember-2 #138/#143
 
 ---
 
