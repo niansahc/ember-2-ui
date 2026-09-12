@@ -126,9 +126,13 @@ test.describe('User journeys', () => {
       conversations: [{ id: 'sess_1', title: 'My Chat', updated_at: now(), project_id: null }],
       projects: [],
     })
+    // fallback(), not continue(): this handler is registered after
+    // mockBootstrap and Playwright matches in reverse order, so continue()
+    // would send the mount-time GET over the Vite proxy to a real backend
+    // instead of letting mockBootstrap answer it.
     await page.route(/\/projects$/, (route, req) => (req.method() === 'POST'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'proj_new', name: 'Work', color: '#ff8c00' }) })
-      : route.continue()))
+      : route.fallback()))
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'PATCH'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', project_id: 'proj_new' }) })
       : route.continue()))
@@ -141,6 +145,36 @@ test.describe('User journeys', () => {
     await page.locator('.sidebar-item').first().click({ button: 'right' })
     await page.locator('.sidebar-context-item', { hasText: 'Work' }).click()
     await expect(page.locator('.sidebar-item')).toHaveCount(0)
+  })
+
+  test('a slow projects fetch cannot erase a project the user just created', async ({ page }) => {
+    // Regression for the sidebar flake: the mount-time GET /v1/projects used to
+    // replace the list wholesale whenever it resolved, so a response that landed
+    // after the user created a project discarded it. Holding the GET past the
+    // click turns that race into a deterministic assertion.
+    await mockBootstrap(page, {
+      conversations: [{ id: 'sess_1', title: 'My Chat', updated_at: now(), project_id: null }],
+      projects: [],
+    })
+    await page.route(/\/projects$/, async (route, req) => {
+      if (req.method() === 'POST') {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'proj_new', name: 'Work', color: '#ff8c00' }) })
+      }
+      // Resolves well after the create below, carrying the pre-create state.
+      await new Promise((r) => setTimeout(r, 1500))
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ projects: [] }) })
+    })
+    page.on('dialog', (d) => d.accept('Work'))
+    await gotoApp(page)
+
+    await page.locator('.sidebar-section-add[aria-label="New project"]').click()
+    const workRow = page.locator('.sidebar-project-row', { hasText: 'Work' })
+    await expect(workRow).toBeVisible()
+
+    // Outlast the held GET, then assert the project survived it.
+    await page.waitForTimeout(2000)
+    await expect(workRow).toBeVisible()
+    await expect(page.locator('.sidebar-empty-sm')).toHaveCount(0)
   })
 
   test('user renames a conversation and it persists across reload', async ({ page }) => {
