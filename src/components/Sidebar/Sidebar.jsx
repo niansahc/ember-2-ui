@@ -69,14 +69,28 @@ export default function Sidebar({
     })
   }
 
+  // Write sequences for the two server-backed lists.
+  //
+  // Both loaders replace their list wholesale when the fetch resolves, and a
+  // fetch can resolve long after it was issued. An unmount guard is not enough:
+  // a load that started before the user created a project would still be live,
+  // and its stale response would erase the new project (and, for conversations,
+  // undo a rename, delete or move). Every local mutation bumps its list's
+  // sequence; a loader captures the sequence before awaiting and drops its
+  // result if the number moved while it was in flight.
+  const projectsWriteSeq = useRef(0)
+  const conversationsWriteSeq = useRef(0)
+
   // Load conversations — try real API, fall back to mock.
   // Stored in a ref so the polling interval and post-stream refresh always
   // call the current closure without needing to re-register the interval.
   const loadConversationsRef = useRef(null)
   loadConversationsRef.current = async function loadConversations(ignore) {
+    const seq = conversationsWriteSeq.current
+    const stale = () => ignore?.current || seq !== conversationsWriteSeq.current
     try {
       const convos = await realGetConversations(100)
-      if (ignore?.current) return
+      if (stale()) return
       setConversations(
         convos.map((c) => ({
           id: c.id,
@@ -86,9 +100,9 @@ export default function Sidebar({
         })),
       )
     } catch {
-      if (ignore?.current) return
+      if (stale()) return
       console.warn('[Sidebar] API unreachable, using mock conversations')
-      mockGetConversations().then((c) => { if (!ignore?.current) setConversations(c) })
+      mockGetConversations().then((c) => { if (!stale()) setConversations(c) })
     }
   }
 
@@ -103,9 +117,11 @@ export default function Sidebar({
   useEffect(() => {
     let ignore = false
     async function loadProjects() {
+      const seq = projectsWriteSeq.current
+      const stale = () => ignore || seq !== projectsWriteSeq.current
       try {
         const projs = await realGetProjects()
-        if (ignore) return
+        if (stale()) return
         setProjects(
           projs.map((p) => ({
             id: p.id,
@@ -115,9 +131,9 @@ export default function Sidebar({
           })),
         )
       } catch {
-        if (ignore) return
+        if (stale()) return
         console.warn('[Sidebar] Projects API unreachable, using mock')
-        mockGetProjects().then((p) => { if (!ignore) setProjects(p) })
+        mockGetProjects().then((p) => { if (!stale()) setProjects(p) })
       }
     }
     loadProjects()
@@ -284,6 +300,7 @@ export default function Sidebar({
     setContextMenu(null)
     if (!name || !name.trim()) return
     const snapshot = conversations  // capture for rollback
+    conversationsWriteSeq.current += 1
     // Optimistic UI update
     setConversations((prev) =>
       prev.map((c) => c.id === conv.id ? { ...c, title: name.trim() } : c),
@@ -293,6 +310,7 @@ export default function Sidebar({
       // Only tell the parent once the rename actually landed.
       onRenameConversation?.(conv.id, name.trim())
     } catch {
+      conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
       setConversations(snapshot)  // revert the title
       setRowError(conv.id, "Couldn't rename — try again")
     }
@@ -303,6 +321,7 @@ export default function Sidebar({
     const conv = contextMenu.conv
     setContextMenu(null)
     const snapshot = conversations  // capture so a failed delete can restore the row
+    conversationsWriteSeq.current += 1
     // Optimistic UI update
     setConversations((prev) => prev.filter((c) => c.id !== conv.id))
     try {
@@ -312,6 +331,7 @@ export default function Sidebar({
       // the user while the row is still sitting there on the server.
       onDeleteConversation?.(conv.id)
     } catch {
+      conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
       setConversations(snapshot)  // row comes back
       setRowError(conv.id, "Couldn't delete — try again")
     }
@@ -322,6 +342,7 @@ export default function Sidebar({
     const conv = contextMenu.conv
     setContextMenu(null)
     const snapshot = conversations  // capture for rollback
+    conversationsWriteSeq.current += 1
     // Optimistic UI update
     setConversations((prev) =>
       prev.map((c) => c.id === conv.id ? { ...c, projectId } : c),
@@ -329,6 +350,7 @@ export default function Sidebar({
     try {
       await realMoveConversationToProject(conv.id, projectId)
     } catch {
+      conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
       setConversations(snapshot)  // back to its original group
       setRowError(conv.id, "Couldn't move — try again")
     }
@@ -343,6 +365,7 @@ export default function Sidebar({
     const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
     try {
       const result = await realCreateProject(name.trim(), color)
+      projectsWriteSeq.current += 1
       setProjects((prev) => [...prev, { id: result.id, name: name.trim(), color, conversationCount: 0 }])
     } catch {
       console.warn('[Sidebar] Create project API failed')
@@ -357,8 +380,10 @@ export default function Sidebar({
     try {
       const result = await realCreateProject(name.trim(), color)
       const newProject = { id: result.id, name: name.trim(), color, conversationCount: 1 }
+      projectsWriteSeq.current += 1
       setProjects((prev) => [...prev, newProject])
       // Move the conversation into the new project
+      conversationsWriteSeq.current += 1
       setConversations((prev) =>
         prev.map((c) => c.id === contextMenu.conv.id ? { ...c, projectId: result.id } : c),
       )
@@ -369,79 +394,23 @@ export default function Sidebar({
     setContextMenu(null)
   }
 
-  // Shared conversation item renderer
-  function ConvoItem({ conv, projectId }) {
-    const convoError = rowErrors[conv.id]
-    return (
-      <li key={conv.id}>
-        <button
-          className={`sidebar-item ${conv.id === activeConversationId ? 'sidebar-item-active' : ''} ${convoError ? 'sidebar-item-error' : ''}`}
-          onClick={() => handleConvoClick(conv.id, projectId)}
-          onContextMenu={(e) => handleContextMenu(e, conv)}
-          aria-current={conv.id === activeConversationId ? 'true' : undefined}
-        >
-          {/* On a failed mutation the title slot briefly carries the error
-              (mirrors the task-row pattern), then auto-reverts to the title. */}
-          <span className="sidebar-item-title">{convoError || conv.title}</span>
-        </button>
-      </li>
-    )
-  }
+  // Props every conversation row needs. Built once so the three call sites
+  // stay readable; ConvoItem itself lives at module scope (see below).
+  const convoRowProps = { rowErrors, activeConversationId, onSelect: handleConvoClick, onContextMenu: handleContextMenu }
 
   // Search bar is inline JSX, not a nested component — a nested function component
   // would create a new type on every render, causing React to unmount/remount the
   // input on each keystroke and destroy focus.
 
-  // ── Context menu (right-click on conversation items) ────────────────
-  function ContextMenuPopup() {
-    if (!contextMenu) return null
-    return (
-      <div
-        ref={contextRef}
-        className="sidebar-context-menu"
-        style={{ top: contextMenu.y, left: contextMenu.x }}
-        role="menu"
-      >
-        <button className="sidebar-context-item" onClick={handleRename} role="menuitem">
-          Rename
-        </button>
-        <div className="sidebar-context-divider" />
-        <div className="sidebar-context-label">Move to...</div>
-        {contextMenu.conv.projectId && (
-          <button
-            className="sidebar-context-item"
-            onClick={() => handleMoveToProject(null)}
-            role="menuitem"
-          >
-            General
-          </button>
-        )}
-        {realProjects
-          .filter((p) => p.id !== contextMenu.conv.projectId)
-          .map((p) => (
-            <button
-              key={p.id}
-              className="sidebar-context-item"
-              onClick={() => handleMoveToProject(p.id)}
-              role="menuitem"
-            >
-              <span className="sidebar-project-dot" style={{ background: p.color }} aria-hidden="true" />
-              {p.name}
-            </button>
-          ))}
-        <button className="sidebar-context-item sidebar-context-new-project" onClick={handleCreateProjectAndMove} role="menuitem">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          New Project...
-        </button>
-        <div className="sidebar-context-divider" />
-        <button className="sidebar-context-item sidebar-context-danger" onClick={handleDelete} role="menuitem">
-          Delete
-        </button>
-      </div>
-    )
+  // Props for the context menu popup. ContextMenuPopup lives at module scope.
+  const contextMenuProps = {
+    contextMenu,
+    contextRef,
+    realProjects,
+    onRename: handleRename,
+    onMoveToProject: handleMoveToProject,
+    onCreateProjectAndMove: handleCreateProjectAndMove,
+    onDelete: handleDelete,
   }
 
   // ── Project detail view ──────────────────────────────────────
@@ -546,7 +515,7 @@ export default function Sidebar({
                   <div key={label} className="sidebar-time-group">
                     <div className="sidebar-time-label">{label}</div>
                     <ul className="sidebar-convo-list" role="list">
-                      {items.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={viewingProject} />)}
+                      {items.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={viewingProject} {...convoRowProps} />)}
                     </ul>
                   </div>
                 ))}
@@ -561,7 +530,7 @@ export default function Sidebar({
             <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
           </div>
         </nav>
-        <ContextMenuPopup />
+        <ContextMenuPopup {...contextMenuProps} />
       </>
     )
   }
@@ -643,7 +612,7 @@ export default function Sidebar({
                 <>
                   {filteredConvos.length > 0 ? (
                     <ul className="sidebar-convo-list" role="list">
-                      {filteredConvos.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={conv.projectId} />)}
+                      {filteredConvos.map((conv) => <ConvoItem key={conv.id} conv={conv} projectId={conv.projectId} {...convoRowProps} />)}
                     </ul>
                   ) : (
                     <p className="sidebar-empty">No matches.</p>
@@ -699,7 +668,7 @@ export default function Sidebar({
                     <div key={label} className="sidebar-time-group">
                       <div className="sidebar-time-label">{label}</div>
                       <ul className="sidebar-convo-list" role="list">
-                        {items.map((conv) => <ConvoItem key={conv.id} conv={conv} />)}
+                        {items.map((conv) => <ConvoItem key={conv.id} conv={conv} {...convoRowProps} />)}
                       </ul>
                     </div>
                   ))}
@@ -777,8 +746,88 @@ export default function Sidebar({
           )}
         </div>
       </nav>
-      <ContextMenuPopup />
+      <ContextMenuPopup {...contextMenuProps} />
     </>
+  )
+}
+
+/**
+ * Shared conversation row.
+ *
+ * Declared at module scope, not inside Sidebar. A component declared inside
+ * another is a new type on every render, so React unmounts and remounts its
+ * DOM node whenever the parent re-renders, and a stable key cannot prevent it.
+ * That made every sidebar row a moving target for clicks that land while any
+ * state is settling. Same reasoning as the search bar comment in Sidebar.
+ */
+function ConvoItem({ conv, projectId, rowErrors, activeConversationId, onSelect, onContextMenu }) {
+  const convoError = rowErrors[conv.id]
+  return (
+    <li>
+      <button
+        className={`sidebar-item ${conv.id === activeConversationId ? 'sidebar-item-active' : ''} ${convoError ? 'sidebar-item-error' : ''}`}
+        onClick={() => onSelect(conv.id, projectId)}
+        onContextMenu={(e) => onContextMenu(e, conv)}
+        aria-current={conv.id === activeConversationId ? 'true' : undefined}
+      >
+        {/* On a failed mutation the title slot briefly carries the error
+            (mirrors the task-row pattern), then auto-reverts to the title. */}
+        <span className="sidebar-item-title">{convoError || conv.title}</span>
+      </button>
+    </li>
+  )
+}
+
+// ── Context menu (right-click on conversation items) ────────────────
+// Module scope for the same reason as ConvoItem above.
+function ContextMenuPopup({ contextMenu, contextRef, realProjects, onRename, onMoveToProject, onCreateProjectAndMove, onDelete }) {
+  if (!contextMenu) return null
+  return (
+    <div
+      ref={contextRef}
+      className="sidebar-context-menu"
+      style={{ top: contextMenu.y, left: contextMenu.x }}
+      role="menu"
+    >
+      <button className="sidebar-context-item" onClick={onRename} role="menuitem">
+        Rename
+      </button>
+      <div className="sidebar-context-divider" />
+      <div className="sidebar-context-label">Move to...</div>
+      {contextMenu.conv.projectId && (
+        <button
+          className="sidebar-context-item"
+          onClick={() => onMoveToProject(null)}
+          role="menuitem"
+        >
+          General
+        </button>
+      )}
+      {realProjects
+        .filter((p) => p.id !== contextMenu.conv.projectId)
+        .map((p) => (
+          <button
+            key={p.id}
+            className="sidebar-context-item"
+            onClick={() => onMoveToProject(p.id)}
+            role="menuitem"
+          >
+            <span className="sidebar-project-dot" style={{ background: p.color }} aria-hidden="true" />
+            {p.name}
+          </button>
+        ))}
+      <button className="sidebar-context-item sidebar-context-new-project" onClick={onCreateProjectAndMove} role="menuitem">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Project...
+      </button>
+      <div className="sidebar-context-divider" />
+      <button className="sidebar-context-item sidebar-context-danger" onClick={onDelete} role="menuitem">
+        Delete
+      </button>
+    </div>
   )
 }
 
