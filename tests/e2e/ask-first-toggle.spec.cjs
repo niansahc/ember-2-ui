@@ -160,4 +160,38 @@ test.describe('Ask-First Toggle', () => {
     const disabledRow = page.locator('.settings-row-disabled')
     await expect(disabledRow).toBeVisible()
   })
+
+  test('nested row carries aria-disabled matching web search state', async ({ page }) => {
+    await mockBootstrap(page, {
+      preferences: { web_search: false },
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const featuresTab = page.locator('.settings-tab', { hasText: 'Features' })
+    await featuresTab.click()
+
+    const row = page.locator('.settings-row-nested', { has: page.locator('label[aria-label="Toggle autonomous web search"]') })
+    await expect(row).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  test('nested row aria-disabled is false when web search is on', async ({ page }) => {
+    await mockBootstrap(page, {
+      preferences: { web_search: true },
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const featuresTab = page.locator('.settings-tab', { hasText: 'Features' })
+    await featuresTab.click()
+
+    const row = page.locator('.settings-row-nested', { has: page.locator('label[aria-label="Toggle autonomous web search"]') })
+    await expect(row).toHaveAttribute('aria-disabled', 'false')
+  })
 })

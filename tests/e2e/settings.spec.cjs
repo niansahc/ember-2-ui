@@ -252,6 +252,33 @@ test.describe('Settings', () => {
     await expect(copyBtn).toBeVisible()
   })
 
+  test('no dead vault-open button in Memory tab', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
+    const openBtn = page.locator('button[aria-label="Open vault folder"]')
+    await expect(openBtn).toHaveCount(0)
+  })
+
+  test('no custom lodestone category form in Memory tab', async ({ page }) => {
+    const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
+    await settingsBtn.click()
+
+    const memoryTab = page.locator('.settings-tab', { hasText: 'Memory' })
+    await memoryTab.click()
+
+    const expandBtn = page.locator('.lodestone-expand-btn')
+    await expandBtn.click()
+
+    await expect(page.locator('.lodestone-findings')).toBeVisible()
+    await expect(page.locator('.lodestone-add-cat-btn')).toHaveCount(0)
+    await expect(page.locator('.lodestone-custom-cat-form')).toHaveCount(0)
+    await expect(page.getByText('+ Add category')).toHaveCount(0)
+  })
+
   test('vision toggle is visible in Features tab', async ({ page }) => {
     const settingsBtn = page.locator('.app-header-btn[aria-label="Open settings"]')
     await settingsBtn.click()
