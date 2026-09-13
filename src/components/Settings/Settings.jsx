@@ -169,9 +169,6 @@ export default memo(function Settings({
   const [lodestoneExpanded, setLodestoneExpanded] = useState(false)
   const [lodestoneAdding, setLodestoneAdding] = useState(null)    // category key when adding a new record
   const [lodestoneAddValue, setLodestoneAddValue] = useState('')
-  const [lodestoneCustomCat, setLodestoneCustomCat] = useState(false)
-  const [lodestoneCustomName, setLodestoneCustomName] = useState('')
-  const [lodestoneCustomQuestion, setLodestoneCustomQuestion] = useState('')
 
   // Switch to requested tab when Settings opens with initialTab
   useEffect(() => {
@@ -1020,9 +1017,6 @@ export default memo(function Settings({
                       </svg>
                     )}
                   </button>
-                  <button className="settings-action-btn" aria-label="Open vault folder">
-                    Open
-                  </button>
                 </div>
               </div>
 
@@ -1176,44 +1170,6 @@ export default memo(function Settings({
                       ))
                     }
 
-                    {/* Add custom category */}
-                    {lodestoneCustomCat ? (
-                      <div className="lodestone-custom-cat-form">
-                        <input
-                          className="lodestone-edit-input"
-                          placeholder="Category name"
-                          value={lodestoneCustomName}
-                          onChange={(e) => setLodestoneCustomName(e.target.value)}
-                          autoFocus
-                        />
-                        <input
-                          className="lodestone-edit-input"
-                          placeholder="What question does this category answer?"
-                          value={lodestoneCustomQuestion}
-                          onChange={(e) => setLodestoneCustomQuestion(e.target.value)}
-                        />
-                        <div className="lodestone-edit-actions">
-                          <button className="settings-action-btn" onClick={() => {
-                            // Custom categories are stored as records — the category key is the name lowercased
-                            setLodestoneCustomCat(false)
-                            setLodestoneCustomName('')
-                            setLodestoneCustomQuestion('')
-                          }}>Save</button>
-                          <button className="settings-action-btn" onClick={() => {
-                            setLodestoneCustomCat(false)
-                            setLodestoneCustomName('')
-                            setLodestoneCustomQuestion('')
-                          }}>Cancel</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        className="lodestone-add-btn lodestone-add-cat-btn"
-                        onClick={() => setLodestoneCustomCat(true)}
-                      >
-                        + Add category
-                      </button>
-                    )}
                   </>
                 )
               })()}
@@ -1268,7 +1224,10 @@ export default memo(function Settings({
               {/* Ask-first toggle — re-enabled in v0.17 once the ADR-034
                   classifier shipped on the backend. When web search is off
                   the row stays disabled (the question doesn't apply). */}
-              <div className={`settings-row settings-row-nested${webSearch ? '' : ' settings-row-disabled'}`}>
+              <div
+                className={`settings-row settings-row-nested${webSearch ? '' : ' settings-row-disabled'}`}
+                aria-disabled={!webSearch}
+              >
                 <div className="settings-row-info">
                   <span className="settings-row-label">Search automatically when uncertain</span>
                   <span className="settings-row-hint">
