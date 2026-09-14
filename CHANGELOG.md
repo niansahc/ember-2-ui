@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.18.2](https://github.com/niansahc/ember-2-ui/compare/v0.18.1...v0.18.2) (2026-09-14)
+
+
+### Features
+
+* text selector reads generation_available under split model hosts ([003f498](https://github.com/niansahc/ember-2-ui/commit/003f498db10eedffea86f67a88c7c7f2a2f6dce0))
+* text selector reads generation_available under split model hosts ([2c3e617](https://github.com/niansahc/ember-2-ui/commit/2c3e61716468aaf344092a380c37734c62211c15))
+
+
+### Bug Fixes
+
+* dead vault-open button, non-persisting category form, CSS-only disabled row ([443abd8](https://github.com/niansahc/ember-2-ui/commit/443abd864b68442866ea03ccce17c8f02e703a9a))
+* dead vault-open button, non-persisting category form, CSS-only disabled row ([81c6054](https://github.com/niansahc/ember-2-ui/commit/81c605436a82e750c375a20e0cf48b7e6c1a027a))
+* **settings:** persist vision settings to backend via preferences API ([cced126](https://github.com/niansahc/ember-2-ui/commit/cced126b42c35c01d5ebe83f41edd110b04c9eda))
+* **settings:** persist vision settings to backend via preferences API ([32e8802](https://github.com/niansahc/ember-2-ui/commit/32e8802a9fb82215c0f5347495b2ddcabebda195)), closes [#131](https://github.com/niansahc/ember-2-ui/issues/131)
+* **sidebar:** discard stale project and conversation loads, hoist row components ([5484b95](https://github.com/niansahc/ember-2-ui/commit/5484b9550a2aeb465bc1b75c7e33a776ad5ea046))
+* **sidebar:** discard stale project and conversation loads, hoist row components ([daecb00](https://github.com/niansahc/ember-2-ui/commit/daecb007f30568f459fb8311583ba2c23764f1c6))
+
 ## [0.18.1](https://github.com/niansahc/ember-2-ui/compare/v0.18.0...v0.18.1) (2026-08-31)
 
 
