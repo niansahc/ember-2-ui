@@ -128,6 +128,13 @@ export default memo(function Settings({
   const [visionEnabled, setVisionEnabled] = useState(true)
   const [visionModel, setVisionModel] = useState(DEFAULT_VISION_MODEL)
   const [localModels, setLocalModels] = useState([])
+  // Split generation host (ember-2 #170): null means no split is configured
+  // and text generation falls back to `available` (localModels), same as
+  // before this feature existed. Presence of the key on the /model response
+  // is the signal, not array length — an empty generation_available still
+  // means "split is active, host reports zero models."
+  const [generationAvailable, setGenerationAvailable] = useState(null)
+  const [generationHost, setGenerationHost] = useState(null)
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelTab, setModelTab] = useState('local')              // 'local' | 'cloud'
 
@@ -203,6 +210,14 @@ export default memo(function Settings({
         }
         if (data.available && data.available.length > 0) {
           setLocalModels(data.available)
+        }
+        // Split generation host (#170) — key presence, not truthiness, is
+        // the signal. An absent key must reproduce today's behavior exactly.
+        if ('generation_available' in data) {
+          setGenerationAvailable(data.generation_available)
+        }
+        if ('generation_host' in data && data.generation_host) {
+          setGenerationHost(data.generation_host)
         }
         // Deliberately no vision handling here. /model used to be read for a
         // `vision_model` field, which forced visionEnabled true and raced
@@ -435,10 +450,15 @@ export default memo(function Settings({
 
   if (!isOpen) return null
 
+  // Vision runs local only — always read `available` (localModels), even
+  // when a split generation host is configured.
   const visionModels = localModels.filter(
     (m) => m.toLowerCase().includes('vision') || m.toLowerCase().includes('llava'),
   )
-  const textModels = localModels.filter(
+  // Text/generation reads the split host's list when one is configured
+  // (generationAvailable !== null), otherwise falls back to `available`.
+  const textModelSource = generationAvailable !== null ? generationAvailable : localModels
+  const textModels = textModelSource.filter(
     (m) => !m.toLowerCase().includes('vision') && !m.toLowerCase().includes('llava'),
   )
 
@@ -523,6 +543,11 @@ export default memo(function Settings({
               {/* Local tab */}
               {modelTab === 'local' && (
                 <div className="model-list" role="tabpanel">
+                  {generationHost && (
+                    <p className="settings-row-hint generation-host-hint">
+                      Text generation via {generationHost}
+                    </p>
+                  )}
                   {loadingModels ? (
                     <p className="model-list-empty">Loading models...</p>
                   ) : textModels.length === 0 ? (
