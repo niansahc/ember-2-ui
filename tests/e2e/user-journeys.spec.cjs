@@ -136,10 +136,11 @@ test.describe('User journeys', () => {
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'PATCH'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', project_id: 'proj_new' }) })
       : route.continue()))
-    page.on('dialog', (d) => d.accept('Work'))
     await gotoApp(page)
 
     await page.locator('.sidebar-section-add[aria-label="New project"]').click()
+    await page.locator('.text-prompt-input').fill('Work')
+    await page.locator('.text-prompt-btn-confirm').click()
     await expect(page.locator('.sidebar-project-row', { hasText: 'Work' })).toBeVisible()
 
     await page.locator('.sidebar-item').first().click({ button: 'right' })
@@ -164,10 +165,11 @@ test.describe('User journeys', () => {
       await new Promise((r) => setTimeout(r, 1500))
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ projects: [] }) })
     })
-    page.on('dialog', (d) => d.accept('Work'))
     await gotoApp(page)
 
     await page.locator('.sidebar-section-add[aria-label="New project"]').click()
+    await page.locator('.text-prompt-input').fill('Work')
+    await page.locator('.text-prompt-btn-confirm').click()
     const workRow = page.locator('.sidebar-project-row', { hasText: 'Work' })
     await expect(workRow).toBeVisible()
 
@@ -190,11 +192,12 @@ test.describe('User journeys', () => {
       try { const b = JSON.parse(req.postData() || '{}'); if (b.title) title = b.title } catch { /* ignore */ }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', title }) })
     })
-    page.on('dialog', (d) => d.accept('New Title'))
     await gotoApp(page)
 
     await page.locator('.sidebar-item').first().click({ button: 'right' })
     await page.locator('.sidebar-context-item', { hasText: 'Rename' }).click()
+    await page.locator('.text-prompt-input').fill('New Title')
+    await page.locator('.text-prompt-btn-confirm').click()
     await expect(page.locator('.sidebar-item-title')).toContainText('New Title')
 
     await page.reload()
