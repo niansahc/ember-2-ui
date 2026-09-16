@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { streamChat } from './ember.js'
+import { streamChat, readMemories, searchMemories, semanticSearch, debugContext } from './ember.js'
 
 // Build a fake fetch Response whose body streams the given SSE frames as one
 // chunk, terminated by [DONE]. Mirrors the wire format ember.js parses:
@@ -67,5 +67,67 @@ describe('streamChat — SSE event discrimination', () => {
       { choices: [{ delta: { content: ' world' } }] },
     ])
     expect(events).toEqual(['Hello', ' world'])
+  })
+})
+
+// Fixture data is synthetic — Vault Privacy Rule.
+describe('Memory Browser API client', () => {
+  function jsonResponse(body, ok = true, status = 200) {
+    return { ok, status, json: async () => body }
+  }
+
+  it('readMemories requests the given type and limit, and encodes them as query params', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ memories: [] }))
+    await readMemories('journal', 42)
+    const [url] = global.fetch.mock.calls[0]
+    expect(url).toBe('/read-memories?memory_type=journal&limit=42')
+  })
+
+  it('readMemories returns null on a failed response instead of throwing', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({}, false, 500))
+    await expect(readMemories('journal')).resolves.toBeNull()
+  })
+
+  it('readMemories returns null when fetch rejects (network failure)', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+    await expect(readMemories('journal')).rejects.toThrow()
+  })
+
+  it('searchMemories includes query and memory_type', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    await searchMemories('test query', 'conversation', 10)
+    const [url] = global.fetch.mock.calls[0]
+    expect(url).toBe('/search-memories?query=test+query&memory_type=conversation&limit=10')
+  })
+
+  it('semanticSearch omits memory_type when not provided (searches all types)', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    await semanticSearch('test query', { limit: 5 })
+    const [url] = global.fetch.mock.calls[0]
+    expect(url).toBe('/semantic-search?query=test+query&limit=5')
+  })
+
+  it('semanticSearch includes memory_type and min_score when provided', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    await semanticSearch('test query', { limit: 5, memoryType: 'reflection', minScore: 0.3 })
+    const [url] = global.fetch.mock.calls[0]
+    expect(url).toBe('/semantic-search?query=test+query&limit=5&memory_type=reflection&min_score=0.3')
+  })
+
+  it('semanticSearch returns null on a failed response', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({}, false, 500))
+    await expect(semanticSearch('test query')).resolves.toBeNull()
+  })
+
+  it('debugContext requests the message as a query param', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ memory_items: [] }))
+    await debugContext('what would this retrieve')
+    const [url] = global.fetch.mock.calls[0]
+    expect(url).toBe('/debug-context?message=what+would+this+retrieve')
+  })
+
+  it('debugContext returns null on a failed response', async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({}, false, 500))
+    await expect(debugContext('anything')).resolves.toBeNull()
   })
 })

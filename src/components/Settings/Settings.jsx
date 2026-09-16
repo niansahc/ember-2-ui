@@ -36,6 +36,7 @@ import {
 import { useAppearance } from '../../contexts/AppearanceContext.jsx'
 import StylePackPicker from './StylePackPicker.jsx'
 import Segmented from './Segmented.jsx'
+import MemoryBrowser from './MemoryBrowser.jsx'
 import './Settings.css'
 
 /** Human-readable byte size (e.g. 1024 → "1.0 KB"). Used for vault storage display. */
@@ -1208,6 +1209,10 @@ export default memo(function Settings({
 
               </div>
               )}
+
+              <hr className="settings-divider" />
+
+              <MemoryBrowser active={activeTab === 'memory'} />
             </div>
           )}
 

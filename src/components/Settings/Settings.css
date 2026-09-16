@@ -1350,3 +1350,184 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ── Memory Browser ──────────────────────────────────────────── */
+
+.memory-browser {
+  margin-top: 0.25rem;
+}
+
+.memory-browser-expand-btn {
+  display: inline-flex;
+}
+
+.memory-browser-panel {
+  margin-top: 0.5rem;
+}
+
+.memory-browser-view-tabs {
+  margin-bottom: 0.75rem;
+}
+
+.memory-browser-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding: 0.4rem 0.5rem;
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+
+.memory-browser-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.memory-browser-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.memory-browser-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.memory-browser-chip-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.memory-browser-chip-count {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.memory-browser-search-form {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.memory-browser-search-input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.memory-browser-search-input:focus {
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+.memory-browser-type-select {
+  padding: 0.45rem 0.5rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.memory-browser-card {
+  padding: 0.6rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.4rem;
+}
+
+.memory-browser-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.memory-browser-type {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.memory-browser-timestamp {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.memory-browser-score {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.memory-browser-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0 0 0.35rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.memory-browser-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.memory-browser-source {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.memory-browser-provenance {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.memory-browser-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: var(--bg-surface-hover);
+}
+
+.memory-browser-badge-hot {
+  color: var(--status-ok-text);
+  background: var(--status-ok-bg);
+}
+
+.memory-browser-badge-warm {
+  color: var(--status-warn-text);
+  background: var(--status-warn-bg);
+}
+
+.memory-browser-badge-cold {
+  color: var(--text-muted);
+  background: var(--bg-surface-hover);
+}
