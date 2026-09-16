@@ -94,11 +94,11 @@ test.describe('Optimistic mutation rollback (H1)', () => {
 
   test('failed rename reverts the title and shows an error', async ({ page }) => {
     await page.route(/\/conversations\/[^/?]+$/, (route) => route.abort())
-    // handleRename uses window.prompt — supply a new title.
-    page.on('dialog', (dialog) => dialog.accept('Renamed Title'))
 
     await page.locator('.sidebar-item').first().click({ button: 'right' })
     await page.locator('.sidebar-context-item', { hasText: 'Rename' }).click()
+    await page.locator('.text-prompt-input').fill('Renamed Title')
+    await page.locator('.text-prompt-btn-confirm').click()
 
     const errored = page.locator('.sidebar-item-error .sidebar-item-title')
     await expect(errored).toBeVisible()

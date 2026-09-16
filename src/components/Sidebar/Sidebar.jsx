@@ -22,6 +22,7 @@ import {
   deleteTask,
 } from '../../api/ember.js'
 import emberMascot from '../../../assets/ember-mascot.png'
+import TextPromptModal from './TextPromptModal.jsx'
 import './Sidebar.css'
 
 export default function Sidebar({
@@ -46,6 +47,8 @@ export default function Sidebar({
   const [search, setSearch] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const contextRef = useRef(null)
+  // In-app replacement for window.prompt() — shape: { title, defaultValue, confirmLabel, onConfirm }.
+  const [textPrompt, setTextPrompt] = useState(null)
   const [tasks, setTasks] = useState([])
   const [showAllTasks, setShowAllTasks] = useState(false)
   // Track tasks toggled done in this session (visual state, not removed)
@@ -293,27 +296,33 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY, conv })
   }
 
-  async function handleRename() {
+  function handleRename() {
     if (!contextMenu) return
     const conv = contextMenu.conv
-    const name = prompt('Rename conversation:', conv.title)
     setContextMenu(null)
-    if (!name || !name.trim()) return
-    const snapshot = conversations  // capture for rollback
-    conversationsWriteSeq.current += 1
-    // Optimistic UI update
-    setConversations((prev) =>
-      prev.map((c) => c.id === conv.id ? { ...c, title: name.trim() } : c),
-    )
-    try {
-      await realRenameConversation(conv.id, name.trim())
-      // Only tell the parent once the rename actually landed.
-      onRenameConversation?.(conv.id, name.trim())
-    } catch {
-      conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
-      setConversations(snapshot)  // revert the title
-      setRowError(conv.id, "Couldn't rename — try again")
-    }
+    setTextPrompt({
+      title: 'Rename conversation',
+      defaultValue: conv.title,
+      confirmLabel: 'Rename',
+      onConfirm: async (name) => {
+        if (!name || !name.trim()) return
+        const snapshot = conversations  // capture for rollback
+        conversationsWriteSeq.current += 1
+        // Optimistic UI update
+        setConversations((prev) =>
+          prev.map((c) => c.id === conv.id ? { ...c, title: name.trim() } : c),
+        )
+        try {
+          await realRenameConversation(conv.id, name.trim())
+          // Only tell the parent once the rename actually landed.
+          onRenameConversation?.(conv.id, name.trim())
+        } catch {
+          conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
+          setConversations(snapshot)  // revert the title
+          setRowError(conv.id, "Couldn't rename — try again")
+        }
+      },
+    })
   }
 
   async function handleDelete() {
@@ -359,39 +368,50 @@ export default function Sidebar({
   // Default project colors — cycles through these for new projects
   const PROJECT_COLORS = ['#ff8c00', '#4a9eff', '#8b5cf6', '#6bcb8b', '#e85d75', '#f5c542']
 
-  async function handleCreateProject() {
-    const name = prompt('Project name:')
-    if (!name || !name.trim()) return
-    const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
-    try {
-      const result = await realCreateProject(name.trim(), color)
-      projectsWriteSeq.current += 1
-      setProjects((prev) => [...prev, { id: result.id, name: name.trim(), color, conversationCount: 0 }])
-    } catch {
-      console.warn('[Sidebar] Create project API failed')
-    }
+  function handleCreateProject() {
+    setTextPrompt({
+      title: 'New project',
+      confirmLabel: 'Create',
+      onConfirm: async (name) => {
+        if (!name || !name.trim()) return
+        const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
+        try {
+          const result = await realCreateProject(name.trim(), color)
+          projectsWriteSeq.current += 1
+          setProjects((prev) => [...prev, { id: result.id, name: name.trim(), color, conversationCount: 0 }])
+        } catch {
+          console.warn('[Sidebar] Create project API failed')
+        }
+      },
+    })
   }
 
-  async function handleCreateProjectAndMove() {
+  function handleCreateProjectAndMove() {
     if (!contextMenu) return
-    const name = prompt('New project name:')
-    if (!name || !name.trim()) return
-    const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
-    try {
-      const result = await realCreateProject(name.trim(), color)
-      const newProject = { id: result.id, name: name.trim(), color, conversationCount: 1 }
-      projectsWriteSeq.current += 1
-      setProjects((prev) => [...prev, newProject])
-      // Move the conversation into the new project
-      conversationsWriteSeq.current += 1
-      setConversations((prev) =>
-        prev.map((c) => c.id === contextMenu.conv.id ? { ...c, projectId: result.id } : c),
-      )
-      await realMoveConversationToProject(contextMenu.conv.id, result.id)
-    } catch {
-      console.warn('[Sidebar] Create project + move failed')
-    }
+    const conv = contextMenu.conv
     setContextMenu(null)
+    setTextPrompt({
+      title: 'New project',
+      confirmLabel: 'Create',
+      onConfirm: async (name) => {
+        if (!name || !name.trim()) return
+        const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
+        try {
+          const result = await realCreateProject(name.trim(), color)
+          const newProject = { id: result.id, name: name.trim(), color, conversationCount: 1 }
+          projectsWriteSeq.current += 1
+          setProjects((prev) => [...prev, newProject])
+          // Move the conversation into the new project
+          conversationsWriteSeq.current += 1
+          setConversations((prev) =>
+            prev.map((c) => c.id === conv.id ? { ...c, projectId: result.id } : c),
+          )
+          await realMoveConversationToProject(conv.id, result.id)
+        } catch {
+          console.warn('[Sidebar] Create project + move failed')
+        }
+      },
+    })
   }
 
   // Props every conversation row needs. Built once so the three call sites
@@ -411,6 +431,23 @@ export default function Sidebar({
     onMoveToProject: handleMoveToProject,
     onCreateProjectAndMove: handleCreateProjectAndMove,
     onDelete: handleDelete,
+  }
+
+  // Props for the in-app window.prompt() replacement. The modal always
+  // closes on confirm before running the caller's callback, matching how a
+  // native prompt() dialog dismisses immediately on OK.
+  const textPromptModalProps = {
+    isOpen: !!textPrompt,
+    title: textPrompt?.title,
+    label: textPrompt?.label,
+    defaultValue: textPrompt?.defaultValue,
+    confirmLabel: textPrompt?.confirmLabel,
+    onConfirm: (value) => {
+      const onConfirm = textPrompt?.onConfirm
+      setTextPrompt(null)
+      onConfirm?.(value)
+    },
+    onCancel: () => setTextPrompt(null),
   }
 
   // ── Project detail view ──────────────────────────────────────
@@ -531,6 +568,7 @@ export default function Sidebar({
           </div>
         </nav>
         <ContextMenuPopup {...contextMenuProps} />
+        <TextPromptModal {...textPromptModalProps} />
       </>
     )
   }
@@ -747,6 +785,7 @@ export default function Sidebar({
         </div>
       </nav>
       <ContextMenuPopup {...contextMenuProps} />
+      <TextPromptModal {...textPromptModalProps} />
     </>
   )
 }
