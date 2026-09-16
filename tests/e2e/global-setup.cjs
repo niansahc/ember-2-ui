@@ -13,6 +13,7 @@
 const { request } = require('@playwright/test')
 const fs = require('fs')
 const path = require('path')
+const { safeCall } = require('./helpers/redact.cjs')
 
 const API_URL = 'http://localhost:8000/v1'
 
@@ -32,7 +33,7 @@ module.exports = async () => {
   const ctx = await request.newContext()
 
   try {
-    const statusRes = await ctx.get(`${API_URL}/developer/status`, { headers })
+    const statusRes = await safeCall(() => ctx.get(`${API_URL}/developer/status`, { headers }))
     if (!statusRes.ok()) {
       console.warn(
         `[global-setup] /v1/developer/status returned ${statusRes.status()}. ` +
@@ -57,10 +58,10 @@ module.exports = async () => {
     }
 
     console.log(`[global-setup] Backend is on '${label}' vault. Swapping to 'test'...`)
-    const swapRes = await ctx.post(`${API_URL}/developer/vault/swap`, {
+    const swapRes = await safeCall(() => ctx.post(`${API_URL}/developer/vault/swap`, {
       headers: { ...headers, 'Content-Type': 'application/json' },
       data: { vault_label: 'test' },
-    })
+    }))
     if (!swapRes.ok()) {
       const body = await swapRes.text()
       throw new Error(

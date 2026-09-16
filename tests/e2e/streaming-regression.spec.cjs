@@ -433,6 +433,7 @@ const {
   cleanupSinceSnapshot,
   API_URL,
   authHeaders,
+  safeCall,
 } = require('./helpers/testvault.cjs')
 
 /**
@@ -442,11 +443,11 @@ const {
  * exactly the bytes under test.
  */
 async function liveStreamingPost(request, content) {
-  const res = await request.post(`${API_URL}/chat/completions`, {
+  const res = await safeCall(() => request.post(`${API_URL}/chat/completions`, {
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     data: { model: 'ember', messages: [{ role: 'user', content }], stream: true },
     timeout: 60000,
-  })
+  }))
   return {
     status: res.status(),
     contentType: res.headers()['content-type'] || '',

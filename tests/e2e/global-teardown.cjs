@@ -11,6 +11,7 @@
 const { request } = require('@playwright/test')
 const fs = require('fs')
 const path = require('path')
+const { safeCall, redactSecrets } = require('./helpers/redact.cjs')
 
 const API_URL = 'http://localhost:8000/v1'
 const PERSONAL_VAULT_LABEL = 'private_vault'
@@ -31,7 +32,7 @@ module.exports = async () => {
   const ctx = await request.newContext()
 
   try {
-    const statusRes = await ctx.get(`${API_URL}/developer/status`, { headers })
+    const statusRes = await safeCall(() => ctx.get(`${API_URL}/developer/status`, { headers }))
     if (!statusRes.ok()) {
       console.warn(`[global-teardown] /v1/developer/status returned ${statusRes.status()}. Skipping swap-back.`)
       return
@@ -46,10 +47,10 @@ module.exports = async () => {
     }
 
     console.log(`[global-teardown] Currently on '${currentLabel}'. Swapping back to '${PERSONAL_VAULT_LABEL}'...`)
-    const swapRes = await ctx.post(`${API_URL}/developer/vault/swap`, {
+    const swapRes = await safeCall(() => ctx.post(`${API_URL}/developer/vault/swap`, {
       headers: { ...headers, 'Content-Type': 'application/json' },
       data: { vault_label: PERSONAL_VAULT_LABEL },
-    })
+    }))
 
     if (swapRes.ok()) {
       console.log('[global-teardown] Swapped back to private_vault.')
@@ -62,7 +63,7 @@ module.exports = async () => {
       )
     }
   } catch (err) {
-    console.warn(`[global-teardown] Unexpected error: ${err.message}. You may still be on the test vault.`)
+    console.warn(`[global-teardown] Unexpected error: ${redactSecrets(err.message)}. You may still be on the test vault.`)
   } finally {
     await ctx.dispose()
   }

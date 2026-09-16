@@ -20,6 +20,8 @@
 // There is currently no API to swap back to the default vault -- an API
 // restart is required. This is a known backend gap flagged for G.
 
+const { safeCall, redactSecrets } = require('./redact.cjs')
+
 const API_URL = 'http://localhost:8000/v1'
 
 function getApiKey() {
@@ -46,9 +48,9 @@ function authHeaders() {
  * Prevents accidental writes to the user's personal vault.
  */
 async function assertTestVault(request) {
-  const res = await request.get(`${API_URL}/developer/status`, {
+  const res = await safeCall(() => request.get(`${API_URL}/developer/status`, {
     headers: authHeaders(),
-  })
+  }))
   if (!res.ok()) {
     throw new Error(
       `Cannot verify vault state: /v1/developer/status returned ${res.status()}. ` +
@@ -73,12 +75,12 @@ async function assertTestVault(request) {
  * delete anything new after the test runs.
  */
 async function snapshotVault(request) {
-  const [convRes, taskActiveRes, taskProposedRes, projRes] = await Promise.all([
+  const [convRes, taskActiveRes, taskProposedRes, projRes] = await safeCall(() => Promise.all([
     request.get(`${API_URL}/conversations?limit=500`, { headers: authHeaders() }),
     request.get(`${API_URL}/tasks?status=active`, { headers: authHeaders() }),
     request.get(`${API_URL}/tasks?status=proposed`, { headers: authHeaders() }),
     request.get(`${API_URL}/projects`, { headers: authHeaders() }),
-  ])
+  ]))
 
   const conversations = convRes.ok() ? (await convRes.json()) : []
   const convList = Array.isArray(conversations) ? conversations : (conversations.conversations || [])
@@ -119,7 +121,7 @@ async function cleanupSinceSnapshot(request, snapshot) {
       }
     }
   } catch (e) {
-    failures.push(`conversation cleanup error: ${e.message}`)
+    failures.push(`conversation cleanup error: ${redactSecrets(e.message)}`)
   }
 
   // tasks
@@ -137,7 +139,7 @@ async function cleanupSinceSnapshot(request, snapshot) {
       }
     }
   } catch (e) {
-    failures.push(`task cleanup error: ${e.message}`)
+    failures.push(`task cleanup error: ${redactSecrets(e.message)}`)
   }
 
   // projects
@@ -154,7 +156,7 @@ async function cleanupSinceSnapshot(request, snapshot) {
       }
     }
   } catch (e) {
-    failures.push(`project cleanup error: ${e.message}`)
+    failures.push(`project cleanup error: ${redactSecrets(e.message)}`)
   }
 
   if (failures.length > 0) {
@@ -162,4 +164,4 @@ async function cleanupSinceSnapshot(request, snapshot) {
   }
 }
 
-module.exports = { assertTestVault, snapshotVault, cleanupSinceSnapshot, API_URL, authHeaders }
+module.exports = { assertTestVault, snapshotVault, cleanupSinceSnapshot, API_URL, authHeaders, safeCall }
