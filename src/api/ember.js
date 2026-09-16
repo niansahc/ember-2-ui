@@ -748,6 +748,57 @@ export async function getVaultStorage() {
   return await res.json()
 }
 
+// ---------------------------------------------------------------------------
+// Memory Browser (Settings > Memory tab) — read-only vault inspection.
+// All four return null on failure rather than throwing, so a caller fetching
+// many of these in parallel (one per memory type, for counts) can treat each
+// as independently fail-soft instead of taking down the whole panel.
+// ---------------------------------------------------------------------------
+
+/** Browse-by-type: raw canonical JSON records for one memory type. No tier/authorship — those columns live only in the SQLite vector index, never the JSON file. */
+export async function readMemories(memoryType, limit = 20) {
+  const params = new URLSearchParams({ memory_type: memoryType, limit: String(limit) })
+  const res = await fetch(`/read-memories?${params}`, { headers: authHeaders() })
+  if (!res.ok) return null
+  return await res.json()
+}
+
+/** Keyword (whole-word overlap) search within a single memory type. Same record shape/gaps as readMemories. */
+export async function searchMemories(query, memoryType, limit = 20) {
+  const params = new URLSearchParams({ query, memory_type: memoryType, limit: String(limit) })
+  const res = await fetch(`/search-memories?${params}`, { headers: authHeaders() })
+  if (!res.ok) return null
+  return await res.json()
+}
+
+/**
+ * Semantic (embedding) search. memoryType omitted searches all types.
+ * Results include tier/authorship for the SQLite-backed types (conversation,
+ * profile, reflection, journal, ingested) — absent for the rest.
+ */
+export async function semanticSearch(query, { limit = 20, memoryType, minScore } = {}) {
+  const params = new URLSearchParams({ query, limit: String(limit) })
+  if (memoryType) params.set('memory_type', memoryType)
+  if (minScore != null) params.set('min_score', String(minScore))
+  const res = await fetch(`/semantic-search?${params}`, { headers: authHeaders() })
+  if (!res.ok) return null
+  return await res.json()
+}
+
+/**
+ * Preview what the real retrieval pipeline would surface for a message.
+ * Read-only and not rate-limited, but it runs the actual ContextService
+ * pipeline, so a message classified as needing web search will trigger a
+ * live web search exactly like a real chat turn would. Nothing is written
+ * to the vault and nothing reaches the model.
+ */
+export async function debugContext(message) {
+  const params = new URLSearchParams({ message })
+  const res = await fetch(`/debug-context?${params}`, { headers: authHeaders() })
+  if (!res.ok) return null
+  return await res.json()
+}
+
 /** True if an API key was found at boot — Splash uses this to skip auth warnings. */
 export const hasApiKey = !!API_KEY
 
