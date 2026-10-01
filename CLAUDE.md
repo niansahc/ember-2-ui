@@ -153,6 +153,8 @@ Retiring that manual check is a backend-repo decision, not a UI one.
 
 When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or moved to the `@needs-live-backend` lane before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
 
+Any test asserting an absence ships with a positive control in the same commit. An assertion that nothing was recorded, nothing was written, no mismatch occurred, a value stayed inside a bound, or a count is zero, is satisfied by a fixture where the thing could never have happened. The control is a second test that makes the condition occur and asserts the first test's assertion fails. Without it, the absence test is vacuous and will stay green through the defect it exists to catch.
+
 ---
 
 ## UI Design Gates
