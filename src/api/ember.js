@@ -384,7 +384,11 @@ export async function getConversationTurns(sessionId) {
   })
   if (!res.ok) throw new Error(`API error ${res.status}`)
   const data = await res.json()
-  return data.turns || []
+  // Require turns to be present in the response; missing means malformed
+  if (!Array.isArray(data.turns)) {
+    throw new Error(`Invalid conversation response: missing or invalid turns`)
+  }
+  return data.turns
 }
 
 /** Rename a conversation (Sidebar context menu). */
