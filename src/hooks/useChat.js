@@ -224,6 +224,7 @@ export function useChat({ model = null } = {}) {
       if (usedWebSearch) {
         setStreamingStatus('searching')
       }
+      let hasVaultSources = false
       for await (const chunk of stream) {
         if (abortRef.current) break
         // Status events: searching, verifying, refining
@@ -242,12 +243,24 @@ export function useChat({ model = null } = {}) {
         }
         // Vault sources event: citations from vault-grounded responses
         if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          hasVaultSources = true
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m,
             ),
           )
           continue
+        }
+        // Error frame: stream terminated with an error. Keep tokens already
+        // rendered and mark the message as failed.
+        if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, isError: true } : m,
+            ),
+          )
+          setIsStreaming(false)
+          break
         }
         // Clear status once real content starts flowing
         setStreamingStatus(null)
@@ -265,7 +278,9 @@ export function useChat({ model = null } = {}) {
           ),
         )
       }
-      if (usedVault) {
+      // Vault badge: derive from vault_sources frame on streaming, fallback to header on non-streaming
+      const vaultBadge = hasVaultSources || usedVault
+      if (vaultBadge) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, usedVault: true } : m,
@@ -401,16 +416,30 @@ export function useChat({ model = null } = {}) {
       const allMessages = toApiHistory(trimmed)
 
       const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+      let hasVaultSources = false
       for await (const chunk of stream) {
         if (abortRef.current) break
         // Handle object events (vault_sources, sources, status) same as main path
+        if (chunk && typeof chunk === 'object' && chunk.type === 'status') {
+          continue
+        }
         if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          hasVaultSources = true
           setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m))
           continue
         }
         if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
           setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, sources: chunk.sources } : m))
           continue
+        }
+        if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, isError: true } : m,
+            ),
+          )
+          setIsStreaming(false)
+          break
         }
         if (chunk && typeof chunk === 'object') continue // skip other object events
         setMessages((prev) =>
@@ -426,7 +455,8 @@ export function useChat({ model = null } = {}) {
           ),
         )
       }
-      if (usedVault) {
+      const vaultBadge = hasVaultSources || usedVault
+      if (vaultBadge) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, usedVault: true } : m,
