@@ -80,6 +80,21 @@ export function useChat({ model = null } = {}) {
   // since it started, so a slow load for A can't paint over B (or over a new
   // chat) that the user picked while A was still in flight.
   const loadSeqRef = useRef(0)
+  // The in-flight stream, if any: which session it belongs to and a promise
+  // that settles when it ends. loadConversation waits on it. See there.
+  const activeStreamRef = useRef(null)          // { sessionId, done: Promise } | null
+
+  /** Register a stream as in flight. Returns the function that ends it. */
+  function beginStream(streamSessionId) {
+    let end
+    const done = new Promise((resolve) => { end = resolve })
+    const entry = { sessionId: streamSessionId, done }
+    activeStreamRef.current = entry
+    return () => {
+      if (activeStreamRef.current === entry) activeStreamRef.current = null
+      end()
+    }
+  }
 
   function generateSessionId() {
     return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
@@ -241,6 +256,7 @@ export function useChat({ model = null } = {}) {
     loadSeqRef.current += 1   // sending here means this conversation is the one the user wants
     setMessages((prev) => [...prev, userMsg])
     setIsStreaming(true)
+    const endStream = beginStream(sessionId)
     if (imageDataUrls.length > 0) setStreamingStatus('analyzing')
     abortRef.current = false
 
@@ -359,6 +375,7 @@ export function useChat({ model = null } = {}) {
     } finally {
       setIsStreaming(false)
       setStreamingStatus(null)
+      endStream()
     }
   }, [messages, isStreaming, sessionId, model])
 
@@ -401,10 +418,24 @@ export function useChat({ model = null } = {}) {
    * it never rejects. With `{ quietNotFound: true }` a 404 leaves a blank new
    * chat instead of an error turn. Session restore uses that: a saved
    * conversation that was deleted isn't a failure worth announcing on boot.
+   *
+   * Loads requested mid-stream wait for the stream to end. Applying them
+   * immediately put the new conversation under the old stream's typing
+   * indicator and Stop button, with the reply streaming into a message that
+   * was no longer on screen. Re-selecting the conversation that is streaming
+   * is a no-op: local state already holds the in-flight exchange, and the
+   * backend only writes turns after it emits [DONE], so a reload would come
+   * back without it and the reply would vanish.
    */
   const loadConversation = useCallback(async (conversationId, { quietNotFound = false } = {}) => {
     const seq = ++loadSeqRef.current
     const isStale = () => seq !== loadSeqRef.current
+    const inFlight = activeStreamRef.current
+    if (inFlight) {
+      await inFlight.done
+      if (inFlight.sessionId === conversationId) return 'ok'
+      if (isStale()) return 'stale'
+    }
     try {
       const turns = await realGetConversationTurns(conversationId)
       if (isStale()) return 'stale'
@@ -455,6 +486,7 @@ export function useChat({ model = null } = {}) {
     setMessages(trimmed)
 
     setIsStreaming(true)
+    const endStream = beginStream(sessionId)
     abortRef.current = false
 
     const assistantId = uuid()
@@ -522,6 +554,7 @@ export function useChat({ model = null } = {}) {
       markMessageFailed(assistantId, chatErrorMessage(err, model))
     } finally {
       setIsStreaming(false)
+      endStream()
     }
   }, [messages, isStreaming, sessionId, model])
 
