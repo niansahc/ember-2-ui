@@ -75,6 +75,11 @@ export function useChat({ model = null } = {}) {
   const projectAssignedRef = useRef(false)       // prevents duplicate assignment calls
   // Ref, not state — avoids stale closure in sendMessage's useCallback.
   const chatOptionsRef = useRef({})              // per-conversation flags: { bareMode, vaultEnabled }
+  // Bumped by anything that changes which conversation is on screen. A
+  // conversation load only applies its response if the counter hasn't moved
+  // since it started, so a slow load for A can't paint over B (or over a new
+  // chat) that the user picked while A was still in flight.
+  const loadSeqRef = useRef(0)
 
   function generateSessionId() {
     return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
@@ -233,6 +238,7 @@ export function useChat({ model = null } = {}) {
       timestamp: new Date().toISOString(),
     }
 
+    loadSeqRef.current += 1   // sending here means this conversation is the one the user wants
     setMessages((prev) => [...prev, userMsg])
     setIsStreaming(true)
     if (imageDataUrls.length > 0) setStreamingStatus('analyzing')
@@ -363,6 +369,7 @@ export function useChat({ model = null } = {}) {
 
   /** Reset everything for a new conversation — fresh session, no project, no options. */
   const clearMessages = useCallback(() => {
+    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
     setMessages([])
     setSessionId(generateSessionId())
     pendingProjectRef.current = null
@@ -391,8 +398,11 @@ export function useChat({ model = null } = {}) {
    * the model provider.
    */
   const loadConversation = useCallback(async (conversationId) => {
+    const seq = ++loadSeqRef.current
+    const isStale = () => seq !== loadSeqRef.current
     try {
       const turns = await realGetConversationTurns(conversationId)
+      if (isStale()) return
       // Defensive: backend occasionally returns non-array on empty conversations
       const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
         id: t.id || uuid(),
@@ -403,6 +413,7 @@ export function useChat({ model = null } = {}) {
       setMessages(mapped)
       setSessionId(conversationId)
     } catch (err) {
+      if (isStale()) return   // a newer selection owns the screen; don't stamp an error on it
       console.warn('[useChat] Conversation load failed:', err)
       setMessages([
         {
