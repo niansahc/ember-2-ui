@@ -382,7 +382,13 @@ export async function getConversationTurns(sessionId) {
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     headers: authHeaders(),
   })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
+  if (!res.ok) {
+    // Status rides on the error so callers can tell "this conversation is
+    // gone" (404) from "the backend hiccuped" (everything else).
+    const err = new Error(`API error ${res.status}`)
+    err.status = res.status
+    throw err
+  }
   const data = await res.json()
   // Require turns to be present in the response; missing means malformed
   if (!Array.isArray(data.turns)) {

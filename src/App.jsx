@@ -234,10 +234,15 @@ export default function App() {
       const savedSession = localStorage.getItem('ember_active_session')
       if (savedSession) {
         setActiveConversation(savedSession)
-        loadConversation(savedSession).catch(() => {
-          // Saved session no longer exists — fall back to blank state
+        // loadConversation never rejects, so this used to be a .catch that
+        // could not fire: a deleted saved session left its ID behind and every
+        // reload re-requested it. Only a 404 clears it. Any other failure
+        // keeps the ID, since the conversation probably still exists and the
+        // error turn already says the load failed.
+        loadConversation(savedSession, { quietNotFound: true }).then((result) => {
+          if (result !== 'not_found') return
           setActiveConversation(null)
-          localStorage.removeItem('ember_active_session')
+          try { localStorage.removeItem('ember_active_session') } catch {}
         })
       }
     } catch {}

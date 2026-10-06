@@ -396,13 +396,18 @@ export function useChat({ model = null } = {}) {
    * history reads as the user's own past conversations, not as one bad answer.
    * The copy is provider-neutral because reading stored turns never touches
    * the model provider.
+   *
+   * Resolves to 'ok', 'not_found', 'error', or 'stale' so callers can react;
+   * it never rejects. With `{ quietNotFound: true }` a 404 leaves a blank new
+   * chat instead of an error turn. Session restore uses that: a saved
+   * conversation that was deleted isn't a failure worth announcing on boot.
    */
-  const loadConversation = useCallback(async (conversationId) => {
+  const loadConversation = useCallback(async (conversationId, { quietNotFound = false } = {}) => {
     const seq = ++loadSeqRef.current
     const isStale = () => seq !== loadSeqRef.current
     try {
       const turns = await realGetConversationTurns(conversationId)
-      if (isStale()) return
+      if (isStale()) return 'stale'
       // Defensive: backend occasionally returns non-array on empty conversations
       const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
         id: t.id || uuid(),
@@ -412,8 +417,14 @@ export function useChat({ model = null } = {}) {
       }))
       setMessages(mapped)
       setSessionId(conversationId)
+      return 'ok'
     } catch (err) {
-      if (isStale()) return   // a newer selection owns the screen; don't stamp an error on it
+      if (isStale()) return 'stale'   // a newer selection owns the screen; don't stamp an error on it
+      if (err?.status === 404 && quietNotFound) {
+        setMessages([])
+        setSessionId(generateSessionId())
+        return 'not_found'
+      }
       console.warn('[useChat] Conversation load failed:', err)
       setMessages([
         {
@@ -425,6 +436,7 @@ export function useChat({ model = null } = {}) {
         },
       ])
       setSessionId(conversationId)
+      return 'error'
     }
   }, [])
 
