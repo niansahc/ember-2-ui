@@ -83,6 +83,15 @@ describe('streamChat — SSE event discrimination', () => {
     expect(errorEvent).not.toHaveProperty('code')
   })
 
+  it('yields tokens that precede an error frame, in order, before the error', async () => {
+    const events = await collect([
+      { choices: [{ delta: { content: 'Partial' } }] },
+      { choices: [{ delta: { content: ' answer' } }] },
+      { type: 'error', code: 'synthetic_code', message: 'Synthetic failure' },
+    ])
+    expect(events).toEqual(['Partial', ' answer', { type: 'error', message: 'Synthetic failure' }])
+  })
+
   it('error frame never contains code in the response stream', async () => {
     const events = await collect([
       { type: 'error', code: 'generation_failed', message: 'Error text' },

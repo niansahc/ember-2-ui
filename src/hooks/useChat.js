@@ -114,6 +114,39 @@ export function useChat({ model = null } = {}) {
   }
 
   /**
+   * Handle an SSE error frame (ADR-040 v3). Two cases, kept deliberately apart:
+   *
+   * - Nothing streamed yet: the placeholder becomes the error turn, same as a
+   *   failed request.
+   * - Tokens already streamed: those are Ember's words, so they stay in a
+   *   normal Ember bubble. The frame's message goes in a *separate* error turn
+   *   below. Folding them into one error bubble would label real model output
+   *   "Ember could not respond" and render it as UI text (ADR 0003, both ways).
+   *
+   * The frame's `code` never gets here; ember.js strips it at the parser.
+   */
+  function handleErrorFrame(assistantId, message) {
+    setMessages((prev) => {
+      const target = prev.find((m) => m.id === assistantId)
+      if (!target || !target.content) {
+        return prev.map((m) =>
+          m.id === assistantId ? { ...m, content: message, isError: true } : m,
+        )
+      }
+      return [
+        ...prev,
+        {
+          id: uuid(),
+          role: 'assistant',
+          content: message,
+          isError: true,
+          timestamp: new Date().toISOString(),
+        },
+      ]
+    })
+  }
+
+  /**
    * Build the message list sent to the API.
    *
    * Error turns are filtered out here. They are UI-authored text, so feeding
@@ -251,15 +284,10 @@ export function useChat({ model = null } = {}) {
           )
           continue
         }
-        // Error frame: stream terminated with an error. Keep tokens already
-        // rendered and mark the message as failed.
+        // Error frame: stream terminated with an error. Tokens already
+        // rendered stay; the message surfaces as its own error turn.
         if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, isError: true } : m,
-            ),
-          )
-          setIsStreaming(false)
+          handleErrorFrame(assistantId, chunk.message)
           break
         }
         // Clear status once real content starts flowing
@@ -433,12 +461,7 @@ export function useChat({ model = null } = {}) {
           continue
         }
         if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, isError: true } : m,
-            ),
-          )
-          setIsStreaming(false)
+          handleErrorFrame(assistantId, chunk.message)
           break
         }
         if (chunk && typeof chunk === 'object') continue // skip other object events
