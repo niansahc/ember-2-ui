@@ -127,11 +127,17 @@ test.describe('Optimistic mutation rollback (H1)', () => {
 
     const checkbox = page.locator('.sidebar-task-checkbox').first()
     await expect(checkbox).not.toBeChecked()
-    await checkbox.check()
+    // click(), not check(). check() clicks and then asserts the box *became*
+    // checked. Here the aborted PATCH rejects almost instantly and the
+    // rollback can land before that post-click assertion runs, so check()
+    // threw "Clicking the checkbox did not change its state" under parallel
+    // load. The rollback is the behaviour under test, so assert it directly.
+    await checkbox.click()
 
-    // Rollback: checkbox snaps back to unchecked, and the task title slot
-    // carries the error.
-    await expect(checkbox).not.toBeChecked()
+    // Rollback: the error lands in the task title slot and the checkbox is
+    // back to unchecked. Error first, so the unchecked assertion runs after
+    // the rollback, not before the optimistic toggle.
     await expect(page.locator('.sidebar-task-error .sidebar-task-title')).toContainText("Couldn't update")
+    await expect(checkbox).not.toBeChecked()
   })
 })

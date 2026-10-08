@@ -26,6 +26,7 @@
 
 const API_URL = import.meta.env.VITE_EMBER_API_URL || '/v1'
 const API_KEY = import.meta.env.VITE_EMBER_API_KEY || ''
+const SSE_CONTRACT_VERSION = 3 // ADR-040: SSE wire contract version
 
 if (!API_KEY) {
   console.warn(
@@ -178,6 +179,14 @@ export async function streamChat(messages, { sessionId = '', signal, bareMode, v
           // reached only after the typed vault_sources branch above.
           if (parsed.sources) {
             yield { type: 'sources', sources: parsed.sources }
+            continue
+          }
+
+          // Error frame: `{ type: 'error', code: '...', message: '...' }`.
+          // The code field is for backend diagnostics only — never expose it to UI.
+          // Yield only the message for user-facing display.
+          if (parsed.type === 'error' && parsed.message) {
+            yield { type: 'error', message: parsed.message }
             continue
           }
 
@@ -375,7 +384,11 @@ export async function getConversationTurns(sessionId) {
   })
   if (!res.ok) throw new Error(`API error ${res.status}`)
   const data = await res.json()
-  return data.turns || []
+  // Require turns to be present in the response; missing means malformed
+  if (!Array.isArray(data.turns)) {
+    throw new Error(`Invalid conversation response: missing or invalid turns`)
+  }
+  return data.turns
 }
 
 /** Rename a conversation (Sidebar context menu). */

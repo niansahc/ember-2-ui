@@ -68,6 +68,41 @@ describe('streamChat — SSE event discrimination', () => {
     ])
     expect(events).toEqual(['Hello', ' world'])
   })
+
+  it('parses error frame and yields message only, never code', async () => {
+    const events = await collect([
+      { type: 'error', code: 'generation_failed', message: 'The model failed to respond' },
+    ])
+    // Must yield the error frame with message
+    expect(events).toContainEqual({
+      type: 'error',
+      message: 'The model failed to respond',
+    })
+    // Code must NOT be in the yielded event
+    const errorEvent = events.find((e) => e && e.type === 'error')
+    expect(errorEvent).not.toHaveProperty('code')
+  })
+
+  it('yields tokens that precede an error frame, in order, before the error', async () => {
+    const events = await collect([
+      { choices: [{ delta: { content: 'Partial' } }] },
+      { choices: [{ delta: { content: ' answer' } }] },
+      { type: 'error', code: 'synthetic_code', message: 'Synthetic failure' },
+    ])
+    expect(events).toEqual(['Partial', ' answer', { type: 'error', message: 'Synthetic failure' }])
+  })
+
+  it('error frame never contains code in the response stream', async () => {
+    const events = await collect([
+      { type: 'error', code: 'generation_failed', message: 'Error text' },
+    ])
+    // Verify code is completely absent from all events
+    events.forEach((event) => {
+      if (event && typeof event === 'object' && event.type === 'error') {
+        expect(Object.keys(event)).not.toContain('code')
+      }
+    })
+  })
 })
 
 // Fixture data is synthetic — Vault Privacy Rule.

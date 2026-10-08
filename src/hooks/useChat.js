@@ -114,6 +114,39 @@ export function useChat({ model = null } = {}) {
   }
 
   /**
+   * Handle an SSE error frame (ADR-040 v3). Two cases, kept deliberately apart:
+   *
+   * - Nothing streamed yet: the placeholder becomes the error turn, same as a
+   *   failed request.
+   * - Tokens already streamed: those are Ember's words, so they stay in a
+   *   normal Ember bubble. The frame's message goes in a *separate* error turn
+   *   below. Folding them into one error bubble would label real model output
+   *   "Ember could not respond" and render it as UI text (ADR 0003, both ways).
+   *
+   * The frame's `code` never gets here; ember.js strips it at the parser.
+   */
+  function handleErrorFrame(assistantId, message) {
+    setMessages((prev) => {
+      const target = prev.find((m) => m.id === assistantId)
+      if (!target || !target.content) {
+        return prev.map((m) =>
+          m.id === assistantId ? { ...m, content: message, isError: true } : m,
+        )
+      }
+      return [
+        ...prev,
+        {
+          id: uuid(),
+          role: 'assistant',
+          content: message,
+          isError: true,
+          timestamp: new Date().toISOString(),
+        },
+      ]
+    })
+  }
+
+  /**
    * Build the message list sent to the API.
    *
    * Error turns are filtered out here. They are UI-authored text, so feeding
@@ -224,6 +257,7 @@ export function useChat({ model = null } = {}) {
       if (usedWebSearch) {
         setStreamingStatus('searching')
       }
+      let hasVaultSources = false
       for await (const chunk of stream) {
         if (abortRef.current) break
         // Status events: searching, verifying, refining
@@ -242,12 +276,19 @@ export function useChat({ model = null } = {}) {
         }
         // Vault sources event: citations from vault-grounded responses
         if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          hasVaultSources = true
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m,
             ),
           )
           continue
+        }
+        // Error frame: stream terminated with an error. Tokens already
+        // rendered stay; the message surfaces as its own error turn.
+        if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
+          handleErrorFrame(assistantId, chunk.message)
+          break
         }
         // Clear status once real content starts flowing
         setStreamingStatus(null)
@@ -265,7 +306,9 @@ export function useChat({ model = null } = {}) {
           ),
         )
       }
-      if (usedVault) {
+      // Vault badge: derive from vault_sources frame on streaming, fallback to header on non-streaming
+      const vaultBadge = hasVaultSources || usedVault
+      if (vaultBadge) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, usedVault: true } : m,
@@ -401,16 +444,25 @@ export function useChat({ model = null } = {}) {
       const allMessages = toApiHistory(trimmed)
 
       const { stream, usedWebSearch, usedVault, usedVision } = await realStreamChat(allMessages, { sessionId, ...chatOptionsRef.current })
+      let hasVaultSources = false
       for await (const chunk of stream) {
         if (abortRef.current) break
         // Handle object events (vault_sources, sources, status) same as main path
+        if (chunk && typeof chunk === 'object' && chunk.type === 'status') {
+          continue
+        }
         if (chunk && typeof chunk === 'object' && chunk.type === 'vault_sources') {
+          hasVaultSources = true
           setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, vaultSources: chunk.sources } : m))
           continue
         }
         if (chunk && typeof chunk === 'object' && chunk.type === 'sources') {
           setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, sources: chunk.sources } : m))
           continue
+        }
+        if (chunk && typeof chunk === 'object' && chunk.type === 'error') {
+          handleErrorFrame(assistantId, chunk.message)
+          break
         }
         if (chunk && typeof chunk === 'object') continue // skip other object events
         setMessages((prev) =>
@@ -426,7 +478,8 @@ export function useChat({ model = null } = {}) {
           ),
         )
       }
-      if (usedVault) {
+      const vaultBadge = hasVaultSources || usedVault
+      if (vaultBadge) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, usedVault: true } : m,
