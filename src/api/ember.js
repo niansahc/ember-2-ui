@@ -383,11 +383,9 @@ export async function getConversationTurns(sessionId) {
     headers: authHeaders(),
   })
   if (!res.ok) {
-    // Status rides on the error so callers can tell "this conversation is
-    // gone" (404) from "the backend hiccuped" (everything else).
-    const err = new Error(`API error ${res.status}`)
-    err.status = res.status
-    throw err
+    // EmberApiError carries the status so callers can tell "this conversation
+    // is gone" (404) from "the backend hiccuped" (everything else).
+    throw new EmberApiError(kindForStatus(res.status), { status: res.status })
   }
   const data = await res.json()
   // Require turns to be present in the response; missing means malformed

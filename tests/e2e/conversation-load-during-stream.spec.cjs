@@ -12,33 +12,27 @@
 // All content is synthetic (Vault Privacy Rule).
 
 const { test, expect } = require('@playwright/test')
-const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
+const { mockBootstrap, mockConversationTurns, gate } = require('./helpers/mock-bootstrap.cjs')
 
-const STREAM_MS = 1500
 const now = new Date().toISOString()
 const A = { id: 'sess_midstreama001', title: 'Synthetic conversation A', updated_at: now, project_id: null }
 const B = { id: 'sess_midstreamb001', title: 'Synthetic conversation B', updated_at: now, project_id: null }
 
+// Stored turns only: the in-flight exchange is never in the response,
+// matching the backend's write-after-[DONE] ordering.
 const STORED = {
   [A.id]: [{ id: 'a1', role: 'user', content: 'Synthetic stored A turn', timestamp: '2026-10-01T12-00-01-000001' }],
   [B.id]: [{ id: 'b1', role: 'user', content: 'Synthetic stored B turn', timestamp: '2026-10-01T12-00-01-000001' }],
 }
 
+// The chat route is held on a gate, so the stream stays in flight until the
+// test releases it. No fixed delay.
 async function setup(page) {
+  const streamGate = gate()
   await mockBootstrap(page, { conversations: [A, B] })
-  await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
-    const id = request.url().split('/').pop()
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      // Stored turns only: the in-flight exchange is never in the response,
-      // matching the backend's write-after-[DONE] ordering.
-      body: JSON.stringify({ session: { id, title: 'Synthetic', created_at: now }, turns: STORED[id] || [] }),
-    })
-  })
+  await mockConversationTurns(page, (id) => ({ turns: STORED[id] || [] }))
   await page.route('**/v1/chat/completions', async (route) => {
-    await new Promise((r) => setTimeout(r, STREAM_MS))
+    await streamGate.promise
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
@@ -50,13 +44,18 @@ async function setup(page) {
   })
   await page.goto('/')
   await page.waitForSelector('.app-layout', { timeout: 15000 })
+  return streamGate
 }
 
 const row = (page, convo) => page.locator('.sidebar-item', { hasText: convo.title })
 const bubble = (page, text) => page.locator('.bubble', { hasText: text })
+const turnsResponse = (page, convo, opts) => page.waitForResponse((r) => r.url().endsWith(convo.id), opts)
+const flushFrames = (page) =>
+  page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
 
-async function openAndSend(page, convo) {
-  await row(page, convo).click()
+// Open A, send, and leave the reply in flight (held on the stream gate).
+async function openAAndSend(page) {
+  await row(page, A).click()
   await expect(bubble(page, 'Synthetic stored A turn')).toBeVisible({ timeout: 10000 })
   await page.locator('[aria-label="Message input"]').fill('Synthetic new question')
   await page.locator('[aria-label="Send message"]').click()
@@ -64,28 +63,39 @@ async function openAndSend(page, convo) {
 }
 
 test.describe('Conversation load during an in-flight stream', () => {
-  test('switching to B mid-stream never shows B under A\'s live stream', async ({ page }) => {
-    await setup(page)
-    await openAndSend(page, A)
+  test('switching to B mid-stream waits for A\'s stream before painting B', async ({ page }) => {
+    const streamGate = await setup(page)
+    await openAAndSend(page)
 
+    // B's turns are fetched while A is still streaming...
+    const bLoaded = turnsResponse(page, B)
     await row(page, B).click()
+    await (await bLoaded).finished()
+    await flushFrames(page)
+    // ...but not painted under A's live stream. Stop is still visible here,
+    // which is the positive control: the stream really is in flight.
+    await expect(page.locator('[aria-label="Stop generating"]')).toBeVisible()
+    await expect(bubble(page, 'Synthetic stored B turn')).toHaveCount(0)
+
+    streamGate.release()
     await expect(bubble(page, 'Synthetic stored B turn')).toBeVisible({ timeout: 10000 })
-    // The moment B is on screen, nothing from A's stream may still be live.
-    // Instant counts, not web-first assertions: those retry until the stream
-    // ends on its own and would pass regardless (timeout: 0 means "no
-    // timeout" in Playwright, not "check once").
-    expect(await page.locator('[aria-label="Stop generating"]').count()).toBe(0)
-    expect(await page.locator('.chat-typing').count()).toBe(0)
-    // Control for the two zero counts above: the stream indicator is live
-    // and countable on this page; openAndSend already saw Stop visible.
+    await expect(page.locator('[aria-label="Send message"]')).toBeVisible()
+    await expect(page.locator('.chat-typing')).toHaveCount(0)
     await expect(bubble(page, 'Synthetic streamed reply')).toHaveCount(0)
   })
 
   test('clicking the conversation that is streaming keeps the in-flight reply', async ({ page }) => {
-    await setup(page)
-    await openAndSend(page, A)
+    const streamGate = await setup(page)
+    await openAAndSend(page)
 
+    // A correct UI issues no reload here, so there may be no response to wait
+    // for. Give a buggy reload a bounded window to land before the stream is
+    // released; a fixed build just spends the 500ms.
+    const reload = turnsResponse(page, A, { timeout: 500 })
     await row(page, A).click()
+    await reload.then((r) => r.finished(), () => {})
+    streamGate.release()
+
     await expect(page.locator('[aria-label="Send message"]')).toBeVisible({ timeout: 10000 })
     await expect(bubble(page, 'Synthetic new question')).toBeVisible()
     await expect(bubble(page, 'Synthetic streamed reply')).toBeVisible()

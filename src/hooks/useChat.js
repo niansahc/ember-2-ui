@@ -80,18 +80,19 @@ export function useChat({ model = null } = {}) {
   // since it started, so a slow load for A can't paint over B (or over a new
   // chat) that the user picked while A was still in flight.
   const loadSeqRef = useRef(0)
-  // The in-flight stream, if any: which session it belongs to and a promise
-  // that settles when it ends. loadConversation waits on it. See there.
-  const activeStreamRef = useRef(null)          // { sessionId, done: Promise } | null
+  // The in-flight stream, if any: which session it belongs to, a promise that
+  // settles when it ends, and that promise's resolver. loadConversation waits
+  // on `done`. See there. Streams never overlap (sendMessage and regenerate
+  // both bail while isStreaming), so one slot is enough.
+  const activeStreamRef = useRef(null)          // { sessionId, done, end } | null
 
   /** Register a stream as in flight. Returns the function that ends it. */
   function beginStream(streamSessionId) {
     let end
     const done = new Promise((resolve) => { end = resolve })
-    const entry = { sessionId: streamSessionId, done }
-    activeStreamRef.current = entry
+    activeStreamRef.current = { sessionId: streamSessionId, done, end }
     return () => {
-      if (activeStreamRef.current === entry) activeStreamRef.current = null
+      activeStreamRef.current = null
       end()
     }
   }
@@ -414,12 +415,13 @@ export function useChat({ model = null } = {}) {
    * The copy is provider-neutral because reading stored turns never touches
    * the model provider.
    *
-   * Resolves to 'ok', 'not_found', 'error', or 'stale' so callers can react;
-   * it never rejects. With `{ quietNotFound: true }` a 404 leaves a blank new
-   * chat instead of an error turn. Session restore uses that: a saved
-   * conversation that was deleted isn't a failure worth announcing on boot.
+   * Never rejects. Pass `onNotFound` to own the 404 case yourself: it's
+   * called instead of painting the error turn. Session restore uses that,
+   * because a saved conversation that was deleted isn't a failure worth
+   * announcing on boot. It's a cue to go back to a blank chat.
    *
-   * Loads requested mid-stream wait for the stream to end. Applying them
+   * Loads requested mid-stream fetch right away but wait for the stream to
+   * end before applying. Applying them
    * immediately put the new conversation under the old stream's typing
    * indicator and Stop button, with the reply streaming into a message that
    * was no longer on screen. Re-selecting the conversation that is streaming
@@ -427,20 +429,27 @@ export function useChat({ model = null } = {}) {
    * backend only writes turns after it emits [DONE], so a reload would come
    * back without it and the reply would vanish.
    */
-  const loadConversation = useCallback(async (conversationId, { quietNotFound = false } = {}) => {
+  const loadConversation = useCallback(async (conversationId, { onNotFound } = {}) => {
     const seq = ++loadSeqRef.current
     const isStale = () => seq !== loadSeqRef.current
     const inFlight = activeStreamRef.current
-    if (inFlight) {
+    if (inFlight && inFlight.sessionId === conversationId) {
       await inFlight.done
-      if (inFlight.sessionId === conversationId) return 'ok'
-      if (isStale()) return 'stale'
+      return
     }
+    // Kick the fetch off now; only the apply waits for an in-flight stream,
+    // so the network time overlaps the rest of the reply.
+    const request = realGetConversationTurns(conversationId)
+    // While we sit on inFlight.done nobody is awaiting `request` yet, so a
+    // fast failure would surface as an unhandled rejection. The real handling
+    // is the try/catch below; this just marks it as observed.
+    request.catch(() => {})
+    if (inFlight) await inFlight.done
     try {
-      const turns = await realGetConversationTurns(conversationId)
-      if (isStale()) return 'stale'
-      // Defensive: backend occasionally returns non-array on empty conversations
-      const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
+      const turns = await request
+      if (isStale()) return
+      // getConversationTurns already throws on a non-array, so map directly.
+      const mapped = turns.map((t) => ({
         id: t.id || uuid(),
         role: t.role,
         content: t.content,
@@ -448,13 +457,11 @@ export function useChat({ model = null } = {}) {
       }))
       setMessages(mapped)
       setSessionId(conversationId)
-      return 'ok'
     } catch (err) {
-      if (isStale()) return 'stale'   // a newer selection owns the screen; don't stamp an error on it
-      if (err?.status === 404 && quietNotFound) {
-        setMessages([])
-        setSessionId(generateSessionId())
-        return 'not_found'
+      if (isStale()) return   // a newer selection owns the screen; don't stamp an error on it
+      if (err?.status === 404 && onNotFound) {
+        onNotFound()
+        return
       }
       console.warn('[useChat] Conversation load failed:', err)
       setMessages([
@@ -467,7 +474,6 @@ export function useChat({ model = null } = {}) {
         },
       ])
       setSessionId(conversationId)
-      return 'error'
     }
   }, [])
 

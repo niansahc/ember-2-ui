@@ -238,15 +238,18 @@ export default function App() {
         // could not fire: a deleted saved session left its ID behind and every
         // reload re-requested it. Only a 404 clears it. Any other failure
         // keeps the ID, since the conversation probably still exists and the
-        // error turn already says the load failed.
-        loadConversation(savedSession, { quietNotFound: true }).then((result) => {
-          if (result !== 'not_found') return
-          setActiveConversation(null)
-          try { localStorage.removeItem('ember_active_session') } catch {}
+        // error turn already says the load failed. A 404 lands on the same
+        // reset as New conversation, not a hand-rolled partial copy of it.
+        loadConversation(savedSession, {
+          onNotFound: () => {
+            clearMessages()
+            setActiveConversation(null)
+            try { localStorage.removeItem('ember_active_session') } catch {}
+          },
         })
       }
     } catch {}
-  }, [loadConversation])
+  }, [loadConversation, clearMessages])
 
   /**
    * Reset every vault-scoped surface after a developer vault swap.

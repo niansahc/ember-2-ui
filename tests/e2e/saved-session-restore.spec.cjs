@@ -11,7 +11,7 @@
 // All IDs are synthetic (Vault Privacy Rule).
 
 const { test, expect } = require('@playwright/test')
-const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
+const { mockBootstrap, mockConversationTurns } = require('./helpers/mock-bootstrap.cjs')
 
 const SAVED_ID = 'sess_restoregone001'
 
@@ -21,14 +21,7 @@ async function bootWithSavedSession(page, status) {
     try { localStorage.setItem('ember_active_session', id) } catch {}
   }, SAVED_ID)
   const loaded = page.waitForResponse((r) => r.url().endsWith(`/conversations/${SAVED_ID}`))
-  await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
-    await route.fulfill({
-      status,
-      contentType: 'application/json',
-      body: JSON.stringify({ detail: 'synthetic' }),
-    })
-  })
+  await mockConversationTurns(page, () => ({ status }))
   await page.goto('/')
   await page.waitForSelector('.app-layout', { timeout: 15000 })
   await loaded

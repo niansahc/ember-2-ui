@@ -166,4 +166,39 @@ async function mockBootstrap(page, overrides = {}) {
   })
 }
 
-module.exports = { mockBootstrap }
+/**
+ * Mock GET /v1/conversations/{id} with the real backend schema
+ * (ember-2 src/api/main.py: { session: { id, title, created_at }, turns }).
+ *
+ * `respond(id)` returns { turns, status = 200, gate } per conversation id.
+ * `gate` is an optional promise the route awaits before fulfilling, so a test
+ * can hold one load in flight for exactly as long as it needs instead of
+ * sleeping a fixed delay. Non-GET methods (rename, delete) flow through.
+ * Register after mockBootstrap so it wins for the per-conversation path.
+ */
+async function mockConversationTurns(page, respond) {
+  await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
+    if (request.method() !== 'GET') return route.continue()
+    const id = request.url().split('/').pop()
+    const { turns = [], status = 200, gate } = respond(id) || {}
+    if (gate) await gate
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        status === 200
+          ? { session: { id, title: 'Synthetic', created_at: '2026-10-01T12:00:00+00:00' }, turns }
+          : { detail: 'synthetic' },
+      ),
+    })
+  })
+}
+
+/** A promise plus its resolver, for holding a mocked route open. */
+function gate() {
+  let release
+  const promise = new Promise((r) => { release = r })
+  return { promise, release }
+}
+
+module.exports = { mockBootstrap, mockConversationTurns, gate }
