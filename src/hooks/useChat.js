@@ -454,6 +454,9 @@ export function useChat({ model = null } = {}) {
         role: t.role,
         content: t.content,
         timestamp: t.timestamp,
+        // Count only; the API never returns image bytes. imageCountLabel
+        // validates it, so a missing/invalid value just renders no note.
+        imageCount: t.image_count,
       }))
       setMessages(mapped)
       setSessionId(conversationId)

@@ -71,6 +71,14 @@
   object-fit: cover;
 }
 
+/* Count-only note on reloaded turns whose image bytes are gone. */
+.bubble-image-note {
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
 /* ── Web search transparency indicator ─────────────────────────── */
 
 /* ── Unified source label — "Source: Vault / Web Search / LLM" ── */

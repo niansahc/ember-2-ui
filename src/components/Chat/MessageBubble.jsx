@@ -11,6 +11,7 @@ import { useState, useRef, useEffect, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import emberMascot from '../../../assets/ember-mascot.png'
+import { imageCountLabel } from '../../utils/imageCountLabel.js'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
 import './MessageBubble.css'
 
@@ -65,6 +66,11 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
   // favour of one explicit Try again button, and keeps this turn out of the
   // history sent back to the API. See ADR 0003.
   const isError = !isUser && message.isError === true
+  // A reloaded turn that had images: only the count survives, no thumbnails.
+  // Its images cannot be re-sent, so the turn is not editable (see canEdit).
+  const hasThumbs = Array.isArray(message.imageDataUrls) && message.imageDataUrls.length > 0
+  const imageNote = isUser && !hasThumbs ? imageCountLabel(message.imageCount) : null
+  const canEdit = isUser && onEdit && !imageNote
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(message.content)
@@ -167,7 +173,10 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
                   ))}
                 </div>
               )}
-              <p className="bubble-text">{message.content}</p>
+              {imageNote && (
+                <div className="bubble-image-note" data-testid="bubble-image-note">{imageNote}</div>
+              )}
+              {message.content && <p className="bubble-text">{message.content}</p>}
             </>
           ) : isError ? (
             // Plain text, not markdown. These strings are ours, they contain no
@@ -252,7 +261,7 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
             <span className="bubble-timestamp" title={message.timestamp}>
               {formatTime(message.timestamp)}
             </span>
-            {isUser && onEdit && (
+            {canEdit && (
               <button
                 className="bubble-action-btn"
                 onClick={handleStartEdit}
