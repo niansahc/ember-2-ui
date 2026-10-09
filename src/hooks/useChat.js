@@ -75,6 +75,27 @@ export function useChat({ model = null } = {}) {
   const projectAssignedRef = useRef(false)       // prevents duplicate assignment calls
   // Ref, not state — avoids stale closure in sendMessage's useCallback.
   const chatOptionsRef = useRef({})              // per-conversation flags: { bareMode, vaultEnabled }
+  // Bumped by anything that changes which conversation is on screen. A
+  // conversation load only applies its response if the counter hasn't moved
+  // since it started, so a slow load for A can't paint over B (or over a new
+  // chat) that the user picked while A was still in flight.
+  const loadSeqRef = useRef(0)
+  // The in-flight stream, if any: which session it belongs to, a promise that
+  // settles when it ends, and that promise's resolver. loadConversation waits
+  // on `done`. See there. Streams never overlap (sendMessage and regenerate
+  // both bail while isStreaming), so one slot is enough.
+  const activeStreamRef = useRef(null)          // { sessionId, done, end } | null
+
+  /** Register a stream as in flight. Returns the function that ends it. */
+  function beginStream(streamSessionId) {
+    let end
+    const done = new Promise((resolve) => { end = resolve })
+    activeStreamRef.current = { sessionId: streamSessionId, done, end }
+    return () => {
+      activeStreamRef.current = null
+      end()
+    }
+  }
 
   function generateSessionId() {
     return `sess_${uuid().replace(/-/g, '').slice(0, 16)}`
@@ -233,8 +254,10 @@ export function useChat({ model = null } = {}) {
       timestamp: new Date().toISOString(),
     }
 
+    loadSeqRef.current += 1   // sending here means this conversation is the one the user wants
     setMessages((prev) => [...prev, userMsg])
     setIsStreaming(true)
+    const endStream = beginStream(sessionId)
     if (imageDataUrls.length > 0) setStreamingStatus('analyzing')
     abortRef.current = false
 
@@ -353,6 +376,7 @@ export function useChat({ model = null } = {}) {
     } finally {
       setIsStreaming(false)
       setStreamingStatus(null)
+      endStream()
     }
   }, [messages, isStreaming, sessionId, model])
 
@@ -363,6 +387,7 @@ export function useChat({ model = null } = {}) {
 
   /** Reset everything for a new conversation — fresh session, no project, no options. */
   const clearMessages = useCallback(() => {
+    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
     setMessages([])
     setSessionId(generateSessionId())
     pendingProjectRef.current = null
@@ -389,12 +414,42 @@ export function useChat({ model = null } = {}) {
    * history reads as the user's own past conversations, not as one bad answer.
    * The copy is provider-neutral because reading stored turns never touches
    * the model provider.
+   *
+   * Never rejects. Pass `onNotFound` to own the 404 case yourself: it's
+   * called instead of painting the error turn. Session restore uses that,
+   * because a saved conversation that was deleted isn't a failure worth
+   * announcing on boot. It's a cue to go back to a blank chat.
+   *
+   * Loads requested mid-stream fetch right away but wait for the stream to
+   * end before applying. Applying them
+   * immediately put the new conversation under the old stream's typing
+   * indicator and Stop button, with the reply streaming into a message that
+   * was no longer on screen. Re-selecting the conversation that is streaming
+   * is a no-op: local state already holds the in-flight exchange, and the
+   * backend only writes turns after it emits [DONE], so a reload would come
+   * back without it and the reply would vanish.
    */
-  const loadConversation = useCallback(async (conversationId) => {
+  const loadConversation = useCallback(async (conversationId, { onNotFound } = {}) => {
+    const seq = ++loadSeqRef.current
+    const isStale = () => seq !== loadSeqRef.current
+    const inFlight = activeStreamRef.current
+    if (inFlight && inFlight.sessionId === conversationId) {
+      await inFlight.done
+      return
+    }
+    // Kick the fetch off now; only the apply waits for an in-flight stream,
+    // so the network time overlaps the rest of the reply.
+    const request = realGetConversationTurns(conversationId)
+    // While we sit on inFlight.done nobody is awaiting `request` yet, so a
+    // fast failure would surface as an unhandled rejection. The real handling
+    // is the try/catch below; this just marks it as observed.
+    request.catch(() => {})
+    if (inFlight) await inFlight.done
     try {
-      const turns = await realGetConversationTurns(conversationId)
-      // Defensive: backend occasionally returns non-array on empty conversations
-      const mapped = (Array.isArray(turns) ? turns : []).map((t) => ({
+      const turns = await request
+      if (isStale()) return
+      // getConversationTurns already throws on a non-array, so map directly.
+      const mapped = turns.map((t) => ({
         id: t.id || uuid(),
         role: t.role,
         content: t.content,
@@ -403,6 +458,11 @@ export function useChat({ model = null } = {}) {
       setMessages(mapped)
       setSessionId(conversationId)
     } catch (err) {
+      if (isStale()) return   // a newer selection owns the screen; don't stamp an error on it
+      if (err?.status === 404 && onNotFound) {
+        onNotFound()
+        return
+      }
       console.warn('[useChat] Conversation load failed:', err)
       setMessages([
         {
@@ -432,6 +492,7 @@ export function useChat({ model = null } = {}) {
     setMessages(trimmed)
 
     setIsStreaming(true)
+    const endStream = beginStream(sessionId)
     abortRef.current = false
 
     const assistantId = uuid()
@@ -499,6 +560,7 @@ export function useChat({ model = null } = {}) {
       markMessageFailed(assistantId, chatErrorMessage(err, model))
     } finally {
       setIsStreaming(false)
+      endStream()
     }
   }, [messages, isStreaming, sessionId, model])
 
