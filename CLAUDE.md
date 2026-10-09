@@ -35,7 +35,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.18.1 (published). 276 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 83 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.18.1 (published). 283 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 85 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -55,6 +55,7 @@ These exist and must not be re-implemented:
 - Disk encryption status in Settings > Security with platform-appropriate docs link
 - Developer vault switcher in Settings > Developer tab (dev mode only)
 - Launch Installer button in Settings > About tab
+- Reloaded user turns that carried images show "1 image sent" / "N images sent" (count only); Edit is hidden on them
 - Session restore on page refresh via localStorage
 - PWA manifest for Android/iOS home screen installation
 - Full-page tabbed Settings (General, Security, Memory, Features, About)
