@@ -28,7 +28,8 @@
  */
 import { useState, useCallback, useRef } from 'react'
 import { uuid } from '../utils/uuid.js'
-import { chatErrorMessage, CONVERSATION_LOAD_ERROR } from '../utils/chatError.js'
+import { chatErrorMessage, CONVERSATION_LOAD_ERROR, CONVERSATION_NOT_FOUND } from '../utils/chatError.js'
+import { isValidConversationId } from '../utils/conversationId.js'
 import {
   streamChat as realStreamChat,
   getConversationTurns as realGetConversationTurns,
@@ -430,6 +431,15 @@ export function useChat({ model = null } = {}) {
    * back without it and the reply would vanish.
    */
   const loadConversation = useCallback(async (conversationId, { onNotFound } = {}) => {
+    // Not an id at all (a boolean off a malformed list entry, or "false" left
+    // in localStorage). There is nothing to fetch and nothing was lost, so no
+    // request and no error turn. A caller that supplied onNotFound gets the
+    // same blank-chat reset it would get from a 404.
+    if (!isValidConversationId(conversationId)) {
+      console.warn('[useChat] Ignoring load of an invalid conversation id:', typeof conversationId)
+      if (onNotFound) onNotFound()
+      return
+    }
     const seq = ++loadSeqRef.current
     const isStale = () => seq !== loadSeqRef.current
     const inFlight = activeStreamRef.current
@@ -467,11 +477,13 @@ export function useChat({ model = null } = {}) {
         return
       }
       console.warn('[useChat] Conversation load failed:', err)
+      // A 404 means the backend is up and says the conversation is gone, so
+      // the copy must not tell the user the backend may be down.
       setMessages([
         {
           id: uuid(),
           role: 'assistant',
-          content: CONVERSATION_LOAD_ERROR,
+          content: err?.status === 404 ? CONVERSATION_NOT_FOUND : CONVERSATION_LOAD_ERROR,
           isError: true,
           timestamp: new Date().toISOString(),
         },
