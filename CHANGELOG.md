@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.18.2](https://github.com/niansahc/ember-2-ui/compare/v0.18.1...v0.18.2) (2026-10-10)
+
+
+### Features
+
+* memory browser ([21c253f](https://github.com/niansahc/ember-2-ui/commit/21c253fb4f056e2e30a3bd6d08212b47733d2967))
+* memory browser ([7ff0dd8](https://github.com/niansahc/ember-2-ui/commit/7ff0dd86238338c221f4f0638c9d2bdc5b45b6c9))
+* text selector reads generation_available under split model hosts ([003f498](https://github.com/niansahc/ember-2-ui/commit/003f498db10eedffea86f67a88c7c7f2a2f6dce0))
+* text selector reads generation_available under split model hosts ([2c3e617](https://github.com/niansahc/ember-2-ui/commit/2c3e61716468aaf344092a380c37734c62211c15))
+* **ui:** render SSE error frame and derive vault badge from vault_sources ([c964900](https://github.com/niansahc/ember-2-ui/commit/c964900519646462a586ba4430045f2bf43f7775))
+* **ui:** show image-sent note on reloaded user turns ([c9c3c5e](https://github.com/niansahc/ember-2-ui/commit/c9c3c5e61b6a28cf6910d4d8c4233a28705fda8d))
+* **ui:** show image-sent note on reloaded user turns ([e3bd9c2](https://github.com/niansahc/ember-2-ui/commit/e3bd9c2eb0cb7ae5cd77ed3bbfb809fd18f41069))
+
+
+### Bug Fixes
+
+* dead vault-open button, non-persisting category form, CSS-only disabled row ([443abd8](https://github.com/niansahc/ember-2-ui/commit/443abd864b68442866ea03ccce17c8f02e703a9a))
+* dead vault-open button, non-persisting category form, CSS-only disabled row ([81c6054](https://github.com/niansahc/ember-2-ui/commit/81c605436a82e750c375a20e0cf48b7e6c1a027a))
+* **dev:** relative API URL, Origin rewrite in Vite proxy, localhost-only dev server (pairs with ember-2 [#282](https://github.com/niansahc/ember-2-ui/issues/282)) ([37ea48b](https://github.com/niansahc/ember-2-ui/commit/37ea48b2227278e40c5b176c9276ed8d231a37e4))
+* **dev:** rewrite Origin in Vite proxy, bind dev server to localhost (pairs with ember-2 [#282](https://github.com/niansahc/ember-2-ui/issues/282)) ([de682e6](https://github.com/niansahc/ember-2-ui/commit/de682e6baa861ea75cdac0470b85f8b03ab125f0))
+* redact credentials from e2e diagnostic output ([977a252](https://github.com/niansahc/ember-2-ui/commit/977a252bcd4a3592c8b0d4fc0cc6f9db1bdfca57))
+* redact credentials from e2e diagnostic output ([a79ac45](https://github.com/niansahc/ember-2-ui/commit/a79ac45213d56920c593c49db5e6cd640eab10c8))
+* replace native prompt and confirm dialogs with in-app modals ([f164be5](https://github.com/niansahc/ember-2-ui/commit/f164be5743e704dceb1baefde4575db483ab0e51))
+* replace native prompt and confirm dialogs with in-app modals ([70ab780](https://github.com/niansahc/ember-2-ui/commit/70ab780222ac4a51bb48ac59353b3948e062c6c7))
+* **settings:** persist vision settings to backend via preferences API ([cced126](https://github.com/niansahc/ember-2-ui/commit/cced126b42c35c01d5ebe83f41edd110b04c9eda))
+* **settings:** persist vision settings to backend via preferences API ([32e8802](https://github.com/niansahc/ember-2-ui/commit/32e8802a9fb82215c0f5347495b2ddcabebda195)), closes [#131](https://github.com/niansahc/ember-2-ui/issues/131)
+* **sidebar:** discard stale project and conversation loads, hoist row components ([5484b95](https://github.com/niansahc/ember-2-ui/commit/5484b9550a2aeb465bc1b75c7e33a776ad5ea046))
+* **sidebar:** discard stale project and conversation loads, hoist row components ([daecb00](https://github.com/niansahc/ember-2-ui/commit/daecb007f30568f459fb8311583ba2c23764f1c6))
+* **ui:** clear saved session when conversation load fails ([2864a55](https://github.com/niansahc/ember-2-ui/commit/2864a55f3128ce2f05045872cc7ae8c18b89ab09))
+* **ui:** conversation load races, stale saved session, mid-stream loads ([405332d](https://github.com/niansahc/ember-2-ui/commit/405332dbc78fd0f5d866392d085a9da1cd9f2987))
+* **ui:** defer conversation load until stream completes ([b16cdb8](https://github.com/niansahc/ember-2-ui/commit/b16cdb8a0672fbf6789963b8cab3c16e708f17a5))
+* **ui:** discard stale conversation loads ([1248be2](https://github.com/niansahc/ember-2-ui/commit/1248be274d761bdfda5cda76d024c892af96c776))
+* **ui:** load conversation history on sidebar click ([f27b438](https://github.com/niansahc/ember-2-ui/commit/f27b438ba9541cba5ea942ed9852a10c6b26ac7c))
+* **ui:** surface generation failures (SSE contract v3) ([a44a490](https://github.com/niansahc/ember-2-ui/commit/a44a4903b83893294df99d58c775f161ecf5f249))
+
 ## [0.18.1](https://github.com/niansahc/ember-2-ui/compare/v0.18.0...v0.18.1) (2026-08-31)
 
 
