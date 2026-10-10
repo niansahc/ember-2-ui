@@ -430,7 +430,7 @@ export function useChat({ model = null } = {}) {
    * backend only writes turns after it emits [DONE], so a reload would come
    * back without it and the reply would vanish.
    */
-  const loadConversation = useCallback(async (conversationId, { onNotFound } = {}) => {
+  const loadConversation = useCallback(async (conversationId, { onNotFound, onGone } = {}) => {
     // Not an id at all (a boolean off a malformed list entry, or "false" left
     // in localStorage). There is nothing to fetch and nothing was lost, so no
     // request and no error turn. A caller that supplied onNotFound gets the
@@ -477,18 +477,32 @@ export function useChat({ model = null } = {}) {
         return
       }
       console.warn('[useChat] Conversation load failed:', err)
+      const gone = err?.status === 404
       // A 404 means the backend is up and says the conversation is gone, so
       // the copy must not tell the user the backend may be down.
       setMessages([
         {
           id: uuid(),
           role: 'assistant',
-          content: err?.status === 404 ? CONVERSATION_NOT_FOUND : CONVERSATION_LOAD_ERROR,
+          content: gone ? CONVERSATION_NOT_FOUND : CONVERSATION_LOAD_ERROR,
           isError: true,
           timestamp: new Date().toISOString(),
         },
       ])
-      setSessionId(conversationId)
+      if (gone) {
+        // The id is dead. Keeping it would send the next message under
+        // X-Session-ID of a conversation that no longer exists, so start a
+        // fresh session (same reset clearMessages does) and tell the caller
+        // to forget the id. Any other failure keeps it: the conversation
+        // probably still exists and a retry can reach it.
+        setSessionId(generateSessionId())
+        pendingProjectRef.current = null
+        projectAssignedRef.current = false
+        chatOptionsRef.current = {}
+        if (onGone) onGone()
+      } else {
+        setSessionId(conversationId)
+      }
     }
   }, [])
 

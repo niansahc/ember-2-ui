@@ -158,12 +158,17 @@ export default function App() {
   // Persist new session ID to localStorage so the conversation survives a page refresh.
   // Only fires once per session — when the first message arrives and no conversation is
   // tracked yet. Subsequent messages in the same session are a no-op.
+  // An error turn alone does not count: after a 404 on load the screen holds
+  // only the not-found notice under a fresh session id that the backend has
+  // never seen, and persisting that would restore a conversation that does
+  // not exist.
+  const hasRealMessage = messages.some((m) => !m.isError)
   useEffect(() => {
-    if (messages.length > 0 && sessionId && !activeConversation) {
+    if (hasRealMessage && sessionId && !activeConversation) {
       setActiveConversation(sessionId)
       try { localStorage.setItem('ember_active_session', sessionId) } catch {}
     }
-  }, [messages.length, sessionId, activeConversation])
+  }, [hasRealMessage, sessionId, activeConversation])
   // Appearance state (theme / style pack / font scale / density / motion) now
   // lives in AppearanceContext — App no longer instantiates or forwards it.
 
@@ -314,7 +319,14 @@ export default function App() {
     setBareMode(false)
     setVaultOff(false)
     setChatOptions({ bareMode: false, vaultEnabled: true })
-    loadConversation(id)
+    // A 404 leaves the error turn on screen but starts a fresh session, so
+    // the dead id must not stay as the active conversation or the saved one.
+    loadConversation(id, {
+      onGone: () => {
+        setActiveConversation(null)
+        try { localStorage.removeItem('ember_active_session') } catch {}
+      },
+    })
   }
 
   if (view === 'splash') {

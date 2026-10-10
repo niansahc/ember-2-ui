@@ -110,6 +110,62 @@ test.describe('Copy for a conversation the backend cannot find', () => {
   })
 })
 
+test.describe('Session id after opening a conversation', () => {
+  // Open GOOD from the sidebar with the given turns status, send a message,
+  // and return the X-Session-ID the chat request carried plus the saved id
+  // read before the send (the send itself legitimately saves a new session).
+  async function openThenSend(page, status) {
+    await mockBootstrap(page, { conversations: [GOOD] })
+    await mockConversationTurns(page, () => (
+      status === 200 ? { turns: [turn('t1', 'user', 'Synthetic stored turn')] } : { status }
+    ))
+    const sent = []
+    await page.route('**/v1/chat/completions', async (route, request) => {
+      sent.push(request.headers()['x-session-id'])
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body:
+          `data: ${JSON.stringify({ choices: [{ delta: { content: 'Synthetic reply' } }] })}\n` +
+          `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] })}\n` +
+          'data: [DONE]\n',
+      })
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.locator('.sidebar-item', { hasText: GOOD.title }).click()
+    if (status === 200) {
+      await expect(page.locator('.bubble', { hasText: 'Synthetic stored turn' })).toBeVisible({ timeout: 10000 })
+    } else {
+      await expect(page.locator('[data-testid="chat-error"]')).toBeVisible({ timeout: 10000 })
+    }
+    const savedBeforeSend = await savedId(page)
+
+    await page.locator('[aria-label="Message input"]').fill('Synthetic follow-up')
+    await page.locator('[aria-label="Send message"]').click()
+    await expect(page.locator('.bubble', { hasText: 'Synthetic reply' })).toBeVisible({ timeout: 10000 })
+    return { sessionHeader: sent[0], savedBeforeSend, sentCount: sent.length }
+  }
+
+  test('after a 404 the next send starts a fresh session, not the dead id', async ({ page }) => {
+    const { sessionHeader, savedBeforeSend, sentCount } = await openThenSend(page, 404)
+
+    expect(savedBeforeSend).toBeNull()
+    expect(sentCount).toBe(1)
+    // The header is present (so this is not vacuous) and is not the dead id.
+    expect(sessionHeader).toMatch(/^sess_[0-9a-f]+$/)
+    expect(sessionHeader).not.toBe(GOOD.id)
+  })
+
+  test('positive control: after a successful load the next send carries that session id', async ({ page }) => {
+    const { sessionHeader, savedBeforeSend, sentCount } = await openThenSend(page, 200)
+
+    expect(savedBeforeSend).toBe(GOOD.id)
+    expect(sentCount).toBe(1)
+    expect(sessionHeader).toBe(GOOD.id)
+  })
+})
+
 test.describe('Web-search citation links', () => {
   async function sendWithSources(page, sources) {
     await mockBootstrap(page)
