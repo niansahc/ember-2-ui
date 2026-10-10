@@ -386,15 +386,20 @@ export function useChat({ model = null } = {}) {
     abortRef.current = true
   }, [])
 
-  /** Reset everything for a new conversation — fresh session, no project, no options. */
-  const clearMessages = useCallback(() => {
-    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
-    setMessages([])
+  /** Fresh session id, no pending project, no per-conversation options. Messages untouched. */
+  const resetSession = useCallback(() => {
     setSessionId(generateSessionId())
     pendingProjectRef.current = null
     projectAssignedRef.current = false
     chatOptionsRef.current = {}
   }, [])
+
+  /** Reset everything for a new conversation — fresh session, no project, no options. */
+  const clearMessages = useCallback(() => {
+    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
+    setMessages([])
+    resetSession()
+  }, [resetSession])
 
   /** Merge per-conversation flags (bareMode, vaultEnabled) into the options ref. */
   const setChatOptions = useCallback((opts) => {
@@ -492,19 +497,16 @@ export function useChat({ model = null } = {}) {
       if (gone) {
         // The id is dead. Keeping it would send the next message under
         // X-Session-ID of a conversation that no longer exists, so start a
-        // fresh session (same reset clearMessages does) and tell the caller
-        // to forget the id. Any other failure keeps it: the conversation
-        // probably still exists and a retry can reach it.
-        setSessionId(generateSessionId())
-        pendingProjectRef.current = null
-        projectAssignedRef.current = false
-        chatOptionsRef.current = {}
+        // fresh session and tell the caller to forget the id. Any other
+        // failure keeps it: the conversation probably still exists and a
+        // retry can reach it.
+        resetSession()
         if (onGone) onGone()
       } else {
         setSessionId(conversationId)
       }
     }
-  }, [])
+  }, [resetSession])
 
   /**
    * Regenerate the last assistant response: trim back to the last user

@@ -28,6 +28,11 @@ import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
 
+/** Forget the saved active conversation. localStorage can throw (private mode), so never let it. */
+function forgetSavedSession() {
+  try { localStorage.removeItem('ember_active_session') } catch {}
+}
+
 // Abbreviate model IDs for the header pill (e.g. "claude-3-haiku-..." → "Claude Haiku").
 function displayModelName(name) {
   if (!name) return ''
@@ -241,7 +246,7 @@ export default function App() {
       if (savedSession && !isValidConversationId(savedSession)) {
         // A leftover from before ids were validated (the string "false").
         // Clear it rather than request /conversations/<junk> on every boot.
-        localStorage.removeItem('ember_active_session')
+        forgetSavedSession()
       } else if (savedSession) {
         setActiveConversation(savedSession)
         // loadConversation never rejects, so this used to be a .catch that
@@ -254,7 +259,7 @@ export default function App() {
           onNotFound: () => {
             clearMessages()
             setActiveConversation(null)
-            try { localStorage.removeItem('ember_active_session') } catch {}
+            forgetSavedSession()
           },
         })
       }
@@ -324,7 +329,7 @@ export default function App() {
     loadConversation(id, {
       onGone: () => {
         setActiveConversation(null)
-        try { localStorage.removeItem('ember_active_session') } catch {}
+        forgetSavedSession()
       },
     })
   }
