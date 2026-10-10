@@ -21,7 +21,7 @@ Exceptions: real diagnoses, real trade-off explanations, and grill findings wher
 
 ## Repo Identity
 This is ember-2-ui — the React/Vite frontend for Ember-2. Tab color: MAGENTA.
-If you are not in C:\Users\nians\OneDrive\Desktop\Ember-2\ember-2-ui, stop and check.
+If you are not in C:\dev\Ember-2\ember-2-ui, stop and check.
 
 ---
 
