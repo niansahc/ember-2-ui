@@ -22,6 +22,7 @@ import { Search, GitBranch, Database, Flame, X, MoreVertical } from 'lucide-reac
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
+import { isValidConversationId } from './utils/conversationId.js'
 import { useTour } from './hooks/useTour.js'
 import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
@@ -232,7 +233,11 @@ export default function App() {
     // Restore active conversation from localStorage if one was saved
     try {
       const savedSession = localStorage.getItem('ember_active_session')
-      if (savedSession) {
+      if (savedSession && !isValidConversationId(savedSession)) {
+        // A leftover from before ids were validated (the string "false").
+        // Clear it rather than request /conversations/<junk> on every boot.
+        localStorage.removeItem('ember_active_session')
+      } else if (savedSession) {
         setActiveConversation(savedSession)
         // loadConversation never rejects, so this used to be a .catch that
         // could not fire: a deleted saved session left its ID behind and every
@@ -297,6 +302,9 @@ export default function App() {
   }
 
   function handleSelectConversation(id, projectId) {
+    // Nothing to open, and writing it to localStorage would make the next
+    // boot request it too. Sidebar already filters, so this is the backstop.
+    if (!isValidConversationId(id)) return
     setActiveConversation(id)
     try { localStorage.setItem('ember_active_session', id) } catch {}
     if (projectId) setActiveProject(projectId)

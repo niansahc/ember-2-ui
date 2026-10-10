@@ -24,6 +24,8 @@
  * into the served HTML; that was incompatible with `script-src 'self'` CSP.
  */
 
+import { isValidConversationId } from '../utils/conversationId.js'
+
 const API_URL = import.meta.env.VITE_EMBER_API_URL || '/v1'
 const API_KEY = import.meta.env.VITE_EMBER_API_KEY || ''
 const SSE_CONTRACT_VERSION = 3 // ADR-040: SSE wire contract version
@@ -60,7 +62,7 @@ export class EmberApiError extends Error {
   constructor(kind, { status = null, body = '', cause = undefined } = {}) {
     super(`Ember API ${kind}${status ? ` (HTTP ${status})` : ''}`)
     this.name = 'EmberApiError'
-    /** @type {'unreachable'|'generation_failed'|'unauthorized'|'rate_limited'|'unknown'} */
+    /** @type {'unreachable'|'generation_failed'|'unauthorized'|'rate_limited'|'invalid_id'|'unknown'} */
     this.kind = kind
     this.status = status
     this.body = body
@@ -377,8 +379,22 @@ export async function getConversations(limit = 50) {
   return data.conversations || []
 }
 
+/**
+ * Refuse to build a /conversations/{id} URL from an id that is not one.
+ * A boolean here used to become /conversations/false; now it throws before
+ * any request is made. `kind: 'invalid_id'` has no user-facing copy on
+ * purpose: callers filter ids at the edge, so reaching this is a bug to see
+ * in the console, not something to explain to the user.
+ */
+function assertConversationId(id) {
+  if (!isValidConversationId(id)) {
+    throw new EmberApiError('invalid_id', { body: `not a conversation id: ${typeof id}` })
+  }
+}
+
 /** Fetch the full message history for a conversation. */
 export async function getConversationTurns(sessionId) {
+  assertConversationId(sessionId)
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     headers: authHeaders(),
   })
@@ -397,6 +413,7 @@ export async function getConversationTurns(sessionId) {
 
 /** Rename a conversation (Sidebar context menu). */
 export async function renameConversation(sessionId, title) {
+  assertConversationId(sessionId)
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -408,6 +425,7 @@ export async function renameConversation(sessionId, title) {
 
 /** Delete a conversation (Sidebar context menu). */
 export async function deleteConversation(sessionId) {
+  assertConversationId(sessionId)
   const res = await fetch(`${API_URL}/conversations/${sessionId}`, {
     method: 'DELETE',
     headers: authHeaders(),
@@ -441,6 +459,7 @@ export async function createProject(name, color = '#ff8c00') {
 
 /** Move a conversation into a project (deferred assignment from useChat). */
 export async function moveConversationToProject(conversationId, projectId) {
+  assertConversationId(conversationId)
   const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
