@@ -28,7 +28,8 @@
  */
 import { useState, useCallback, useRef } from 'react'
 import { uuid } from '../utils/uuid.js'
-import { chatErrorMessage, CONVERSATION_LOAD_ERROR } from '../utils/chatError.js'
+import { chatErrorMessage, CONVERSATION_LOAD_ERROR, CONVERSATION_NOT_FOUND } from '../utils/chatError.js'
+import { isValidConversationId } from '../utils/conversationId.js'
 import {
   streamChat as realStreamChat,
   getConversationTurns as realGetConversationTurns,
@@ -385,15 +386,20 @@ export function useChat({ model = null } = {}) {
     abortRef.current = true
   }, [])
 
-  /** Reset everything for a new conversation — fresh session, no project, no options. */
-  const clearMessages = useCallback(() => {
-    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
-    setMessages([])
+  /** Fresh session id, no pending project, no per-conversation options. Messages untouched. */
+  const resetSession = useCallback(() => {
     setSessionId(generateSessionId())
     pendingProjectRef.current = null
     projectAssignedRef.current = false
     chatOptionsRef.current = {}
   }, [])
+
+  /** Reset everything for a new conversation — fresh session, no project, no options. */
+  const clearMessages = useCallback(() => {
+    loadSeqRef.current += 1   // a load still in flight is for a conversation we just left
+    setMessages([])
+    resetSession()
+  }, [resetSession])
 
   /** Merge per-conversation flags (bareMode, vaultEnabled) into the options ref. */
   const setChatOptions = useCallback((opts) => {
@@ -429,7 +435,16 @@ export function useChat({ model = null } = {}) {
    * backend only writes turns after it emits [DONE], so a reload would come
    * back without it and the reply would vanish.
    */
-  const loadConversation = useCallback(async (conversationId, { onNotFound } = {}) => {
+  const loadConversation = useCallback(async (conversationId, { onNotFound, onGone } = {}) => {
+    // Not an id at all (a boolean off a malformed list entry, or "false" left
+    // in localStorage). There is nothing to fetch and nothing was lost, so no
+    // request and no error turn. A caller that supplied onNotFound gets the
+    // same blank-chat reset it would get from a 404.
+    if (!isValidConversationId(conversationId)) {
+      console.warn('[useChat] Ignoring load of an invalid conversation id:', typeof conversationId)
+      if (onNotFound) onNotFound()
+      return
+    }
     const seq = ++loadSeqRef.current
     const isStale = () => seq !== loadSeqRef.current
     const inFlight = activeStreamRef.current
@@ -467,18 +482,31 @@ export function useChat({ model = null } = {}) {
         return
       }
       console.warn('[useChat] Conversation load failed:', err)
+      const gone = err?.status === 404
+      // A 404 means the backend is up and says the conversation is gone, so
+      // the copy must not tell the user the backend may be down.
       setMessages([
         {
           id: uuid(),
           role: 'assistant',
-          content: CONVERSATION_LOAD_ERROR,
+          content: gone ? CONVERSATION_NOT_FOUND : CONVERSATION_LOAD_ERROR,
           isError: true,
           timestamp: new Date().toISOString(),
         },
       ])
-      setSessionId(conversationId)
+      if (gone) {
+        // The id is dead. Keeping it would send the next message under
+        // X-Session-ID of a conversation that no longer exists, so start a
+        // fresh session and tell the caller to forget the id. Any other
+        // failure keeps it: the conversation probably still exists and a
+        // retry can reach it.
+        resetSession()
+        if (onGone) onGone()
+      } else {
+        setSessionId(conversationId)
+      }
     }
-  }, [])
+  }, [resetSession])
 
   /**
    * Regenerate the last assistant response: trim back to the last user

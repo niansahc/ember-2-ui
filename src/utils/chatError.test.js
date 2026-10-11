@@ -4,6 +4,7 @@ import {
   providerForModel,
   LOCAL_RUNTIME_NAME,
   CONVERSATION_LOAD_ERROR,
+  CONVERSATION_NOT_FOUND,
 } from './chatError.js'
 
 // The point of these tests is not that the strings are spelled a particular
@@ -140,6 +141,7 @@ describe('no fabrication', () => {
     chatErrorMessage({ kind: 'rate_limited', status: 429 }, 'gpt-4o'),
     chatErrorMessage({ kind: 'unknown', status: 503 }, 'qwen3:8b'),
     CONVERSATION_LOAD_ERROR,
+    CONVERSATION_NOT_FOUND,
   ]
 
   it('never claims to recall anything from the vault', () => {
@@ -155,8 +157,18 @@ describe('no fabrication', () => {
   })
 
   it('every message names the system, so it cannot be mistaken for a reply', () => {
-    for (const msg of ALL) {
+    // CONVERSATION_NOT_FOUND is exempt on purpose: it is the approved copy for
+    // a 404, where the backend answered and the conversation is gone, so it
+    // must not name or blame the backend. It is checked on its own below.
+    for (const msg of ALL.filter((m) => m !== CONVERSATION_NOT_FOUND)) {
       expect(msg).toMatch(/backend|API key|throttling|rate limiting/i)
     }
+  })
+
+  it('the not-found copy is the approved wording and does not blame the backend', () => {
+    expect(CONVERSATION_NOT_FOUND).toBe("I couldn't find that conversation. It may have been deleted.")
+    expect(CONVERSATION_NOT_FOUND).not.toMatch(/backend|running/i)
+    // Positive control: the load-failure copy is the one that does name it.
+    expect(CONVERSATION_LOAD_ERROR).toMatch(/backend/i)
   })
 })

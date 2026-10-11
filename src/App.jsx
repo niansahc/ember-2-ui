@@ -22,10 +22,16 @@ import { Search, GitBranch, Database, Flame, X, MoreVertical } from 'lucide-reac
 import { getModel as realGetModel, getPinStatus, getPreferences, updatePreferences, getDeveloperStatus } from './api/ember.js'
 import { useChat } from './hooks/useChat.js'
 import { parseEmberTimestamp } from './utils/parseTimestamp.js'
+import { isValidConversationId } from './utils/conversationId.js'
 import { useTour } from './hooks/useTour.js'
 import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
+
+/** Forget the saved active conversation. localStorage can throw (private mode), so never let it. */
+function forgetSavedSession() {
+  try { localStorage.removeItem('ember_active_session') } catch {}
+}
 
 // Abbreviate model IDs for the header pill (e.g. "claude-3-haiku-..." → "Claude Haiku").
 function displayModelName(name) {
@@ -157,12 +163,17 @@ export default function App() {
   // Persist new session ID to localStorage so the conversation survives a page refresh.
   // Only fires once per session — when the first message arrives and no conversation is
   // tracked yet. Subsequent messages in the same session are a no-op.
+  // An error turn alone does not count: after a 404 on load the screen holds
+  // only the not-found notice under a fresh session id that the backend has
+  // never seen, and persisting that would restore a conversation that does
+  // not exist.
+  const hasRealMessage = messages.some((m) => !m.isError)
   useEffect(() => {
-    if (messages.length > 0 && sessionId && !activeConversation) {
+    if (hasRealMessage && sessionId && !activeConversation) {
       setActiveConversation(sessionId)
       try { localStorage.setItem('ember_active_session', sessionId) } catch {}
     }
-  }, [messages.length, sessionId, activeConversation])
+  }, [hasRealMessage, sessionId, activeConversation])
   // Appearance state (theme / style pack / font scale / density / motion) now
   // lives in AppearanceContext — App no longer instantiates or forwards it.
 
@@ -232,7 +243,11 @@ export default function App() {
     // Restore active conversation from localStorage if one was saved
     try {
       const savedSession = localStorage.getItem('ember_active_session')
-      if (savedSession) {
+      if (savedSession && !isValidConversationId(savedSession)) {
+        // A leftover from before ids were validated (the string "false").
+        // Clear it rather than request /conversations/<junk> on every boot.
+        forgetSavedSession()
+      } else if (savedSession) {
         setActiveConversation(savedSession)
         // loadConversation never rejects, so this used to be a .catch that
         // could not fire: a deleted saved session left its ID behind and every
@@ -244,7 +259,7 @@ export default function App() {
           onNotFound: () => {
             clearMessages()
             setActiveConversation(null)
-            try { localStorage.removeItem('ember_active_session') } catch {}
+            forgetSavedSession()
           },
         })
       }
@@ -297,6 +312,9 @@ export default function App() {
   }
 
   function handleSelectConversation(id, projectId) {
+    // Nothing to open, and writing it to localStorage would make the next
+    // boot request it too. Sidebar already filters, so this is the backstop.
+    if (!isValidConversationId(id)) return
     setActiveConversation(id)
     try { localStorage.setItem('ember_active_session', id) } catch {}
     if (projectId) setActiveProject(projectId)
@@ -306,7 +324,14 @@ export default function App() {
     setBareMode(false)
     setVaultOff(false)
     setChatOptions({ bareMode: false, vaultEnabled: true })
-    loadConversation(id)
+    // A 404 leaves the error turn on screen but starts a fresh session, so
+    // the dead id must not stay as the active conversation or the saved one.
+    loadConversation(id, {
+      onGone: () => {
+        setActiveConversation(null)
+        forgetSavedSession()
+      },
+    })
   }
 
   if (view === 'splash') {

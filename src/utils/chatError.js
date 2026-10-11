@@ -54,6 +54,14 @@ export const CONVERSATION_LOAD_ERROR =
   "I couldn't load that conversation. My backend may not be running right now."
 
 /**
+ * Shown when the backend answers 404 for a conversation the user picked.
+ * The backend is up and said the conversation is gone, so this must not
+ * blame the backend the way CONVERSATION_LOAD_ERROR does.
+ */
+export const CONVERSATION_NOT_FOUND =
+  "I couldn't find that conversation. It may have been deleted."
+
+/**
  * Map a failure to user-facing copy.
  *
  * Every branch names one concrete next step, because that is the test for

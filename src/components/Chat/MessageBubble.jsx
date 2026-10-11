@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm'
 import emberMascot from '../../../assets/ember-mascot.png'
 import { imageCountLabel } from '../../utils/imageCountLabel.js'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
+import { safeExternalUrl } from '../../utils/externalUrl.js'
 import './MessageBubble.css'
 
 /**
@@ -239,19 +240,29 @@ export default memo(function MessageBubble({ message, isLast, onRegenerate, onEd
         {!isUser && message.sources && message.sources.filter((s) => s.url && s.title).length > 0 && (
           <div className="bubble-sources" aria-label="Sources">
             <span className="bubble-sources-label">Sources:</span>
-            {message.sources.filter((s) => s.url && s.title).slice(0, 5).map((src, i) => (
-              <span key={i}>
-                {i > 0 && <span className="bubble-sources-sep"> · </span>}
-                <a
-                  href={src.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bubble-source-link"
-                >
-                  {src.title}
-                </a>
-              </span>
-            ))}
+            {message.sources.filter((s) => s.url && s.title).slice(0, 5).map((src, i) => {
+              // Only an absolute http(s) URL becomes a link. A bare string
+              // such as "false" would resolve against this origin and open
+              // the app itself in a new tab, so it renders as plain text.
+              const href = safeExternalUrl(src.url)
+              return (
+                <span key={i}>
+                  {i > 0 && <span className="bubble-sources-sep"> · </span>}
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bubble-source-link"
+                    >
+                      {src.title}
+                    </a>
+                  ) : (
+                    <span className="bubble-source-text">{src.title}</span>
+                  )}
+                </span>
+              )
+            })}
           </div>
         )}
 

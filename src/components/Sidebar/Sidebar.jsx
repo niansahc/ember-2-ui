@@ -7,6 +7,7 @@
  */
 import { useEffect, useState, useRef } from 'react'
 import { parseEmberTimestamp } from '../../utils/parseTimestamp.js'
+import { isValidConversationId } from '../../utils/conversationId.js'
 import { useTransientError } from '../../hooks/useTransientError.js'
 import { mockGetConversations, mockGetProjects } from '../../api/mock.js'
 import {
@@ -94,8 +95,15 @@ export default function Sidebar({
     try {
       const convos = await realGetConversations(100)
       if (stale()) return
+      // An entry whose id is not a usable id cannot be opened, renamed, or
+      // deleted, and clicking it used to request /conversations/false. Drop
+      // it here so a broken row never reaches onSelect.
+      const usable = convos.filter((c) => isValidConversationId(c?.id))
+      if (usable.length !== convos.length) {
+        console.warn(`[Sidebar] Skipped ${convos.length - usable.length} conversation(s) with an invalid id`)
+      }
       setConversations(
-        convos.map((c) => ({
+        usable.map((c) => ({
           id: c.id,
           title: c.title,
           updatedAt: c.updated_at,
@@ -737,7 +745,7 @@ export default function Sidebar({
                       className="sidebar-task-title"
                       onClick={() => {
                         const sessionId = task.metadata?.session_id
-                        if (sessionId) onSelectConversation(sessionId)
+                        if (isValidConversationId(sessionId)) onSelectConversation(sessionId)
                       }}
                       title={taskError || task.title}
                     >
