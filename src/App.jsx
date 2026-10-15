@@ -28,9 +28,12 @@ import { useIdleTimeout } from './hooks/useIdleTimeout.js'
 import './App.css'
 import './styles/tour.css'
 
+// localStorage key for the active conversation id (session restore on refresh).
+const SAVED_SESSION_KEY = 'ember_active_session'
+
 /** Forget the saved active conversation. localStorage can throw (private mode), so never let it. */
 function forgetSavedSession() {
-  try { localStorage.removeItem('ember_active_session') } catch {}
+  try { localStorage.removeItem(SAVED_SESSION_KEY) } catch {}
 }
 
 // Abbreviate model IDs for the header pill (e.g. "claude-3-haiku-..." → "Claude Haiku").
@@ -171,7 +174,7 @@ export default function App() {
   useEffect(() => {
     if (hasRealMessage && sessionId && !activeConversation) {
       setActiveConversation(sessionId)
-      try { localStorage.setItem('ember_active_session', sessionId) } catch {}
+      try { localStorage.setItem(SAVED_SESSION_KEY, sessionId) } catch {}
     }
   }, [hasRealMessage, sessionId, activeConversation])
   // Appearance state (theme / style pack / font scale / density / motion) now
@@ -242,7 +245,7 @@ export default function App() {
     // opened. Dropping this saves one network request on every boot.
     // Restore active conversation from localStorage if one was saved
     try {
-      const savedSession = localStorage.getItem('ember_active_session')
+      const savedSession = localStorage.getItem(SAVED_SESSION_KEY)
       if (savedSession && !isValidConversationId(savedSession)) {
         // A leftover from before ids were validated (the string "false").
         // Clear it rather than request /conversations/<junk> on every boot.
@@ -316,7 +319,7 @@ export default function App() {
     // boot request it too. Sidebar already filters, so this is the backstop.
     if (!isValidConversationId(id)) return
     setActiveConversation(id)
-    try { localStorage.setItem('ember_active_session', id) } catch {}
+    try { localStorage.setItem(SAVED_SESSION_KEY, id) } catch {}
     if (projectId) setActiveProject(projectId)
     setSidebarOpen(false)
     // Per-conversation toggles reset on any conversation entry — vault ON, bare OFF.
