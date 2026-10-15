@@ -11,6 +11,17 @@
             "statusMessage": "Checking file policy..."
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-env-reads.cjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking .env read policy..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
