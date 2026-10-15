@@ -75,3 +75,23 @@ check.
   caught — and they are now the documented place to look, instead of being implicit.
 - "Acceptable skip" now has a written definition (see CLAUDE.md Testing
   Discipline), so the count stops drifting release to release.
+
+## Addendum: vault swap-back and the rate-limit budget
+
+The live-backend lane and the default lane share one API and one per-IP rate
+limit (60/min, slowapi, keyed by remote address, so every localhost client is the
+same bucket).
+
+- **Swap-back contract.** Global setup records the active vault label to
+  `.e2e-vault-original.json` *before* swapping to `test`. Teardown restores that
+  exact label (never a hardcoded name), retries 429s honoring `Retry-After` within
+  a bounded wait, then re-reads the active vault and fails the run loudly if it
+  does not match. If the backend is already on `test` with no record, the run
+  fails and asks for `EMBER_RESTORE_VAULT=<label>`; no label is assumed.
+  `npm run e2e:restore` restores from the record after a hard kill. Logic and its
+  unit tests: `tests/e2e/helpers/vault-swap.cjs`, `tests/unit/vault-swap.test.js`.
+- **Default lane sends nothing to the live API.** `mockBootstrap` registers a
+  context-level catch-all that answers any unclaimed API path with a 404
+  (surfaced failure, ADR 0003). Measured with the proxy pointed at a dead port:
+  508 requests reached the proxy before (peak 208 in a 60s window), 1 after.
+  Details and the measurement recipe: `docs/e2e-vault-swap.md`.

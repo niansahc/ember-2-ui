@@ -28,7 +28,30 @@
 // put them in a separate test.describe with its own beforeEach that skips
 // mockBootstrap.
 
+// Paths the Vite dev server proxies to the live API (vite.config.js). Anything
+// under these that no mock claims would otherwise reach :8000 and count against
+// the backend's shared 60/min-per-IP rate limit; in the baseline measurement 374
+// of 508 such requests were GET /v1/developer/status alone. The catch-all below
+// absorbs them as a surfaced 404 (ADR 0003: failures are shown, never faked).
+const API_PATH = /^\/(v1|model|ingest|journal|state|reflect|debug-context)(\/|$)/
+
 async function mockBootstrap(page, overrides = {}) {
+  // Registered on the CONTEXT, not the page: page routes always run before
+  // context routes, so every specific page mock wins no matter when it was
+  // registered (disk-encryption.spec registers its mock before calling
+  // mockBootstrap). Mocks call route.fallback() for methods they do not handle,
+  // which lands here instead of the network.
+  const unmocked = []
+  await page.context().route((url) => API_PATH.test(url.pathname), async (route, request) => {
+    unmocked.push({ method: request.method(), path: new URL(request.url()).pathname })
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      headers: { 'x-e2e-unmocked': '1' },
+      body: JSON.stringify({ detail: 'not mocked in e2e (mockBootstrap catch-all)' }),
+    })
+  })
+
   const health = {
     status: 'ok',
     version: '0.14.1',
@@ -98,12 +121,12 @@ async function mockBootstrap(page, overrides = {}) {
   // /model — App.jsx reads model name + available list for Settings
   // Scoped to GET only so POST /model (model switch) still hits the backend.
   await page.route('**/model', async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     // Guard against accidentally matching unrelated URLs that happen to
     // end in /model (e.g. /v1/some-model) — only the exact bare /model
     // path, optionally with a trailing slash or query string.
     const url = new URL(request.url())
-    if (!/\/model\/?$/.test(url.pathname)) return route.continue()
+    if (!/\/model\/?$/.test(url.pathname)) return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -114,7 +137,7 @@ async function mockBootstrap(page, overrides = {}) {
   // /v1/preferences — GET only, so PATCH can still hit real backend if a
   // test needs to exercise preference writes
   await page.route('**/v1/preferences', async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -135,7 +158,7 @@ async function mockBootstrap(page, overrides = {}) {
   // GET and to the bare collection path so /conversations/{id} (turns, rename,
   // delete) still flows through to a per-test route or the real backend.
   await page.route(/\/conversations(\?|$)/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -145,7 +168,7 @@ async function mockBootstrap(page, overrides = {}) {
 
   // GET /v1/projects — POST (createProject) still hits the backend.
   await page.route(/\/projects$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -156,7 +179,7 @@ async function mockBootstrap(page, overrides = {}) {
   // GET /v1/tasks?status=... — returns the list for the requested status;
   // PATCH/DELETE on /tasks/{id} still flow through.
   await page.route(/\/tasks(\?|$)/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     const status = new URL(request.url()).searchParams.get('status')
     await route.fulfill({
       status: 200,
@@ -164,6 +187,8 @@ async function mockBootstrap(page, overrides = {}) {
       body: JSON.stringify({ tasks: tasks[status] || [] }),
     })
   })
+
+  return { unmocked }
 }
 
 /**
@@ -178,7 +203,7 @@ async function mockBootstrap(page, overrides = {}) {
  */
 async function mockConversationTurns(page, respond) {
   await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     const id = request.url().split('/').pop()
     const { turns = [], status = 200, gate } = respond(id) || {}
     if (gate) await gate
