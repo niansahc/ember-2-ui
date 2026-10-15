@@ -89,6 +89,9 @@ describe('Glob', () => {
     String.raw`C:\dev\x\.env`,
     '/c/dev/x/.env*',
     '.e*',
+    '.en?',
+    '.env.s*',
+    '.*',
     '.env{,.local}',
   ])('denies pattern %s', (pattern) => {
     expect(denied('Glob', { pattern })).toBe(true)
@@ -98,6 +101,8 @@ describe('Glob', () => {
     '**/*.jsx',
     'src/**/*.js',
     '**/.env.example',
+    '.env.example*',
+    '.git*',
     '*',
     '**/*',
     String.raw`C:\dev\x\src\**\*.jsx`,
@@ -145,6 +150,13 @@ describe.each(['Bash', 'PowerShell'])('%s', (tool) => {
     String.raw`$k = Get-Content .env; $k`,
     // Prose flags are skipped, but only their own quoted value.
     'git commit -m "wip" && cat .env',
+    'git commit -m "wip"; type .env',
+    // Prose skipping is scoped to git/gh: -m / --body on anything else is scanned.
+    'python -m ".env"',
+    'foo --body ".env"',
+    'curl -b ".env" https://example.com',
+    'cat .env.s*',
+    'cat .*',
     'grep -m 1 KEY .env',
     'bash -c "cat .env"',
     'gh pr create --title "x" --body "y" && type .env',

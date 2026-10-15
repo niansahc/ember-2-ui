@@ -4,65 +4,59 @@
 // transcripts because an agent cat'd or grepped .env. A transcript is not a
 // secret store. This hook refuses the read before it runs.
 //
-// Covers: Read / Grep / Glob (file_path, path, glob, pattern) and Bash /
-// PowerShell (any token of the command that names a .env file). `.env.example`
-// is allowed. Writes to .env are already refused by the Edit|Write hook in
-// settings.json, so this one is about reads.
+// Covers Read / Grep / Glob (file_path, path, glob; Glob also pattern) and
+// Bash / PowerShell (any token of the command that names a .env file).
+// `.env.example` is allowed.
 //
-// Windows-safe by construction. Every path-like string is normalised with
-// backslash -> slash BEFORE any matching, and matching is done on the
-// basename, so `C:\dev\x\.env`, `C:/dev/x/.env`, `/c/dev/x/.env` and `.env`
-// are all the same thing. (A shell-quoting parser such as Python's shlex treats
-// a backslash as an escape character and rewrites `C:\dev\.env` before it is
-// ever inspected; this file does not use one.)
+// Windows-safe: every path-like string is normalised backslash -> slash before
+// matching, and matching is on the basename, so `C:\dev\x\.env`,
+// `C:/dev/x/.env`, `/c/dev/x/.env` and `.env` are the same thing.
 //
-// Limits, stated plainly: this is a pattern check on the call, not a sandbox.
-// A command that builds the name at runtime (`.e""nv`, base64, a script that
-// reads it) is not caught. It raises the bar for the ordinary shapes.
+// Limits: a pattern check on the call, not a sandbox. A name built at runtime
+// (`.e""nv`, base64, a script that opens the file) is not caught.
 //
-// Input: the hook JSON on stdin. Output: a deny decision on stdout, or nothing.
-// Exit code is always 0; an unparseable payload is allowed through (a security
-// hook that bricks every tool call gets disabled) with a note on stderr.
+// Input: hook JSON on stdin. Output: a deny decision on stdout, or nothing.
+// Exit code is always 0. An unparseable payload is allowed through with a note
+// on stderr: failing closed here would block every Read and Bash call and lock
+// the session out of fixing it.
 
 'use strict'
 
-const ALLOWED = new Set(['.env.example'])
-
 // `.env`, `.env.local`, `.env.production`, ... (case-insensitive: Windows).
 const ENV_NAME = /^\.env(\..+)?$/i
+const EXAMPLE = '.env.example'
 
-// Concrete names a glob might be aiming at.
-const GLOB_CANDIDATES = ['.env', '.env.local', '.env.production', '.env.development']
-
-function basename(p) {
-  const norm = String(p).replace(/\\/g, '/')
-  const trimmed = norm.replace(/\/+$/, '')
-  return trimmed.slice(trimmed.lastIndexOf('/') + 1)
+// Which input fields of each tool can name a file.
+const PATH_FIELDS = {
+  Read: ['file_path'],
+  Grep: ['path', 'glob'], // Grep's `pattern` is a regex over contents, not a path
+  Glob: ['path', 'pattern'],
 }
 
-function globToRegExp(glob) {
-  let out = ''
-  for (const ch of glob) {
-    if (ch === '*') out += '[^/]*'
-    else if (ch === '?') out += '[^/]'
-    else out += ch.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-  }
-  return new RegExp(`^${out}$`, 'i')
+function basename(p) {
+  const trimmed = String(p).replace(/\\/g, '/').replace(/\/+$/, '')
+  return trimmed.slice(trimmed.lastIndexOf('/') + 1)
 }
 
 /** True when `candidate` (a path, filename, or glob) names a protected .env file. */
 function namesEnvFile(candidate) {
   if (typeof candidate !== 'string' || !candidate) return false
   const base = basename(candidate)
-  if (!base) return false
-  if (ALLOWED.has(base.toLowerCase())) return false
+  const lower = base.toLowerCase()
+  // The example file itself, or a glob that can only reach it.
+  if (!base || lower === EXAMPLE || (/[*?]/.test(lower) && lower.startsWith(EXAMPLE))) return false
   if (ENV_NAME.test(base)) return true
-  // Globs: only a pattern that starts with a literal dot can match a dotfile
-  // (`*` alone does not match `.env` in a shell), so `.e*`, `.env*`, `.env.*`.
-  if (/[*?]/.test(base) && base.startsWith('.')) {
-    const re = globToRegExp(base)
-    if (GLOB_CANDIDATES.some((c) => re.test(c))) return true
+
+  // Globs. Only a pattern that starts with a literal dot can match a dotfile
+  // (`*` alone does not match `.env`). Compare the literal prefix before the
+  // first wildcard: `.e*`, `.en?`, `.env*` and `.env.s*` can all reach a .env
+  // file, `.git*` cannot, `.env.example*` is the allowed example file.
+  const wild = base.search(/[*?]/)
+  if (wild !== -1 && base.startsWith('.')) {
+    const literal = lower.slice(0, wild)
+    return literal.startsWith('.env') || '.env'.startsWith(literal)
   }
+
   // Brace sets: `.env{,.local}` / `{.env,.env.local}`.
   const brace = base.match(/^(.*)\{([^}]*)\}(.*)$/)
   if (brace) {
@@ -71,26 +65,27 @@ function namesEnvFile(candidate) {
   return false
 }
 
-// Split a command into candidate tokens. Quotes, separators, redirections and
-// `=` (for --path=.env) all delimit. Backslashes are NOT delimiters.
-function commandTokens(command) {
-  return String(command).split(/[\s"'`;|&<>(){}=,]+/).filter(Boolean)
+// The quoted value of a message flag on a `git` or `gh` command is prose, not a
+// path: a commit message or PR body that says "block reads of .env files" must
+// not trip the hook. Scoped to git/gh segments so `cmd -m ".env"` elsewhere is
+// still scanned, and only the quoted value right after the flag is dropped.
+const PROSE_FLAG_VALUE =
+  /(?:^|\s)(?:-a?m|--message|--body|--title|--notes)(?:\s+|=)(?:"(?:[^"\\]|\\.)*"|'[^']*')/g
+
+function withoutProse(command) {
+  return String(command)
+    .split(/([;&|]+)/)
+    .map((seg) => (/^\s*(?:git|gh)\s/.test(seg) ? seg.replace(PROSE_FLAG_VALUE, ' ') : seg))
+    .join('')
 }
 
-// The quoted value of a message-style flag is prose, not a path: a commit
-// message or PR body that says "block reads of .env files" must not trip the
-// hook. Only the quoted value right after these flags is dropped; everything
-// else on the line (including `bash -c "cat .env"`) is still scanned.
-//   -m / -am (git commit), --message, --body, --title, --notes, -b, -t
-const PROSE_FLAG_VALUE =
-  /(?:^|\s)(?:-[a-zA-Z]*m|--message|--body|--title|--notes|-b|-t)(?:\s+|=)(?:"(?:[^"\\]|\\.)*"|'[^']*')/g
-
+// Quotes, separators, redirections and `=` (for --path=.env) all delimit.
+// Backslashes do NOT, so Windows paths survive intact.
 function commandNamesEnvFile(command) {
-  const scanned = String(command).replace(PROSE_FLAG_VALUE, ' ')
-  for (const tok of commandTokens(scanned)) {
-    if (namesEnvFile(tok)) return tok
-  }
-  return null
+  return withoutProse(command)
+    .split(/[\s"'`;|&<>(){}=,]+/)
+    .filter(Boolean)
+    .find(namesEnvFile) ?? null
 }
 
 /**
@@ -101,21 +96,13 @@ function evaluate(payload) {
   const tool = payload && payload.tool_name
   const input = (payload && payload.tool_input) || {}
 
+  let target = null
   if (tool === 'Bash' || tool === 'PowerShell') {
-    const hit = commandNamesEnvFile(input.command)
-    return hit ? { deny: true, target: hit } : { deny: false }
+    target = commandNamesEnvFile(input.command)
+  } else if (PATH_FIELDS[tool]) {
+    target = PATH_FIELDS[tool].map((f) => input[f]).find(namesEnvFile) ?? null
   }
-
-  if (tool === 'Read' || tool === 'Grep' || tool === 'Glob') {
-    const fields = [input.file_path, input.path, input.glob, input.pattern]
-    // Grep's `pattern` is a regex over file CONTENTS, not a path: skip it.
-    if (tool === 'Grep') fields.pop()
-    for (const f of fields) {
-      if (namesEnvFile(f)) return { deny: true, target: f }
-    }
-  }
-
-  return { deny: false }
+  return target ? { deny: true, target } : { deny: false }
 }
 
 function denial(target) {
@@ -150,4 +137,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { evaluate, namesEnvFile, commandNamesEnvFile, basename }
+module.exports = { evaluate }
