@@ -28,12 +28,13 @@
 // put them in a separate test.describe with its own beforeEach that skips
 // mockBootstrap.
 
-// Paths the Vite dev server proxies to the live API (vite.config.js). Anything
+// Paths the Vite dev server proxies to the live API (proxy-prefixes.cjs). Anything
 // under these that no mock claims would otherwise reach :8000 and count against
-// the backend's shared 60/min-per-IP rate limit; in the baseline measurement 374
-// of 508 such requests were GET /v1/developer/status alone. The catch-all below
-// absorbs them as a surfaced 404 (ADR 0003: failures are shown, never faked).
-const API_PATH = /^\/(v1|model|ingest|journal|state|reflect|debug-context)(\/|$)/
+// the backend's shared 60/min-per-IP rate limit (numbers: docs/e2e-vault-swap.md).
+// The catch-all below absorbs them as a surfaced 404 (ADR 0003: failures are
+// shown, never faked).
+const PROXY_PREFIXES = require('./proxy-prefixes.cjs')
+const API_PATH = new RegExp(`^(${PROXY_PREFIXES.join('|')})(/|$)`)
 
 async function mockBootstrap(page, overrides = {}) {
   // Registered on the CONTEXT, not the page: page routes always run before

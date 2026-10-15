@@ -4,15 +4,14 @@
 // If the backend is on 'test' with no record, set EMBER_RESTORE_VAULT=<label>.
 
 const { makeDeps } = require('../tests/e2e/helpers/vault-runtime.cjs')
-const { runTeardown } = require('../tests/e2e/helpers/vault-swap.cjs')
+const { runTeardownLoud } = require('../tests/e2e/helpers/vault-swap.cjs')
 
 ;(async () => {
   const { ctx, deps } = await makeDeps()
   try {
-    await runTeardown(deps)
-  } catch (err) {
-    console.error(err.message)
-    process.exitCode = 1
+    await runTeardownLoud(deps)
+  } catch {
+    // runTeardownLoud already printed the boxed message and set exitCode 1.
   } finally {
     await ctx.dispose()
   }

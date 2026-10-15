@@ -15,10 +15,8 @@
 //     await cleanupSinceSnapshot(request, snapshot)
 //   })
 //
-// The backend must be switched to the 'test' vault manually before running
-// these tests (POST /v1/developer/vault/swap body {"vault_label": "test"}).
-// There is currently no API to swap back to the default vault -- an API
-// restart is required. This is a known backend gap flagged for G.
+// Global setup swaps the backend to the 'test' vault and teardown restores the
+// recorded one; see helpers/vault-swap.cjs and docs/e2e-vault-swap.md.
 
 const { safeCall, redactSecrets } = require('./redact.cjs')
 

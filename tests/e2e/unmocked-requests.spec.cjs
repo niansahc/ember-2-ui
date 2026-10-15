@@ -5,45 +5,46 @@
 const { test, expect } = require('@playwright/test')
 const { mockBootstrap } = require('./helpers/mock-bootstrap.cjs')
 
-test.describe('mockBootstrap catch-all', () => {
-  test('absorbs an unmocked API call as a 404 and records it', async ({ page }) => {
-    const { unmocked } = await mockBootstrap(page)
-    await page.goto('/')
-    await page.waitForSelector('.app-layout', { timeout: 15000 })
-    const before = unmocked.length
-    const out = await page.evaluate(async () => {
-      const r = await fetch('/v1/definitely-not-mocked')
-      return { status: r.status, flag: r.headers.get('x-e2e-unmocked') }
-    })
-    expect(out).toEqual({ status: 404, flag: '1' })
-    expect(unmocked.slice(before)).toEqual([{ method: 'GET', path: '/v1/definitely-not-mocked' }])
-  })
+// Boot the app under mockBootstrap and return the unmocked list plus a probe
+// that fires one fetch from the page and reports what the catch-all recorded
+// for it alone (boot-time calls are excluded).
+async function boot(page) {
+  const { unmocked } = await mockBootstrap(page)
+  await page.goto('/')
+  await page.waitForSelector('.app-layout', { timeout: 15000 })
+  return {
+    unmocked,
+    async probe(path, init) {
+      const before = unmocked.length
+      const out = await page.evaluate(async ([p, i]) => {
+        const r = await fetch(p, i)
+        return { status: r.status, flag: r.headers.get('x-e2e-unmocked') }
+      }, [path, init])
+      return { ...out, recorded: unmocked.slice(before) }
+    },
+  }
+}
 
-  // Positive control for the test above: a mocked path must NOT be recorded,
+test.describe('mockBootstrap catch-all', () => {
+  for (const { name, path, init, method } of [
+    { name: 'an unmocked GET', path: '/v1/definitely-not-mocked', init: undefined, method: 'GET' },
+    // A non-GET to a mocked path: the mock calls route.fallback(), which must
+    // land on the catch-all, not the network.
+    { name: 'a non-GET to a mocked path', path: '/v1/preferences', init: { method: 'PATCH', body: '{}' }, method: 'PATCH' },
+  ]) {
+    test(`absorbs ${name} as a 404 and records it`, async ({ page }) => {
+      const app = await boot(page)
+      expect(await app.probe(path, init)).toEqual({
+        status: 404, flag: '1', recorded: [{ method, path }],
+      })
+    })
+  }
+
+  // Positive control for the tests above: a mocked path must NOT be recorded,
   // otherwise "unmocked" would list everything and prove nothing.
   test('control: a mocked GET is not recorded and is served by its mock', async ({ page }) => {
-    const { unmocked } = await mockBootstrap(page)
-    await page.goto('/')
-    await page.waitForSelector('.app-layout', { timeout: 15000 })
-    const before = unmocked.length
-    const out = await page.evaluate(async () => {
-      const r = await fetch('/v1/preferences')
-      return { status: r.status, flag: r.headers.get('x-e2e-unmocked') }
-    })
-    expect(out).toEqual({ status: 200, flag: null })
-    expect(unmocked.slice(before)).toEqual([])
-  })
-
-  test('a non-GET to a mocked path falls through to the catch-all, not the network', async ({ page }) => {
-    const { unmocked } = await mockBootstrap(page)
-    await page.goto('/')
-    await page.waitForSelector('.app-layout', { timeout: 15000 })
-    const before = unmocked.length
-    const status = await page.evaluate(async () => (
-      await fetch('/v1/preferences', { method: 'PATCH', body: '{}' })
-    ).status)
-    expect(status).toBe(404)
-    expect(unmocked.slice(before)).toEqual([{ method: 'PATCH', path: '/v1/preferences' }])
+    const app = await boot(page)
+    expect(await app.probe('/v1/preferences')).toEqual({ status: 200, flag: null, recorded: [] })
   })
 
   test('a spec-level mock registered after mockBootstrap still wins', async ({ page }) => {

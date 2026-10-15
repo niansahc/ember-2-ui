@@ -11,7 +11,7 @@
 //   client.get(url, {headers}) / client.post(url, {headers, data})
 // returning something with ok(), status(), headers(), json(), text().
 
-const API_URL = 'http://localhost:8000/v1'
+const { API_URL } = require('./testvault.cjs')
 const STATUS_URL = `${API_URL}/developer/status`
 const SWAP_URL = `${API_URL}/developer/vault/swap`
 const TEST_LABEL = 'test'
@@ -137,17 +137,36 @@ async function swapTo(d, label) {
   }
 }
 
-/** Swap to label, then read the active vault back and require it to match. */
-async function restoreVault(d, label) {
+/**
+ * Swap to label, then read the active vault back. Returns the observed label
+ * (null when status is unreadable) so each caller words its own failure; a
+ * matching result means the swap is verified.
+ */
+async function swapAndVerify(d, label) {
   await swapTo(d, label)
   const after = await fetchStatus(d)
-  if (!after.ok || after.label !== label) {
+  return after.ok ? after.label : null
+}
+
+/** Swap to label and require the read-back to match, else VaultRestoreError. */
+async function restoreVault(d, label) {
+  const actual = await swapAndVerify(d, label)
+  if (actual !== label) {
     throw new VaultRestoreError(
       `Vault restore NOT verified. Expected active vault '${label}', ` +
-      `found ${after.ok ? `'${after.label}'` : `unreadable status (HTTP ${after.httpStatus})`}.`,
-      { expected: label, actual: after.ok ? after.label : null },
+      `found ${actual === null ? 'unreadable status' : `'${actual}'`}.`,
+      { expected: label, actual },
     )
   }
+}
+
+/**
+ * Where to restore when the backend is on 'test' and there is no record:
+ * EMBER_RESTORE_VAULT, never a guessed default. Null when unusable.
+ */
+function restoreLabelFromEnv(env) {
+  const label = env.EMBER_RESTORE_VAULT
+  return label && label !== TEST_LABEL ? label : null
 }
 
 function manualRestoreHint(label) {
@@ -180,10 +199,11 @@ async function runSetup(d) {
       log(`[global-setup] On test vault with a record from an earlier run. Will restore '${record.label}'.`)
       return { original: record.label, swapped: false }
     }
-    if (env.EMBER_RESTORE_VAULT && env.EMBER_RESTORE_VAULT !== TEST_LABEL) {
-      writeRecord(recordFile, env.EMBER_RESTORE_VAULT, io, d.now)
-      log(`[global-setup] On test vault, no record. Using EMBER_RESTORE_VAULT='${env.EMBER_RESTORE_VAULT}'.`)
-      return { original: env.EMBER_RESTORE_VAULT, swapped: false }
+    const fromEnv = restoreLabelFromEnv(env)
+    if (fromEnv) {
+      writeRecord(recordFile, fromEnv, io, d.now)
+      log(`[global-setup] On test vault, no record. Using EMBER_RESTORE_VAULT='${fromEnv}'.`)
+      return { original: fromEnv, swapped: false }
     }
     throw new VaultSwapError(
       `Backend is already on the 'test' vault and no record of the original vault exists, so the ` +
@@ -201,12 +221,11 @@ async function runSetup(d) {
 
   writeRecord(recordFile, label, io, d.now)
   log(`[global-setup] Recorded '${label}'. Swapping to '${TEST_LABEL}'...`)
-  await swapTo(d, TEST_LABEL)
-  const after = await fetchStatus(d)
-  if (!after.ok || after.label !== TEST_LABEL) {
+  const actual = await swapAndVerify(d, TEST_LABEL)
+  if (actual !== TEST_LABEL) {
     throw new VaultSwapError(
       `Swap to '${TEST_LABEL}' returned ok but the active vault is ` +
-      `${after.ok ? `'${after.label}'` : 'unreadable'}. ${manualRestoreHint(label)}`,
+      `${actual === null ? 'unreadable' : `'${actual}'`}. ${manualRestoreHint(label)}`,
     )
   }
   log(`[global-setup] On test vault. Will restore '${label}' afterward.`)
@@ -240,8 +259,8 @@ async function runTeardown(d) {
       log(`[global-teardown] On '${status.label}', no record. Nothing to restore.`)
       return { restored: false }
     }
-    target = env.EMBER_RESTORE_VAULT
-    if (!target || target === TEST_LABEL) {
+    target = restoreLabelFromEnv(env)
+    if (!target) {
       throw new VaultRestoreError(
         `Backend is on the 'test' vault and there is no record of the original. ` +
         `Rerun with EMBER_RESTORE_VAULT=<label>. No label is assumed.`,
@@ -294,9 +313,8 @@ ${bar}
 }
 
 module.exports = {
-  API_URL, STATUS_URL, SWAP_URL, TEST_LABEL, RETRY_AFTER_CAP_MS,
+  STATUS_URL, SWAP_URL,
   VaultSwapError, VaultRestoreError,
   parseRetryAfter, withRetry,
-  readRecord, writeRecord, clearRecord,
-  fetchStatus, swapTo, restoreVault, runSetup, runTeardown, runTeardownLoud,
+  restoreVault, runSetup, runTeardown, runTeardownLoud,
 }
