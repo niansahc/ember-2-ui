@@ -168,7 +168,7 @@ test.describe('Settings', () => {
           body: JSON.stringify({ success: true }),
         })
       } else {
-        await route.continue()
+        await route.fallback()
       }
     })
 

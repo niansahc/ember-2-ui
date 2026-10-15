@@ -287,7 +287,7 @@ test.describe('Chat failures surface honestly', () => {
     await page.route(/\/conversations\/[^/?]+$/, (route, req) =>
       req.method() === 'GET'
         ? route.fulfill({ status: 500, contentType: 'text/plain', body: 'Internal Server Error' })
-        : route.continue(),
+        : route.fallback(),
     )
     await gotoApp(page)
 

@@ -16,7 +16,7 @@ const TASK = { id: 'task_tray01', title: 'Synthetic Task', status: 'active', met
 // sticks — otherwise handleTaskToggle would roll back and clear the done class.
 async function mockTaskMutations(page) {
   await page.route(/\/tasks\/[^/?]+$/, async (route, request) => {
-    if (request.method() === 'GET') return route.continue()
+    if (request.method() === 'GET') return route.fallback()
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
 }

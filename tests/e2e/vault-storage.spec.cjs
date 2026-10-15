@@ -23,7 +23,7 @@ test.describe('Vault Storage Display', () => {
 
     // mock lodestone endpoint (Memory tab fetches this)
     await page.route('**/v1/lodestone', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -33,7 +33,7 @@ test.describe('Vault Storage Display', () => {
 
     // mock developer status
     await page.route('**/v1/developer/status', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -70,7 +70,7 @@ test.describe('Vault Storage Display', () => {
     })
 
     await page.route('**/v1/lodestone', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -79,7 +79,7 @@ test.describe('Vault Storage Display', () => {
     })
 
     await page.route('**/v1/developer/status', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -113,7 +113,7 @@ test.describe('Vault Storage Display', () => {
     })
 
     await page.route('**/v1/lodestone', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -122,7 +122,7 @@ test.describe('Vault Storage Display', () => {
     })
 
     await page.route('**/v1/developer/status', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

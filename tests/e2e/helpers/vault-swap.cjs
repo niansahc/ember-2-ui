@@ -272,10 +272,31 @@ async function runTeardown(d) {
   return { restored: true, label: target }
 }
 
+/**
+ * Teardown entry point: runs runTeardown and, on failure, prints one boxed
+ * message, sets proc.exitCode = 1 and rethrows. Success leaves exitCode alone.
+ * proc/logError are injected so this is unit-testable.
+ */
+async function runTeardownLoud(d, { proc = process, logError = console.error } = {}) {
+  try {
+    return await runTeardown(d)
+  } catch (err) {
+    const bar = '!'.repeat(72)
+    logError(`
+${bar}
+[global-teardown] VAULT NOT RESTORED
+${err.message}
+${bar}
+`)
+    proc.exitCode = 1
+    throw err
+  }
+}
+
 module.exports = {
   API_URL, STATUS_URL, SWAP_URL, TEST_LABEL, RETRY_AFTER_CAP_MS,
   VaultSwapError, VaultRestoreError,
   parseRetryAfter, withRetry,
   readRecord, writeRecord, clearRecord,
-  fetchStatus, swapTo, restoreVault, runSetup, runTeardown,
+  fetchStatus, swapTo, restoreVault, runSetup, runTeardown, runTeardownLoud,
 }

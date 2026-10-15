@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import swap from '../e2e/helpers/vault-swap.cjs'
 
 const {
-  withRetry, parseRetryAfter, runSetup, runTeardown, restoreVault,
+  withRetry, parseRetryAfter, runSetup, runTeardown, runTeardownLoud, restoreVault,
   VaultSwapError, VaultRestoreError, STATUS_URL, SWAP_URL,
 } = swap
 
@@ -310,5 +310,30 @@ describe('restoreVault', () => {
     const { d } = deps({ client })
     await restoreVault(d, 'alpha')
     expect(client.calls.map((c) => c.kind)).toEqual(['POST', 'GET'])
+  })
+})
+
+describe('runTeardownLoud exit code', () => {
+  it('failure: exitCode 1, one boxed message naming the vault, error rethrown', async () => {
+    const client = fakeClient({ get: [statusRes('test'), statusRes('test')], post: [ok()] })
+    const { d } = deps({ client, io: fakeIo({ [REC]: record('alpha') }) })
+    const proc = { exitCode: 0 }
+    const logged = []
+    await expect(runTeardownLoud(d, { proc, logError: (m) => logged.push(m) }))
+      .rejects.toBeInstanceOf(VaultRestoreError)
+    expect(proc.exitCode).toBe(1)
+    expect(logged).toHaveLength(1)
+    expect(logged[0]).toMatch(/VAULT NOT RESTORED/)
+    expect(logged[0]).toMatch(/Expected active vault 'alpha', found 'test'/)
+  })
+
+  it('CONTROL: success leaves exitCode 0 and logs nothing', async () => {
+    const client = fakeClient({ get: [statusRes('test'), statusRes('alpha')], post: [ok()] })
+    const { d } = deps({ client, io: fakeIo({ [REC]: record('alpha') }) })
+    const proc = { exitCode: 0 }
+    const logged = []
+    await runTeardownLoud(d, { proc, logError: (m) => logged.push(m) })
+    expect(proc.exitCode).toBe(0)
+    expect(logged).toEqual([])
   })
 })

@@ -8,18 +8,13 @@
 // failing exit code, not a warning.
 
 const { makeDeps, NO_BACKEND } = require('./helpers/vault-runtime.cjs')
-const { runTeardown } = require('./helpers/vault-swap.cjs')
+const { runTeardownLoud } = require('./helpers/vault-swap.cjs')
 
 module.exports = async () => {
   if (NO_BACKEND) return
   const { ctx, deps } = await makeDeps()
   try {
-    await runTeardown(deps)
-  } catch (err) {
-    const bar = '!'.repeat(72)
-    console.error(`\n${bar}\n[global-teardown] VAULT NOT RESTORED\n${err.message}\n${bar}\n`)
-    process.exitCode = 1
-    throw err
+    await runTeardownLoud(deps)
   } finally {
     await ctx.dispose()
   }

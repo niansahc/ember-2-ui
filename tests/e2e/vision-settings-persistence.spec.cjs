@@ -180,7 +180,7 @@ test.describe('Vision Settings Persistence', () => {
     // that omits them. Registered after mockBootstrap on purpose — Playwright
     // matches routes in reverse registration order, so this one wins.
     await page.route('**/v1/preferences', async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
