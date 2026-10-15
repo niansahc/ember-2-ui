@@ -477,12 +477,12 @@ export function useChat({ model = null } = {}) {
       setSessionId(conversationId)
     } catch (err) {
       if (isStale()) return   // a newer selection owns the screen; don't stamp an error on it
-      if (err?.status === 404 && onNotFound) {
+      const gone = err?.status === 404
+      if (gone && onNotFound) {
         onNotFound()
         return
       }
       console.warn('[useChat] Conversation load failed:', err)
-      const gone = err?.status === 404
       // A 404 means the backend is up and says the conversation is gone, so
       // the copy must not tell the user the backend may be down.
       setMessages([
