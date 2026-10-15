@@ -15,7 +15,7 @@ async function mockMemoryTabDeps(page) {
     })
   })
   await page.route('**/v1/lodestone', async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -23,7 +23,7 @@ async function mockMemoryTabDeps(page) {
     })
   })
   await page.route('**/v1/developer/status', async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -294,7 +294,7 @@ test.describe('Developer Vault Switcher', () => {
     let swapped = false
     await mockBootstrap(page)
     await page.route(/\/conversations(\?|$)/, (route, req) => {
-      if (req.method() !== 'GET') return route.continue()
+      if (req.method() !== 'GET') return route.fallback()
       const conversations = swapped
         ? [{ id: 'sess_b', title: 'After Swap', updated_at: new Date().toISOString(), project_id: null }]
         : [{ id: 'sess_a', title: 'Before Swap', updated_at: new Date().toISOString(), project_id: null }]

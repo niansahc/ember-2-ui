@@ -49,7 +49,7 @@ async function seedLists(page) {
   })
   // GET /v1/projects
   await page.route(/\/projects$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

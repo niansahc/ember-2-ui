@@ -29,7 +29,7 @@ test.describe('Conversation loading (BUG-001)', () => {
     // GET /v1/conversations/{id} — the turns for the synthetic conversation.
     // Registered after mockBootstrap so it wins for the per-conversation path.
     await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

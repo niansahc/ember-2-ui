@@ -74,7 +74,7 @@ test.describe('User journeys', () => {
     await mockBootstrap(page, { conversations: [CONVO] })
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'GET'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ turns: TURNS }) })
-      : route.continue()))
+      : route.fallback()))
     await gotoApp(page)
 
     const item = page.locator('.sidebar-item').first()
@@ -135,7 +135,7 @@ test.describe('User journeys', () => {
       : route.fallback()))
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'PATCH'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', project_id: 'proj_new' }) })
-      : route.continue()))
+      : route.fallback()))
     await gotoApp(page)
 
     await page.locator('.sidebar-section-add[aria-label="New project"]').click()
@@ -186,9 +186,9 @@ test.describe('User journeys', () => {
     // Stateful conversation list — reflects the rename so a reload keeps it.
     await page.route(/\/conversations(\?|$)/, (route, req) => (req.method() === 'GET'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ conversations: [{ id: 'sess_1', title, updated_at: ts, project_id: null }] }) })
-      : route.continue()))
+      : route.fallback()))
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => {
-      if (req.method() !== 'PATCH') return route.continue()
+      if (req.method() !== 'PATCH') return route.fallback()
       try { const b = JSON.parse(req.postData() || '{}'); if (b.title) title = b.title } catch { /* ignore */ }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', title }) })
     })
@@ -209,7 +209,7 @@ test.describe('User journeys', () => {
     await mockBootstrap(page, { conversations: [{ id: 'sess_1', title: 'Doomed', updated_at: now(), project_id: null }] })
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'DELETE'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-      : route.continue()))
+      : route.fallback()))
     await gotoApp(page)
 
     await expect(page.locator('.sidebar-item')).toHaveCount(1)
@@ -325,7 +325,7 @@ test.describe('User journeys', () => {
     await mockBootstrap(page, { conversations: [CONVO] })
     await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'GET'
       ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ turns: TURNS }) })
-      : route.continue()))
+      : route.fallback()))
     await gotoApp(page)
 
     await page.locator('.sidebar-item').first().click()
@@ -341,7 +341,7 @@ test.describe('User journeys', () => {
     let current = 'qwen3:8b'
     await page.route('**/model', (route, req) => {
       const u = new URL(req.url())
-      if (!/\/model\/?$/.test(u.pathname)) return route.continue()
+      if (!/\/model\/?$/.test(u.pathname)) return route.fallback()
       if (req.method() === 'POST') { try { current = JSON.parse(req.postData() || '{}').model } catch { /* ignore */ } }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ model: current, available: ['qwen3:8b', 'llama3.2:3b'], vision_model: null }) })
     })

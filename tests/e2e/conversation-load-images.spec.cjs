@@ -17,7 +17,7 @@ const NOTE = '[data-testid="bubble-image-note"]'
 async function loadWith(page, turns) {
   await mockBootstrap(page, { conversations: [CONVO] })
   await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-    if (request.method() !== 'GET') return route.continue()
+    if (request.method() !== 'GET') return route.fallback()
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ turns }) })
   })
   await page.goto('/')

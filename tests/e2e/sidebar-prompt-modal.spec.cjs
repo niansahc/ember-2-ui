@@ -26,7 +26,7 @@ test.describe('Sidebar TextPromptModal', () => {
       })
       await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'PATCH'
         ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', title: 'New Title' }) })
-        : route.continue()))
+        : route.fallback()))
       await gotoApp(page)
       await page.locator('.sidebar-item').first().click({ button: 'right' })
       await page.locator('.sidebar-context-item', { hasText: 'Rename' }).click()
@@ -107,7 +107,7 @@ test.describe('Sidebar TextPromptModal', () => {
         : route.fallback()))
       await page.route(/\/conversations\/[^/?]+$/, (route, req) => (req.method() === 'PATCH'
         ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess_1', project_id: 'proj_new' }) })
-        : route.continue()))
+        : route.fallback()))
       await gotoApp(page)
       await page.locator('.sidebar-item').first().click({ button: 'right' })
       await page.locator('.sidebar-context-item', { hasText: 'New Project...' }).click()

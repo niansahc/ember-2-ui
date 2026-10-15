@@ -1,69 +1,20 @@
-// Playwright global teardown — runs once after all tests complete.
+// Playwright global teardown — runs once after all tests, including after
+// failures and Ctrl+C (Playwright's own graceful stop). A hard kill skips it;
+// the record file left behind is picked up by the next setup, or run
+// `npm run e2e:restore`.
 //
-// Swaps the backend back to the user's personal vault (private_vault) so
-// the user isn't left on the test vault after a test run. Requires G's
-// swap-back endpoint (commit cc798be) — backend must be restarted after
-// pulling that change for this teardown to succeed.
-//
-// Best-effort: if the swap-back fails, logs a clear warning but does not
-// fail the test run. The user can manually swap back via curl if needed.
+// Restores the label recorded at setup (never a hardcoded name), retrying
+// 429s with backoff, then verifies. Any failure is loud: boxed message and a
+// failing exit code, not a warning.
 
-const { request } = require('@playwright/test')
-const fs = require('fs')
-const path = require('path')
-const { safeCall, redactSecrets } = require('./helpers/redact.cjs')
-
-const API_URL = 'http://localhost:8000/v1'
-const PERSONAL_VAULT_LABEL = 'private_vault'
-
-function getApiKey() {
-  const envPath = path.resolve(__dirname, '..', '..', '.env')
-  try {
-    const content = fs.readFileSync(envPath, 'utf8')
-    const match = content.match(/VITE_EMBER_API_KEY=(.+)/)
-    if (match) return match[1].trim()
-  } catch {}
-  return ''
-}
+const { makeDeps, NO_BACKEND } = require('./helpers/vault-runtime.cjs')
+const { runTeardownLoud } = require('./helpers/vault-swap.cjs')
 
 module.exports = async () => {
-  const key = getApiKey()
-  const headers = key ? { Authorization: `Bearer ${key}` } : {}
-  const ctx = await request.newContext()
-
+  if (NO_BACKEND) return
+  const { ctx, deps } = await makeDeps()
   try {
-    const statusRes = await safeCall(() => ctx.get(`${API_URL}/developer/status`, { headers }))
-    if (!statusRes.ok()) {
-      console.warn(`[global-teardown] /v1/developer/status returned ${statusRes.status()}. Skipping swap-back.`)
-      return
-    }
-
-    const status = await statusRes.json()
-    const currentLabel = status?.active_vault?.label
-
-    if (currentLabel === PERSONAL_VAULT_LABEL) {
-      console.log('[global-teardown] Already on private_vault. No swap needed.')
-      return
-    }
-
-    console.log(`[global-teardown] Currently on '${currentLabel}'. Swapping back to '${PERSONAL_VAULT_LABEL}'...`)
-    const swapRes = await safeCall(() => ctx.post(`${API_URL}/developer/vault/swap`, {
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      data: { vault_label: PERSONAL_VAULT_LABEL },
-    }))
-
-    if (swapRes.ok()) {
-      console.log('[global-teardown] Swapped back to private_vault.')
-    } else {
-      const body = await swapRes.text()
-      console.warn(
-        `[global-teardown] Swap-back failed: ${swapRes.status()} ${body}. ` +
-        `Backend may need a restart to pick up the swap-back endpoint (commit cc798be). ` +
-        `You are still on the '${currentLabel}' vault.`,
-      )
-    }
-  } catch (err) {
-    console.warn(`[global-teardown] Unexpected error: ${redactSecrets(err.message)}. You may still be on the test vault.`)
+    await runTeardownLoud(deps)
   } finally {
     await ctx.dispose()
   }

@@ -29,7 +29,7 @@ test.describe('Conversation load with malformed response', () => {
 
     // Return 200 OK but missing the "turns" key — malformed
     await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -52,7 +52,7 @@ test.describe('Conversation load with malformed response', () => {
 
     // Return proper response with turns array
     await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-      if (request.method() !== 'GET') return route.continue()
+      if (request.method() !== 'GET') return route.fallback()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

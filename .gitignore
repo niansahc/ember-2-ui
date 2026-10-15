@@ -32,3 +32,6 @@ Thumbs.db
 # Editor directories
 .vscode/
 .idea/
+
+# e2e vault swap-back record (tests/e2e/helpers/vault-swap.cjs)
+.e2e-vault-original.json

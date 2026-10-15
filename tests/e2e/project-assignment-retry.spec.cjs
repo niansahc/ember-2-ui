@@ -41,10 +41,10 @@ test.describe('Deferred project assignment retry (#20)', () => {
     // path, so guard on method + body). Abort the 1st, fulfill the 2nd 200.
     let moveAttempts = 0
     await page.route(/\/conversations\/[^/?]+$/, async (route, request) => {
-      if (request.method() !== 'PATCH') return route.continue()
+      if (request.method() !== 'PATCH') return route.fallback()
       let body = {}
       try { body = JSON.parse(request.postData() || '{}') } catch {}
-      if (!('project_id' in body)) return route.continue()
+      if (!('project_id' in body)) return route.fallback()
 
       moveAttempts += 1
       if (moveAttempts === 1) {
