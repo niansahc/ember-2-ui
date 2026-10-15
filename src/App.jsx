@@ -288,7 +288,7 @@ export default function App() {
     setVaultOff(false)
     setChatOptions({ bareMode: false, vaultEnabled: true })
     // The stored session belongs to the vault we just left.
-    try { localStorage.removeItem('ember_active_session') } catch {}
+    forgetSavedSession()
     setVaultEpoch((n) => n + 1)
     // Preferences are per-vault, so the ones in hand are now the wrong ones.
     getPreferences().then((prefs) => {
@@ -303,7 +303,7 @@ export default function App() {
     setBareMode(false)
     setVaultOff(false)
     setChatOptions({ bareMode: false, vaultEnabled: true })
-    try { localStorage.removeItem('ember_active_session') } catch {}
+    forgetSavedSession()
     setSidebarOpen(false)
     // If started from a project view, assign new conversation to that project
     if (projectId && projectId !== 'general') {
