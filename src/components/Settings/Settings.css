@@ -1531,3 +1531,10 @@
   color: var(--text-muted);
   background: var(--bg-surface-hover);
 }
+
+/* Inline save/load failure under a setting row (thinking toggle). */
+.settings-row-error {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--error);
+}

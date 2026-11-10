@@ -643,6 +643,41 @@ export async function updatePreferences(updates) {
 }
 
 // ---------------------------------------------------------------------------
+// Thinking setting (ember-2 PR #316)
+// ---------------------------------------------------------------------------
+//
+// Unlike getPreferences/updatePreferences these THROW on failure. The toggle
+// needs to tell "off" from "couldn't read" and to roll back a failed write, and
+// a soft-fail to {} can do neither (ADR 0003: surface failures).
+
+/** Read the throw-on-failure error out of a non-2xx response. */
+async function thinkingError(res) {
+  let detail = ''
+  try {
+    detail = (await res.json()).detail || ''
+  } catch {}
+  return new Error(detail || `API error ${res.status}`)
+}
+
+/** GET /v1/settings/thinking -> { enabled, model, supported, cloud }. */
+export async function getThinking() {
+  const res = await fetch(`${API_URL}/settings/thinking`, { headers: authHeaders() })
+  if (!res.ok) throw await thinkingError(res)
+  return await res.json()
+}
+
+/** POST /v1/settings/thinking { enabled } -> same body as GET. Applies from the next message. */
+export async function setThinking(enabled) {
+  const res = await fetch(`${API_URL}/settings/thinking`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ enabled }),
+  })
+  if (!res.ok) throw await thinkingError(res)
+  return await res.json()
+}
+
+// ---------------------------------------------------------------------------
 // File upload
 // ---------------------------------------------------------------------------
 
