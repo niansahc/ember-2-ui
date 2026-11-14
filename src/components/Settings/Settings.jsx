@@ -9,9 +9,9 @@
  * not on mount. This keeps the initial open fast and avoids unnecessary API calls.
  */
 import { useState, useEffect, useRef, memo } from 'react'
-import { mockGetOllamaModels } from '../../api/mock.js'
 import {
   getModel as realGetModel,
+  getModelStrict,
   setModel as realSetModel,
   getProviderKey,
   setProviderKey,
@@ -41,6 +41,12 @@ import {
   readyFromBody,
   toggleThinking,
 } from '../../utils/thinkingSettings.js'
+import { deriveModelListView } from '../../utils/modelListView.js'
+import {
+  CONVERSATIONAL_STYLES,
+  GENERATION_HOST_HINT,
+  MODEL_LIST_COPY,
+} from '../../utils/settingsCopy.js'
 import { useAppearance } from '../../contexts/AppearanceContext.jsx'
 import StylePackPicker from './StylePackPicker.jsx'
 import Segmented from './Segmented.jsx'
@@ -144,7 +150,10 @@ export default memo(function Settings({
   // means "split is active, host reports zero models."
   const [generationAvailable, setGenerationAvailable] = useState(null)
   const [generationHost, setGenerationHost] = useState(null)
-  const [loadingModels, setLoadingModels] = useState(false)
+  // 'loading' | 'error' | 'ready'. modelsSeq drops a stale reply (a retry or a
+  // close/reopen must not be overwritten by an older request finishing late).
+  const [modelsStatus, setModelsStatus] = useState('loading')
+  const modelsSeq = useRef(0)
   const [modelTab, setModelTab] = useState('local')              // 'local' | 'cloud'
   // "Think before replying" (ember-2 #316). Server-owned via its own endpoint,
   // not preferences. thinkingSeq orders requests: a late reply from an older
@@ -155,6 +164,7 @@ export default memo(function Settings({
   // restores a value the server actually confirmed.
   const [thinkingSaving, setThinkingSaving] = useState(false)
   const thinkingSeq = useRef(0)
+  const seenModelRef = useRef(null) // last model the refetch effect saw while open
 
   // ── Cloud provider key state ──
   const [providerStatus, setProviderStatus] = useState({})        // { anthropic: { configured: true }, ... }
@@ -208,50 +218,51 @@ export default memo(function Settings({
     }
   }, [isOpen, initialTab])
 
+  // Model list. Throws-and-times-out via getModelStrict so a dead or hung
+  // /model lands in an error state with a retry. No mock fallback: a failed
+  // request must not invent models (ADR 0003).
+  async function loadModels() {
+    const seq = ++modelsSeq.current
+    setModelsStatus('loading')
+    try {
+      const data = await getModelStrict()
+      if (seq !== modelsSeq.current) return
+      if (data.model) {
+        setCurrentModel(data.model)
+        // Set tab based on current model
+        if (data.model.startsWith('claude-') || data.model.startsWith('gpt-')) {
+          setModelTab('cloud')
+        } else {
+          setModelTab('local')
+        }
+      }
+      if (data.available && data.available.length > 0) {
+        setLocalModels(data.available)
+      }
+      // Split generation host (#170) — key presence, not truthiness, is
+      // the signal. An absent key must reproduce today's behavior exactly.
+      if ('generation_available' in data) {
+        setGenerationAvailable(data.generation_available)
+      }
+      if ('generation_host' in data && data.generation_host) {
+        setGenerationHost(data.generation_host)
+      }
+      // Deliberately no vision handling here. /model used to be read for a
+      // `vision_model` field, which forced visionEnabled true and raced
+      // loadPreferences() below. The backend never actually sent that field,
+      // so the branch was dead — but it was a second writer to state that
+      // preferences now owns outright. Removed with issue #131; if /model
+      // ever starts returning vision_model, it still must not win here.
+      setModelsStatus('ready')
+    } catch {
+      if (seq === modelsSeq.current) setModelsStatus('error')
+    }
+  }
+
   useEffect(() => {
     if (!isOpen) return
     let ignore = false
 
-    setLoadingModels(true)
-    async function loadModels() {
-      try {
-        const data = await realGetModel()
-        if (ignore) return
-        if (data.model) {
-          setCurrentModel(data.model)
-          // Set tab based on current model
-          if (data.model.startsWith('claude-') || data.model.startsWith('gpt-')) {
-            setModelTab('cloud')
-          } else {
-            setModelTab('local')
-          }
-        }
-        if (data.available && data.available.length > 0) {
-          setLocalModels(data.available)
-        }
-        // Split generation host (#170) — key presence, not truthiness, is
-        // the signal. An absent key must reproduce today's behavior exactly.
-        if ('generation_available' in data) {
-          setGenerationAvailable(data.generation_available)
-        }
-        if ('generation_host' in data && data.generation_host) {
-          setGenerationHost(data.generation_host)
-        }
-        // Deliberately no vision handling here. /model used to be read for a
-        // `vision_model` field, which forced visionEnabled true and raced
-        // loadPreferences() below. The backend never actually sent that field,
-        // so the branch was dead — but it was a second writer to state that
-        // preferences now owns outright. Removed with issue #131; if /model
-        // ever starts returning vision_model, it still must not win here.
-      } catch {
-        if (ignore) return
-        console.warn('[Settings] Model API unreachable, using mock')
-        const list = await mockGetOllamaModels()
-        if (!ignore) setLocalModels(list)
-      } finally {
-        if (!ignore) setLoadingModels(false)
-      }
-    }
     loadModels()
 
     // Check provider key status
@@ -315,15 +326,14 @@ export default memo(function Settings({
     // avoids 2 unnecessary API calls when the user opens Settings to a
     // different tab (the common case).
 
-    return () => { ignore = true }
+    return () => { ignore = true; modelsSeq.current++ }
   }, [isOpen])
 
-  // Thinking setting. Keyed on currentModel as well as isOpen: supported/cloud
-  // describe the ACTIVE model, so a confirmed model switch (handleSelectModel
-  // sets currentModel only after the backend reports it) must refetch. Waits
-  // for currentModel so we don't fire a throwaway request before /model lands.
-  useEffect(() => {
-    if (!isOpen || !currentModel) return
+  // Thinking setting. Fetched on open, independent of the model list: the
+  // endpoint reports the model itself, so a slow or failed /model must not
+  // leave this row stuck disabled. fetchThinking restarts the load; thinkingSeq
+  // drops a late reply from an older fetch or click.
+  function fetchThinking() {
     const seq = ++thinkingSeq.current
     setThinkingState({ status: 'loading' })
     setThinkingError('')
@@ -331,10 +341,27 @@ export default memo(function Settings({
     getThinking()
       .then((body) => { if (seq === thinkingSeq.current) setThinkingState(readyFromBody(body)) })
       .catch(() => { if (seq === thinkingSeq.current) setThinkingState({ status: 'error' }) })
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+    fetchThinking()
     return () => {
-      // Invalidate on unmount/close/model change so a stale reply is dropped.
-      if (seq === thinkingSeq.current) thinkingSeq.current++
+      // Invalidate on close so a stale reply is dropped; forget the last
+      // model so the next open's first value is not mistaken for a change.
+      thinkingSeq.current++
+      seenModelRef.current = null
     }
+  }, [isOpen])
+
+  // supported/cloud describe the ACTIVE model, so a confirmed model CHANGE
+  // refetches. The first model we see after open is only recorded, not a
+  // trigger (open already fetched), so open sends exactly one request.
+  useEffect(() => {
+    if (!isOpen || !currentModel) return
+    const prev = seenModelRef.current
+    seenModelRef.current = currentModel
+    if (prev !== null && prev !== currentModel) fetchThinking()
   }, [isOpen, currentModel])
 
   // Optimistic toggle: paint first, roll back to the pre-click state on failure.
@@ -515,6 +542,8 @@ export default memo(function Settings({
     (m) => !m.toLowerCase().includes('vision') && !m.toLowerCase().includes('llava'),
   )
 
+  const modelListView = deriveModelListView({ status: modelsStatus, models: textModels })
+
   return (
     <>
       <div className="settings-overlay" onClick={onClose} aria-hidden="true" />
@@ -598,12 +627,17 @@ export default memo(function Settings({
                 <div className="model-list" role="tabpanel">
                   {generationHost && (
                     <p className="settings-row-hint generation-host-hint">
-                      Text generation via {generationHost}
+                      {GENERATION_HOST_HINT}
                     </p>
                   )}
-                  {loadingModels ? (
+                  {modelListView === 'loading' ? (
                     <p className="model-list-empty">Loading models...</p>
-                  ) : textModels.length === 0 ? (
+                  ) : modelListView === 'error' ? (
+                    <div className="model-list-empty" role="alert">
+                      <p>{MODEL_LIST_COPY.error}</p>
+                      <button className="model-list-retry" onClick={loadModels}>{MODEL_LIST_COPY.retry}</button>
+                    </div>
+                  ) : modelListView === 'empty' ? (
                     <p className="model-list-empty">No local models found. Install one with <code>ollama pull qwen3:8b</code></p>
                   ) : (
                     textModels.map((m) => (
@@ -704,11 +738,7 @@ export default memo(function Settings({
                   <span className="settings-row-hint">Controls how Ember responds</span>
                 </div>
                 <div className="settings-style-options" role="radiogroup" aria-label="Conversational style">
-                  {[
-                    { value: 'casual', label: 'Casual', desc: 'Shorter, informal, conversational' },
-                    { value: 'balanced', label: 'Balanced', desc: 'Default — mix of warmth and substance' },
-                    { value: 'thoughtful', label: 'Thoughtful', desc: 'Fuller responses with more context and reasoning' },
-                  ].map((opt) => (
+                  {CONVERSATIONAL_STYLES.map((opt) => (
                     <label
                       key={opt.value}
                       className={`settings-style-option ${tone === opt.value ? 'settings-style-option-active' : ''}`}

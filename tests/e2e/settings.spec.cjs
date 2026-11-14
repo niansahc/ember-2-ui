@@ -390,3 +390,16 @@ test.describe('Settings', () => {
     expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(viewportWidth + 5)
   })
 })
+
+test.describe('Settings: Conversational Style copy', () => {
+  test('cards show the approved descriptions', async ({ page }) => {
+    await mockBootstrap(page)
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.locator('.app-header-btn[aria-label="Open settings"]').click()
+    const options = page.locator('.settings-style-option')
+    await expect(options.nth(0)).toContainText('Shorter, informal, conversational')
+    await expect(options.nth(1)).toContainText('Default, a mix of warmth and substance')
+    await expect(options.nth(2)).toContainText('Fuller responses with more context and detail')
+  })
+})
