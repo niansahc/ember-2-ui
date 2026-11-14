@@ -146,6 +146,25 @@ async function mockBootstrap(page, overrides = {}) {
     })
   })
 
+  // /v1/settings/thinking — GET only; a spec that exercises POST registers its
+  // own route (page routes win over the context catch-all). Override the body
+  // with `thinking: { supported: false }` etc.
+  const thinking = {
+    enabled: false,
+    model: 'qwen3:8b',
+    supported: true,
+    cloud: false,
+    ...overrides.thinking,
+  }
+  await page.route('**/v1/settings/thinking', async (route, request) => {
+    if (request.method() !== 'GET') return route.fallback()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(thinking),
+    })
+  })
+
   // /v1/security/pin/status — GET only
   await page.route('**/v1/security/pin/status', async (route) => {
     await route.fulfill({

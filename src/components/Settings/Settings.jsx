@@ -8,7 +8,7 @@
  * Data fetching is deferred per-tab: each tab only fetches its data when activated,
  * not on mount. This keeps the initial open fast and avoids unnecessary API calls.
  */
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { mockGetOllamaModels } from '../../api/mock.js'
 import {
   getModel as realGetModel,
@@ -18,6 +18,8 @@ import {
   deleteProviderKey,
   getPreferences,
   updatePreferences,
+  getThinking,
+  setThinking,
   getPinStatus,
   getLodestone,
   updateLodestone,
@@ -33,6 +35,12 @@ import {
   readLegacyVisionSettings,
   resolveVisionSettings,
 } from '../../utils/visionSettings.js'
+import {
+  THINKING_COPY,
+  deriveThinkingView,
+  readyFromBody,
+  toggleThinking,
+} from '../../utils/thinkingSettings.js'
 import { useAppearance } from '../../contexts/AppearanceContext.jsx'
 import StylePackPicker from './StylePackPicker.jsx'
 import Segmented from './Segmented.jsx'
@@ -138,6 +146,15 @@ export default memo(function Settings({
   const [generationHost, setGenerationHost] = useState(null)
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelTab, setModelTab] = useState('local')              // 'local' | 'cloud'
+  // "Think before replying" (ember-2 #316). Server-owned via its own endpoint,
+  // not preferences. thinkingSeq orders requests: a late reply from an older
+  // fetch or click must not overwrite a newer one.
+  const [thinking, setThinkingState] = useState({ status: 'loading' })
+  const [thinkingError, setThinkingError] = useState('')
+  // Blocks a second click while a save is in flight, so a rollback always
+  // restores a value the server actually confirmed.
+  const [thinkingSaving, setThinkingSaving] = useState(false)
+  const thinkingSeq = useRef(0)
 
   // ── Cloud provider key state ──
   const [providerStatus, setProviderStatus] = useState({})        // { anthropic: { configured: true }, ... }
@@ -301,6 +318,39 @@ export default memo(function Settings({
     return () => { ignore = true }
   }, [isOpen])
 
+  // Thinking setting. Keyed on currentModel as well as isOpen: supported/cloud
+  // describe the ACTIVE model, so a confirmed model switch (handleSelectModel
+  // sets currentModel only after the backend reports it) must refetch. Waits
+  // for currentModel so we don't fire a throwaway request before /model lands.
+  useEffect(() => {
+    if (!isOpen || !currentModel) return
+    const seq = ++thinkingSeq.current
+    setThinkingState({ status: 'loading' })
+    setThinkingError('')
+    setThinkingSaving(false)
+    getThinking()
+      .then((body) => { if (seq === thinkingSeq.current) setThinkingState(readyFromBody(body)) })
+      .catch(() => { if (seq === thinkingSeq.current) setThinkingState({ status: 'error' }) })
+    return () => {
+      // Invalidate on unmount/close/model change so a stale reply is dropped.
+      if (seq === thinkingSeq.current) thinkingSeq.current++
+    }
+  }, [isOpen, currentModel])
+
+  // Optimistic toggle: paint first, roll back to the pre-click state on failure.
+  async function handleToggleThinking(next) {
+    const before = thinking
+    const seq = ++thinkingSeq.current
+    setThinkingError('')
+    setThinkingSaving(true)
+    setThinkingState({ ...before, enabled: next })
+    const result = await toggleThinking({ current: before, next, save: setThinking })
+    if (seq !== thinkingSeq.current) return // a refetch (model change) owns the UI now
+    setThinkingSaving(false)
+    setThinkingState(result.state)
+    if (!result.ok) setThinkingError(result.error)
+  }
+
   // Deferred: vault storage stats — only fetched when Memory tab is active.
   useEffect(() => {
     if (!isOpen || activeTab !== 'memory') return
@@ -450,6 +500,8 @@ export default memo(function Settings({
   }
 
   if (!isOpen) return null
+
+  const thinkingView = deriveThinkingView(thinking)
 
   // Vision runs local only — always read `available` (localModels), even
   // when a split generation host is configured.
@@ -618,6 +670,28 @@ export default memo(function Settings({
                     When using a cloud model, your conversation and relevant memories are sent to your cloud provider for processing. Your vault, history, and files remain on your device.
                   </div>
                 </div>
+              )}
+
+              {/* Think before replying — under the model picker because support
+                  depends on the active model. Hint/disabled come from
+                  deriveThinkingView; save failures roll back and show inline. */}
+              <div className={`settings-row${thinkingView.disabled ? ' settings-row-disabled' : ''}`} aria-disabled={thinkingView.disabled}>
+                <div className="settings-row-info">
+                  <span className="settings-row-label">{THINKING_COPY.label}</span>
+                  {thinkingView.hint && <span className="settings-row-hint">{thinkingView.hint}</span>}
+                </div>
+                <label className="toggle" aria-label="Toggle thinking" title={thinkingView.checked ? 'Click to disable' : 'Click to enable'}>
+                  <input
+                    type="checkbox" role="switch"
+                    checked={thinkingView.checked}
+                    disabled={thinkingView.disabled || thinkingSaving}
+                    onChange={(e) => handleToggleThinking(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+              {thinkingError && (
+                <p className="settings-row-error" role="alert">{thinkingError}</p>
               )}
 
               <hr className="settings-divider" />
