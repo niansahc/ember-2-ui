@@ -501,6 +501,8 @@ export default memo(function Settings({
 
   if (!isOpen) return null
 
+  const thinkingView = deriveThinkingView(thinking)
+
   // Vision runs local only — always read `available` (localModels), even
   // when a split generation host is configured.
   const visionModels = localModels.filter(
@@ -673,31 +675,24 @@ export default memo(function Settings({
               {/* Think before replying — under the model picker because support
                   depends on the active model. Hint/disabled come from
                   deriveThinkingView; save failures roll back and show inline. */}
-              {(() => {
-                const view = deriveThinkingView(thinking)
-                return (
-                  <>
-                    <div className={`settings-row${view.disabled ? ' settings-row-disabled' : ''}`} aria-disabled={view.disabled}>
-                      <div className="settings-row-info">
-                        <span className="settings-row-label">{THINKING_COPY.label}</span>
-                        {view.hint && <span className="settings-row-hint">{view.hint}</span>}
-                      </div>
-                      <label className="toggle" aria-label="Toggle thinking" title={view.checked ? 'Click to disable' : 'Click to enable'}>
-                        <input
-                          type="checkbox" role="switch"
-                          checked={view.checked}
-                          disabled={view.disabled || thinkingSaving}
-                          onChange={(e) => handleToggleThinking(e.target.checked)}
-                        />
-                        <span className="toggle-track" />
-                      </label>
-                    </div>
-                    {thinkingError && (
-                      <p className="settings-row-error" role="alert">{thinkingError}</p>
-                    )}
-                  </>
-                )
-              })()}
+              <div className={`settings-row${thinkingView.disabled ? ' settings-row-disabled' : ''}`} aria-disabled={thinkingView.disabled}>
+                <div className="settings-row-info">
+                  <span className="settings-row-label">{THINKING_COPY.label}</span>
+                  {thinkingView.hint && <span className="settings-row-hint">{thinkingView.hint}</span>}
+                </div>
+                <label className="toggle" aria-label="Toggle thinking" title={thinkingView.checked ? 'Click to disable' : 'Click to enable'}>
+                  <input
+                    type="checkbox" role="switch"
+                    checked={thinkingView.checked}
+                    disabled={thinkingView.disabled || thinkingSaving}
+                    onChange={(e) => handleToggleThinking(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+              {thinkingError && (
+                <p className="settings-row-error" role="alert">{thinkingError}</p>
+              )}
 
               <hr className="settings-divider" />
 
