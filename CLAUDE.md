@@ -193,6 +193,14 @@ Vault contents — including names, conversation text, and record IDs — must n
 
 ---
 
+## Doing the work
+- If the correct fix is blocked, larger than scoped, or a test looks wrong, stop and report it. Do not substitute a workaround, partial fix, or fallback that hides the failure.
+- Tests verify correctness; they do not define the solution. Do not edit a test to make it pass unless the prompt names it.
+- Comments: match the surrounding file's density. Comment only a non-obvious why. No comments that restate the code, narrate the change, or explain a shortcut.
+- Reports state: commands run with their results; what was not verified; shortcuts or deviations from the plan; what is incomplete. A claim without a run behind it is labelled unverified.
+
+---
+
 ## Release Process
 
 ### Gates -- mandatory before any release or patch is cut
