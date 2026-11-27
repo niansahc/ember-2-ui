@@ -316,6 +316,24 @@ export async function getModel() {
   }
 }
 
+/**
+ * Strict variant for the Settings model list: throws on a non-2xx, a network
+ * error, or no answer within timeoutMs, so the UI can show an error state
+ * instead of waiting forever. getModel() above stays soft for callers that
+ * only want a best-effort name.
+ */
+export async function getModelStrict({ timeoutMs = 8000 } = {}) {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const res = await fetch('/model', { headers: authHeaders(), signal: ctrl.signal })
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    return await res.json()
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /** Switch the active model. Hits /model (Ember-native, not /v1). */
 export async function setModel(model) {
   try {

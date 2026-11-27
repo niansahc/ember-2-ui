@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { streamChat, readMemories, searchMemories, semanticSearch, debugContext } from './ember.js'
+import { getModelStrict, streamChat, readMemories, searchMemories, semanticSearch, debugContext } from './ember.js'
 
 // Build a fake fetch Response whose body streams the given SSE frames as one
 // chunk, terminated by [DONE]. Mirrors the wire format ember.js parses:
@@ -164,5 +164,39 @@ describe('Memory Browser API client', () => {
   it('debugContext returns null on a failed response', async () => {
     global.fetch = vi.fn().mockResolvedValue(jsonResponse({}, false, 500))
     await expect(debugContext('anything')).resolves.toBeNull()
+  })
+})
+
+describe('getModelStrict', () => {
+  afterEach(() => vi.useRealTimers())
+
+  // Fetch stub that honours AbortSignal, like the real one, and otherwise never answers.
+  const hangingFetch = () => vi.fn((_u, init) => new Promise((_res, rej) => {
+    init.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')))
+  }))
+
+  it('returns the body on 200', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ model: 'synthetic' }) })
+    expect(await getModelStrict()).toEqual({ model: 'synthetic' })
+    expect(global.fetch.mock.calls[0][0]).toBe('/model')
+  })
+  it('throws on a non-2xx instead of returning a fake body', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    await expect(getModelStrict()).rejects.toThrow('API error 500')
+  })
+  it('throws on a network error', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(getModelStrict()).rejects.toThrow('Failed to fetch')
+  })
+  it('aborts and throws when nothing answers within the timeout (and not before)', async () => {
+    vi.useFakeTimers()
+    global.fetch = hangingFetch()
+    let outcome = 'pending'
+    const p = getModelStrict({ timeoutMs: 8000 }).then(() => { outcome = 'ok' }, () => { outcome = 'rejected' })
+    await vi.advanceTimersByTimeAsync(7999)
+    expect(outcome).toBe('pending') // control: the timeout is what rejects, not an early failure
+    await vi.advanceTimersByTimeAsync(1)
+    await p
+    expect(outcome).toBe('rejected')
   })
 })

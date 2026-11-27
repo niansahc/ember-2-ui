@@ -236,3 +236,65 @@ test.describe('Thinking toggle: model change and viewport', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
   })
 })
+
+test.describe('Thinking toggle: loads independently of the model list', () => {
+  /** Count GETs to /v1/settings/thinking, answering with `body`. */
+  async function countThinkingGets(page, body) {
+    const gets = []
+    await page.route('**/v1/settings/thinking', async (route, request) => {
+      if (request.method() !== 'GET') return route.fallback()
+      gets.push(Date.now())
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+    })
+    return gets
+  }
+  const body = { enabled: false, model: 'qwen3:8b', supported: true, cloud: false }
+  const isBareModel = (request) => /\/model\/?$/.test(new URL(request.url()).pathname)
+
+  test('GET /model never answers: thinking is still fetched once and the row is usable', async ({ page }) => {
+    await mockBootstrap(page)
+    const gets = await countThinkingGets(page, body)
+    await page.route('**/model', async (route, request) => {
+      if (request.method() !== 'GET' || !isBareModel(request)) return route.fallback()
+      await new Promise(() => {}) // held open
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.locator('.app-header-btn[aria-label="Open settings"]').click()
+    // The hint appearing proves the response was consumed (row left its
+    // loading state), not just that a request left the browser.
+    await expect(page.getByText(COPY.off)).toBeVisible()
+    await expect(toggleInput(page)).toBeEnabled()
+    // Control: the model list is still stuck while the row is not.
+    await expect(page.getByText('Loading models...')).toBeVisible()
+    expect(gets.length).toBe(1)
+  })
+
+  test('a confirmed model change refetches (1 -> 2); open alone is one fetch', async ({ page }) => {
+    await mockBootstrap(page)
+    const gets = await countThinkingGets(page, body)
+    // Stateful /model: POST switches, the confirming GET reports the new model.
+    let active = 'qwen3:8b'
+    await page.route('**/model', async (route, request) => {
+      if (!isBareModel(request)) return route.fallback()
+      if (request.method() === 'POST') {
+        active = request.postDataJSON().model
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, model: active }) })
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ model: active, available: ['qwen3:8b', 'llama3.2:3b'] }),
+      })
+    })
+    await page.goto('/')
+    await page.waitForSelector('.app-layout', { timeout: 15000 })
+    await page.locator('.app-header-btn[aria-label="Open settings"]').click()
+    await expect(page.locator('.model-list-item-active', { hasText: 'qwen3:8b' })).toBeVisible()
+    await expect(page.getByText(COPY.off)).toBeVisible()
+    expect(gets.length).toBe(1) // /model landing after open must not add a fetch
+    await page.locator('.model-list-item', { hasText: 'llama3.2:3b' }).click()
+    await expect(page.locator('.model-list-item-active', { hasText: 'llama3.2:3b' })).toBeVisible()
+    await expect.poll(() => gets.length).toBe(2)
+  })
+})

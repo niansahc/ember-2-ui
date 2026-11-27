@@ -47,7 +47,7 @@ test.describe('Split Model Host', () => {
     await expect(page.locator('.model-list-item', { hasText: 'qwen3:8b' })).toHaveCount(0)
   })
 
-  test('split present: host hint is visible and names the host', async ({ page }) => {
+  test('split present: host hint shows the approved copy and never the address', async ({ page }) => {
     await mockBootstrap(page, {
       model: {
         available: ['qwen3:8b'],
@@ -64,7 +64,13 @@ test.describe('Split Model Host', () => {
     const localTab = page.locator('.model-tab', { hasText: 'Local' })
     await localTab.click()
 
-    await expect(page.locator('.generation-host-hint')).toContainText('gpu-box.local')
+    await expect(page.locator('.generation-host-hint')).toHaveText('These models run on another computer.')
+    // Absence of the address. Control: the same fixture does carry the host
+    // (read back from the mocked body), and the hint is rendered, so a missing
+    // address is the UI's choice and not a missing fixture.
+    const body = await page.evaluate(() => fetch('/model').then((r) => r.text()))
+    expect(body).toContain('gpu-box.local')
+    await expect(page.locator('.settings-page')).not.toContainText('gpu-box.local')
   })
 
   test('split present: vision selector still reads available, not generation_available', async ({ page }) => {

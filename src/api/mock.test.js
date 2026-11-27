@@ -15,6 +15,9 @@ describe('mock module surface', () => {
   it('exports no chat reply or conversation history mock', () => {
     expect(mock.mockStreamChat).toBeUndefined()
     expect(mock.mockGetMessages).toBeUndefined()
+    // A fabricated model list is the same defect (ADR 0003): a failed /model
+    // surfaces an error state instead.
+    expect(mock.mockGetOllamaModels).toBeUndefined()
   })
 
   it('still exports the surfaces where a mock is harmless', () => {
@@ -23,7 +26,6 @@ describe('mock module surface', () => {
     expect(typeof mock.mockCheckConnection).toBe('function')
     expect(typeof mock.mockGetProjects).toBe('function')
     expect(typeof mock.mockGetConversations).toBe('function')
-    expect(typeof mock.mockGetOllamaModels).toBe('function')
     expect(typeof mock.mockCheckUpdate).toBe('function')
   })
 })

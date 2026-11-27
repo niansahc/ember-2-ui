@@ -60,23 +60,6 @@ export async function mockGetConversations() {
 }
 
 /**
- * Get installed Ollama models.
- */
-export async function mockGetOllamaModels() {
-  await sleep(400)
-  return [
-    'qwen2.5:14b',
-    'llama3.2:3b',
-    'mistral:7b',
-    'deepseek-r1:8b',
-    'llama3.2-vision:11b',
-    'llava:13b',
-  ]
-}
-
-
-
-/**
  * Check for updates against GitHub releases.
  */
 export async function mockCheckUpdate() {
