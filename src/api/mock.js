@@ -59,19 +59,6 @@ export async function mockGetConversations() {
   ]
 }
 
-/**
- * Check for updates against GitHub releases.
- */
-export async function mockCheckUpdate() {
-  await sleep(600)
-  return {
-    hasUpdate: false,
-    current: 'v0.9.0',
-    latest: 'v0.9.0',
-    changelog: '',
-  }
-}
-
 /** Promise-based delay. */
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))

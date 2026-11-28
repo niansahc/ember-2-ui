@@ -38,7 +38,6 @@ export default function Sidebar({
   onRenameConversation,
   onDeleteConversation,
   onOpenSettings,
-  onOpenUpdates,
   onOpenAbout,
   devVaultLabel,
 }) {
@@ -572,7 +571,7 @@ export default function Sidebar({
           )}
 
           <div className="sidebar-footer">
-            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
           </div>
         </nav>
         <ContextMenuPopup {...contextMenuProps} />
@@ -788,7 +787,7 @@ export default function Sidebar({
 
         <div className="sidebar-footer">
           {!collapsed && (
-            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenUpdates={onOpenUpdates} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
+            <SidebarFooter collapsed={collapsed} onOpenSettings={onOpenSettings} onOpenAbout={onOpenAbout} emberMascotImg={emberMascot} devVaultLabel={devVaultLabel} />
           )}
         </div>
       </nav>
@@ -878,7 +877,7 @@ function ContextMenuPopup({ contextMenu, contextRef, realProjects, onRename, onM
   )
 }
 
-function SidebarFooter({ collapsed, onOpenSettings, onOpenUpdates, onOpenAbout, emberMascotImg, devVaultLabel }) {
+function SidebarFooter({ collapsed, onOpenSettings, onOpenAbout, emberMascotImg, devVaultLabel }) {
   const [version, setVersion] = useState('')
 
   useEffect(() => {

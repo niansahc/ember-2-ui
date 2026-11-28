@@ -166,7 +166,7 @@ The 2 full-suite failures are infrastructure flakes in `beforeEach` hooks that h
 
 - **Keyboard sweep:** Tab-walked the chat surface (header → main → input → sidebar trigger → settings) — focus indicator visible at every stop after fix 3.1. Escape closes modals. Shift+Tab cycles backward correctly.
 - **Skip link:** New skip link appears on first Tab from page load; activating jumps focus into `<main id="main-content">`.
-- **Modal focus trap:** Settings, BugReport, Updates, About all trap focus correctly via `useModal` hook. Escape returns focus to triggering element.
+- **Modal focus trap:** Settings, BugReport, About all trap focus correctly via `useModal` hook. Escape returns focus to triggering element.
 - **Reduced motion:** OS preference and user override both kill animations as expected (`src/index.css:127-139`).
 - **Bloom light theme:** Did not exercise via axe in this pass (default theme is Ember; theme switching is preference-driven and doesn't change axe-detectable structure). Bloom's `--text-muted` on `--bg-surface` is the highest-risk contrast pair and is flagged in the Deferred list.
 
