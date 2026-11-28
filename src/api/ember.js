@@ -16,7 +16,7 @@
  * would correctly reject) and break the partner-install scenario where the
  * backend listens on a different host.
  *
- * Auth: every request includes an X-API-Key header via authHeaders().
+ * Auth: every request includes an `Authorization: Bearer <key>` header via authHeaders().
  * The key is baked into the bundle at build time from the system keyring
  * by scripts/build-with-key.js — it lives in import.meta.env.VITE_EMBER_API_KEY
  * after Vite's compile-time env replacement. We no longer rely on the
