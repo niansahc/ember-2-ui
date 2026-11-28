@@ -895,30 +895,3 @@ export const hasApiKey = !!API_KEY
 function authHeaders() {
   return API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}
 }
-
-
-// ---------------------------------------------------------------------------
-// Updates — GitHub Releases API
-// ---------------------------------------------------------------------------
-
-/** Check for a newer release via the GitHub Releases API. */
-export async function checkUpdate(currentVersion) {
-  try {
-    const res = await fetch(
-      'https://api.github.com/repos/niansahc/ember-2/releases/latest',
-      { headers: { Accept: 'application/vnd.github+json' } },
-    )
-    if (!res.ok) throw new Error(`GitHub API ${res.status}`)
-    const data = await res.json()
-
-    return {
-      hasUpdate: data.tag_name !== currentVersion,
-      current: currentVersion,
-      latest: data.tag_name,
-      changelog: data.body || '',
-      publishedAt: data.published_at,
-    }
-  } catch {
-    return { error: true }
-  }
-}

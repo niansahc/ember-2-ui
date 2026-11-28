@@ -11,7 +11,6 @@ import Sidebar from './components/Sidebar/Sidebar.jsx'
 import Chat from './components/Chat/Chat.jsx'
 import Settings from './components/Settings/Settings.jsx'
 import BugReport from './components/BugReport/BugReport.jsx'
-import Updates from './components/Updates/Updates.jsx'
 import About from './components/About/About.jsx'
 import LockScreen from './components/LockScreen/LockScreen.jsx'
 import PinSetup from './components/LockScreen/PinSetup.jsx'
@@ -55,7 +54,6 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsInitialTab, setSettingsInitialTab] = useState(null)
   const [bugReportOpen, setBugReportOpen] = useState(false)
-  const [updatesOpen, setUpdatesOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeConversation, setActiveConversation] = useState(null)
   const [activeProject, setActiveProject] = useState('general')
@@ -405,7 +403,6 @@ export default function App() {
         onSelectProject={setActiveProject}
         onDeleteConversation={(id) => { if (activeConversation === id) clearMessages(); }}
         onOpenSettings={() => { setSettingsOpen(true); setSidebarOpen(false) }}
-        onOpenUpdates={() => { setUpdatesOpen(true); setSidebarOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSidebarOpen(false) }}
         devVaultLabel={devMode ? devVaultLabel : null}
       />
@@ -613,7 +610,6 @@ export default function App() {
           }).catch(() => {})
         }}
         onOpenBugReport={() => { setBugReportOpen(true); setSettingsOpen(false) }}
-        onOpenUpdates={() => { setUpdatesOpen(true); setSettingsOpen(false) }}
         onOpenAbout={() => { setAboutOpen(true); setSettingsOpen(false) }}
         onModelChange={setModel}
         onVaultSwapped={handleVaultSwapped}
@@ -622,11 +618,6 @@ export default function App() {
       <BugReport
         isOpen={bugReportOpen}
         onClose={() => setBugReportOpen(false)}
-      />
-
-      <Updates
-        isOpen={updatesOpen}
-        onClose={() => setUpdatesOpen(false)}
       />
 
       <About

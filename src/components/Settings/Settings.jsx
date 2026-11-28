@@ -120,7 +120,7 @@ const TABS = [
 export default memo(function Settings({
   isOpen, initialTab, onClose,
   onRequestPinSetup, onRequestPinChange,
-  onOpenBugReport, onOpenUpdates, onOpenAbout, onModelChange, onVaultSwapped,
+  onOpenBugReport, onOpenAbout, onModelChange, onVaultSwapped,
 }) {
   // Appearance state/setters come from context now, not props (issue #24).
   const {
@@ -1517,14 +1517,6 @@ export default memo(function Settings({
                   <path d="M12 8h.01" />
                 </svg>
                 About Ember
-              </button>
-
-              <button className="settings-link-btn" onClick={() => { onClose(); onOpenUpdates() }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <polyline points="1 4 1 10 7 10" />
-                  <path d="M3.51 15a9 9 0 105.26-11.49L1 10" />
-                </svg>
-                Check for updates
               </button>
 
               <button

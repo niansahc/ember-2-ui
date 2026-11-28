@@ -26,7 +26,6 @@ describe('mock module surface', () => {
     expect(typeof mock.mockCheckConnection).toBe('function')
     expect(typeof mock.mockGetProjects).toBe('function')
     expect(typeof mock.mockGetConversations).toBe('function')
-    expect(typeof mock.mockCheckUpdate).toBe('function')
   })
 })
 
