@@ -35,7 +35,7 @@ This repo produces a static build that gets copied into ember-2/ui/. It is not a
 
 ## Current State
 
-Version: v0.18.1 (published). 318 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 328 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
+Version: v0.18.1 (published). 318 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 337 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
 
 ---
 
@@ -58,7 +58,7 @@ These exist and must not be re-implemented:
 - Reloaded user turns that carried images show "1 image sent" / "N images sent" (count only); Edit is hidden on them
 - Session restore on page refresh via localStorage
 - PWA manifest for Android/iOS home screen installation
-- Full-page tabbed Settings (General, Security, Memory, Features, About)
+- Full-page tabbed Settings (General, Appearance, Security, Memory, Features, About)
 - Onboarding flow (4-step: profile, lodestone gate, lodestone questionnaire, lodestone review)
 - Lodestone panel in Memory tab (5 taxonomy categories, per-record edit/dismiss/confirm)
 - Deviation Engine toggle in Features tab
@@ -127,8 +127,7 @@ The UI's default lane proves rendering/interaction against a known API contract 
 
 **Streaming regression coverage (`tests/e2e/streaming-regression.spec.cjs`).**
 Five scenarios covering the normal generation path plus the four terminal
-short-circuits (empty / override / clarification / onboarding) that PR #106
-hardened. Each asserts the client requests `stream: true`, the ADR-040 v2
+short-circuits (empty / override / clarification / onboarding). Each asserts the client requests `stream: true`, the ADR-040 v2
 frame families parse, the reply renders, and streaming terminates with no
 hang. The chat endpoint is mocked, so this lane proves the **UI half** — that
 the client asks for SSE and correctly consumes terminal frames. It cannot
@@ -137,8 +136,8 @@ fail because the backend regressed to JSON.
 The same file carries a `@needs-live-backend` lane (3 tests) that removes the
 mock and asserts the real adapter's output: override and clarification
 terminals emit `text/event-stream` with a stop chunk and `[DONE]`, plus one
-no-mocks end-to-end render. That lane is what would actually go red if A1
-regressed. Only the two pure-function terminals are covered — empty is
+no-mocks end-to-end render. That lane is what would actually go red if the
+backend stopped emitting SSE. Only the two pure-function terminals are covered — empty is
 unreachable from the client, and onboarding would require arranging
 fresh-vault state on a live backend.
 
@@ -189,7 +188,6 @@ Vault contents — including names, conversation text, and record IDs — must n
 - Component changes should not break mobile
 - If the human says PAUSE — stop and reorient
 - If the human says STOP — drop the topic entirely
-- Use TodoWrite and TodoRead tools to maintain a visible task list for every multi-step task. Update it as work completes.
 
 ---
 
@@ -276,15 +274,11 @@ After any Edit or Write to `src/**/*.{jsx,js,css}`, runs `npx playwright test --
 
 ## Claude Code Efficiency Rules
 
-**Parallel subagents — use them.**
-Any task touching 3+ independent files or with clearly separable subtasks must use parallel subagents. Do not work sequentially when work can be fanned out. Spawn subagents, merge results.
-
 **Hooks — always active:**
-- Auto-run tests after any code edit (pytest for G, npm run test:e2e for M and Y)
-- Auto-reject any changes to private_vault/ or .env files
+- See "Hooks" above: `.env*` writes are blocked and source edits trigger the Playwright run.
 
 **Scheduled tasks:**
-- Weekly dependency audit — flag outdated or vulnerable packages in requirements.txt / package.json
+- Weekly dependency audit — flag outdated or vulnerable packages in package.json
 - Pre-release cross-repo consistency check — verify UI matches backend API responses before any release
 
 **Session naming:**
