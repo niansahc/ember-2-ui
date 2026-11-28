@@ -22,7 +22,7 @@ function sourceFiles(dir) {
 
 // First-argument literal of every fetch( call. Backtick, single and double
 // quoted literals are read; ${API_URL} resolves to the default API_URL declares.
-export function fetchRoots(source) {
+function fetchRoots(source) {
   const apiBase = source.match(/VITE_EMBER_API_URL\s*\|\|\s*'([^']+)'/)?.[1] ?? null
   const roots = []
   const unresolved = []
@@ -40,16 +40,15 @@ export function fetchRoots(source) {
   return { roots, unresolved }
 }
 
-export function uncovered(roots, prefixes) {
+function uncovered(roots, prefixes) {
   return [...new Set(roots)].filter((r) => !prefixes.includes(r)).sort()
 }
 
-describe('proxy prefixes cover every path the UI fetches', () => {
-  const files = sourceFiles(SRC)
-  const all = files.map((p) => fetchRoots(readFileSync(p, 'utf8')))
-  const roots = all.flatMap((r) => r.roots)
-  const unresolved = all.flatMap((r) => r.unresolved)
+const scanned = sourceFiles(SRC).map((p) => fetchRoots(readFileSync(p, 'utf8')))
+const roots = scanned.flatMap((r) => r.roots)
+const unresolved = scanned.flatMap((r) => r.unresolved)
 
+describe('proxy prefixes cover every path the UI fetches', () => {
   it('reads a non-trivial set of fetch paths from src', () => {
     expect(new Set(roots).size).toBeGreaterThan(10)
     expect(roots).toContain('/v1')
@@ -82,9 +81,12 @@ describe('proxy prefix guard positive controls', () => {
   })
 
   it('flags a real UI path when its prefix is removed from the list', () => {
-    const roots = sourceFiles(SRC).flatMap((p) => fetchRoots(readFileSync(p, 'utf8')).roots)
     const without = PROXY_PREFIXES.filter((p) => p !== '/provider-key')
     expect(uncovered(roots, without)).toEqual(['/provider-key'])
+  })
+
+  it('reports ${API_URL} when no default is declared', () => {
+    expect(fetchRoots('fetch(`${API_URL}/a`)').unresolved).toEqual(['${API_URL}/a'])
   })
 
   it('reports an unresolvable first argument', () => {
