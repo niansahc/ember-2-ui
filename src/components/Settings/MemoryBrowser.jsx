@@ -172,7 +172,7 @@ function MemoryBrowser({ active }) {
       : await semanticSearch(searchQuery, { limit: PAGE_SIZE, memoryType: searchType === 'all' ? undefined : searchType })
     setSearchLoading(false)
     if (!result) {
-      setSearchError('Search failed — try again.')
+      setSearchError('Search failed. Try again.')
       return
     }
     setSearchResults(result.results || result.memories || [])
@@ -187,7 +187,7 @@ function MemoryBrowser({ active }) {
     const result = await debugContext(previewMessage)
     setPreviewLoading(false)
     if (!result) {
-      setPreviewError('Preview failed — try again.')
+      setPreviewError('Preview failed. Try again.')
       return
     }
     setPreviewResult(result)
@@ -248,7 +248,7 @@ function MemoryBrowser({ active }) {
                     >
                       {type}
                       <span className="memory-browser-chip-count">
-                        {data?.loading ? '…' : data?.error ? '—' : `${count ?? 0}${capped ? '+' : ''}`}
+                        {data?.loading ? '…' : data?.error ? 'n/a' : `${count ?? 0}${capped ? '+' : ''}`}
                       </span>
                     </button>
                   )

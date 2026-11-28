@@ -107,7 +107,7 @@ export default function ServiceStatus() {
       // Previously a silent catch — the user clicked Shut Down and got no
       // feedback. Now we surface the message in the panel. The backend
       // endpoint currently 404s (G repo TODO), so this fires every time.
-      setShutdownError(err?.message || 'Shutdown failed — the backend may be unreachable.')
+      setShutdownError(err?.message || 'Shutdown failed. The backend may be unreachable.')
     } finally {
       setShuttingDown(false)
     }

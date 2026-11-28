@@ -15,7 +15,7 @@ const ETHOS_FULL = `# What Ember Believes
 
 ## 1. Your intelligence should be yours.
 
-Ember exists to support your thinking, your memory, and your growth — not to extract value from them. Your cognitive history is not training data. It is not a product. It is yours.
+Ember exists to support your thinking, your memory, and your growth, not to extract value from them. Your cognitive history is not training data. It is not a product. It is yours.
 
 ## 2. Memory is a right, not a feature.
 
@@ -35,7 +35,7 @@ Your data lives in plain JSON files on your filesystem. You can read them, expor
 
 ## 6. Reflection is not optimization.
 
-Ember reflects — daily, weekly, over time. But reflection is not about making you more productive or more efficient. It is about helping you see patterns, make sense of your experience, and grow on your own terms.
+Ember reflects daily, weekly, over time. But reflection is not about making you more productive or more efficient. It is about helping you see patterns, make sense of your experience, and grow on your own terms.
 
 ## 7. Safety is governance, not suppression.
 
@@ -43,11 +43,11 @@ Ember has a constitutional review layer that governs what she says and how she s
 
 ## 8. Transparency is non-negotiable.
 
-Every decision Ember makes — what she retrieves, what she reviews, what she says — is logged and inspectable. You can see what context she used, what safety triggers fired, and why she said what she said. There are no black boxes.
+Every decision Ember makes (what she retrieves, what she reviews, what she says) is logged and inspectable. You can see what context she used, what safety triggers fired, and why she said what she said. There are no black boxes.
 
 ## 9. The model is a tool, not the system.
 
-The LLM is a reasoning engine. It is not the system of record, the memory store, or the decision-maker. It generates, summarizes, and reflects. The system around it — the vault, the retrieval pipeline, the review layer — is what makes Ember intelligent.
+The LLM is a reasoning engine. It is not the system of record, the memory store, or the decision-maker. It generates, summarizes, and reflects. The system around it (the vault, the retrieval pipeline, the review layer) is what makes Ember intelligent.
 
 ## 10. Ember belongs to the people who use her.
 
@@ -116,13 +116,13 @@ export default function About({ isOpen, onClose, onOpenBugReport }) {
           {/* ── The Story ───────────────────────────────────── */}
           <section className="about-story" aria-label="The story of Ember">
             <p>
-              Ember-1 was built over years — a thinking partner that accumulated context, patterns, history. But she lived on someone else's servers, under someone else's terms. The work was real. The ownership was not.
+              Ember-1 was built over years. She was a thinking partner that accumulated context, patterns, history. But she lived on someone else's servers, under someone else's terms. The work was real. The ownership was not.
             </p>
             <p className="about-story-accent">
               Ember-2 is the answer to that.
             </p>
             <p>
-              She carries the name because she carries something forward — the conviction that your memories, your context, and your cognitive history belong to you. Not to a platform. Not to a business model. To you.
+              She carries the name because she carries something forward: the conviction that your memories, your context, and your cognitive history belong to you. Not to a platform. Not to a business model. To you.
             </p>
             <p className="about-story-closing">
               The "2" is not a version number. It is a boundary drawn.
@@ -216,7 +216,7 @@ export default function About({ isOpen, onClose, onOpenBugReport }) {
                 {NATURE_FACETS.map((f) => (
                   <div key={f.name} className="about-nature-facet">
                     <span className="about-nature-facet-name">{f.name}</span>
-                    <span className="about-nature-facet-sep"> — </span>
+                    <span className="about-nature-facet-sep">: </span>
                     <span className="about-nature-facet-desc">{f.desc}</span>
                   </div>
                 ))}

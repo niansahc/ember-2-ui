@@ -66,7 +66,7 @@
   margin: var(--space-5) 0;
 }
 [data-style-pack="hacker"] .settings-divider::before {
-  content: '— — —';
+  content: '· · ·';
   position: absolute;
   top: -0.7em;
   left: 50%;

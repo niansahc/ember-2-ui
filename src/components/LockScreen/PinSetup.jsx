@@ -165,8 +165,8 @@ export default function PinSetup({ onComplete, onSkip }) {
 
           <div className="pin-setup-warning">
             Your recovery passphrase is never stored in plain text anywhere on this device.
-            If you forget it, your PIN cannot be recovered. Store it somewhere you control
-            — a password manager, written down in a safe place.
+            If you forget it, your PIN cannot be recovered. Store it somewhere you control,
+            such as a password manager or written down in a safe place.
           </div>
 
           {error && <p className="pin-setup-error">{error}</p>}

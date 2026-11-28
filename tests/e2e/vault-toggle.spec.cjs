@@ -34,7 +34,7 @@ test.describe('Vault Toggle', () => {
 
     const banner = page.locator('.app-vault-banner')
     await expect(banner).toBeVisible()
-    await expect(banner).toContainText("Vault off — this conversation won't be saved.")
+    await expect(banner).toContainText("Vault off. This conversation won't be saved.")
   })
 
   test('vault back on hides the banner', async ({ page }) => {

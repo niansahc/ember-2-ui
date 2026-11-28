@@ -47,7 +47,7 @@ export async function mockGetConversations() {
   return [
     // General (no project) — show in chronological list
     { id: '1', title: 'Weekly planning session', updatedAt: '2026-03-24T10:30:00Z' },
-    { id: '2', title: 'Journal reflection — patterns', updatedAt: '2026-03-23T19:15:00Z' },
+    { id: '2', title: 'Journal reflection: patterns', updatedAt: '2026-03-23T19:15:00Z' },
     { id: '5', title: 'Recipe ideas for the week', updatedAt: '2026-03-20T18:30:00Z' },
     // Project conversations
     { id: '3', title: 'Python streaming question', updatedAt: '2026-03-22T14:45:00Z', projectId: 'ember-dev' },

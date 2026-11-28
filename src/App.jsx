@@ -469,7 +469,7 @@ export default function App() {
                 setBareMode(next)
                 setChatOptions({ bareMode: next })
               }}
-              title={bareMode ? 'Bare mode on — personality off. Click to restore.' : 'Personality on. Click to enable bare mode.'}
+              title={bareMode ? 'Bare mode on, personality off. Click to restore.' : 'Personality on. Click to enable bare mode.'}
               aria-label={bareMode ? 'Bare mode is on. Click to restore personality.' : 'Personality is on. Click to enable bare mode for this conversation.'}
             >
               {bareMode ? <X size={15} aria-hidden="true" /> : <Flame size={15} aria-hidden="true" />}
@@ -481,7 +481,7 @@ export default function App() {
                 setVaultOff(next)
                 setChatOptions({ vaultEnabled: !next })
               }}
-              title={vaultOff ? 'Vault off — conversation not saved' : 'Vault on — conversation saved'}
+              title={vaultOff ? 'Vault off: conversation not saved' : 'Vault on: conversation saved'}
               aria-label={vaultOff ? 'Vault is off. Click to enable saving.' : 'Vault is on. Click to disable saving for this conversation.'}
             >
               <Database size={15} aria-hidden="true" />
@@ -580,7 +580,7 @@ export default function App() {
 
         {vaultOff && (
           <div className="app-vault-banner" role="status">
-            Vault off — this conversation won't be saved.
+            Vault off. This conversation won't be saved.
           </div>
         )}
 
