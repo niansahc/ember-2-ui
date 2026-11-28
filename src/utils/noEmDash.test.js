@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { hasEmDash } from './settingsCopy.js'
 
 const EM_DASH = '—'
 const BACKSLASH = String.fromCharCode(92)
@@ -11,7 +12,7 @@ const ALLOWED = new Set(['utils/settingsCopy.js'])
 // Drops // and /* */ comments (including JSX {/* */}), keeping string,
 // template and JSX text. A quote ends at a newline so an apostrophe in JSX
 // text cannot swallow the rest of the file.
-export function stripComments(src) {
+function stripComments(src) {
   let out = ''
   let i = 0
   let quote = null
@@ -41,11 +42,11 @@ export function stripComments(src) {
   return out
 }
 
-export function findEmDashes(src) {
+function findEmDashes(src) {
   return stripComments(src)
     .split('\n')
     .map((text, idx) => ({ line: idx + 1, text: text.trim() }))
-    .filter((l) => l.text.includes(EM_DASH))
+    .filter((l) => hasEmDash(l.text))
 }
 
 function sourceFiles(dir) {
