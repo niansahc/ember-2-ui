@@ -1,4 +1,4 @@
-# CLAUDE.md — ember-2-ui
+# CLAUDE.md: ember-2-ui
 
 ## Response brevity
 
@@ -19,179 +19,87 @@ Exceptions: real diagnoses, real trade-off explanations, and grill findings wher
 
 ---
 
-## Repo Identity
-This is ember-2-ui — the React/Vite frontend for Ember-2. Tab color: MAGENTA.
-If you are not in C:\dev\Ember-2\ember-2-ui, stop and check.
+## Repo identity
 
----
+ember-2-ui: the React/Vite frontend for Ember-2. Tab color: MAGENTA. If you are not in C:\dev\Ember-2\ember-2-ui, stop and check.
 
-## What This Repo Is
-
-The Ember-2 custom UI. Built with React and Vite. Served by the ember-2 FastAPI backend from the ui/ folder after build.
-
-This repo produces a static build that gets copied into ember-2/ui/. It is not a standalone app — it requires the ember-2 backend to function.
-
----
-
-## Current State
-
-Version: v0.18.1 (published). 318 default-lane Playwright tests + 8 tagged `@needs-live-backend` (ADR 0001) + 337 Vitest unit tests (`npm run test:unit`). Default lane is green with only deterministic capability-gate skips (no backend-dependent skips, no `test.fixme`). Settings redesign, onboarding flow, lodestone panel, vault citations, service status indicator, Change PIN flow, disk encryption status, and developer vault switcher all shipped. This repo produces the static build served by the ember-2 FastAPI backend.
-
----
-
-## Key Components
-
-These exist and must not be re-implemented:
-
-- Streaming chat with markdown rendering (ReactMarkdown + remark-gfm)
-- Shepherd.js guided first-run tour (6 steps, triggers once via preferences API)
-- Task sidebar tray (bottom-anchored, checkbox to complete, 30s polling)
-- Conversational style selector (Casual/Balanced/Thoughtful card selector in Settings)
-- PIN/passphrase lock screen with idle timeout and recovery
-- Multi-image upload — select and send multiple images in a single message
-- Unified source attribution label on assistant messages (Source: Web Search / Vault / Vision)
-- Service status indicator -- breathing dot with hover panel for restart/shutdown
-- Change PIN flow in Settings > Security (verify current, enter new, confirm)
-- Disk encryption status in Settings > Security with platform-appropriate docs link
-- Developer vault switcher in Settings > Developer tab (dev mode only)
-- Launch Installer button in Settings > About tab
-- Reloaded user turns that carried images show "1 image sent" / "N images sent" (count only); Edit is hidden on them
-- Session restore on page refresh via localStorage
-- PWA manifest for Android/iOS home screen installation
-- Full-page tabbed Settings (General, Appearance, Security, Memory, Features, About)
-- Onboarding flow (4-step: profile, lodestone gate, lodestone questionnaire, lodestone review)
-- Lodestone panel in Memory tab (5 taxonomy categories, per-record edit/dismiss/confirm)
-- Deviation Engine toggle in Features tab
-- "Think before replying" toggle in Settings > General under the model picker, backed by `GET/POST /v1/settings/thinking` (not preferences); optimistic with rollback, refetches on model change
-- Bare mode per-conversation toggle (flame/X icon in chat header, strips personality)
-- Vault storage display in Settings Memory tab (current size + 30-day projection)
-- Provider-aware chat failure surface (error turn with Try again; names Ollama, Anthropic, or OpenAI per active model)
-- Vision settings (toggle + model picker in Features tab) persisted to the backend via `PATCH /v1/preferences` as `vision_enabled` / `vision_model`, with one-time promotion off the legacy localStorage keys. The backend honors `vision_enabled` at the image gate as of ember-2 #138/#143
+It produces a static build that is copied into ember-2/ui/ and served by the ember-2 FastAPI backend. It is not a standalone app. Version v0.18.1 (published). Test counts live in the test runners, not here.
 
 ---
 
 ## Rules
 
-- Do not modify the build output in ember-2/ui/ directly — always build from source
-- Do not store sensitive data in localStorage beyond session IDs and UI preferences
-- Do not hardcode API URLs — use the Vite proxy config
-- Do not use axios — use native fetch
-- Mobile must work — test viewport behavior for any UI changes
-- Never render content Ember did not produce as if she produced it. There is no chat mock and no mock fallback: when a request fails, surface the failure. See ADR 0003 (`docs/adr/0003-no-fabricated-content-in-chat.md`)
-- Do not use the word "shape" in any output
+- Do not modify the build output in ember-2/ui/ directly. Always build from source.
+- Do not store sensitive data in localStorage beyond session IDs and UI preferences.
+- Do not hardcode API URLs. Use the Vite proxy config.
+- Do not use axios. Use native fetch.
+- Mobile must work. Test viewport behavior for any UI change.
+- Never render content Ember did not produce as if she produced it. There is no chat mock and no mock fallback: when a request fails, surface the failure. See ADR 0003 (`docs/adr/0003-no-fabricated-content-in-chat.md`).
+- Do not use the word "shape" in any output.
 - Never add Co-authored-by: Claude or any Claude attribution to commit messages or PR bodies. Attribution is acknowledged in docs/BUILDING_EMBER.md.
+- Components listed in the codebase already exist. Search before re-implementing one.
 
 ---
 
-## Tech Stack
+## Test commands
 
-- React 19
-- Vite
-- Playwright (e2e tests)
-- No axios — native fetch only
-
----
-
-## Test Commands
-
-**WARNING: Playwright MUST be run in PowerShell — NOT bash. The bash runner does not support the browser environment. This is the most common source of test failures.**
+**Playwright MUST be run in PowerShell, not bash.** The bash runner does not support the browser environment. This is the most common source of test failures.
 
 ```bash
-# Run e2e tests (must be run in PowerShell, not bash)
-npx playwright test
-
-# Run with reduced workers to avoid crashing the API
-npx playwright test --workers=2
-
-# Run unit tests (Vitest — node env, pure utils + mock)
-npm run test:unit
-
-# Build for production
-npm run build
-
-# Dev server
-npm run dev
+npx playwright test --workers=2   # e2e (PowerShell); fewer workers avoids crashing the API
+npm run test:unit                 # Vitest, node env, pure utils + mock
+npm run build                     # production build
+npm run dev                       # dev server
 ```
 
-### Testing Discipline
+### Testing discipline
 
-**The default lane is green-by-construction.** Only deterministic capability gates may skip (e.g. "Vite dev server required for ESM import"). Zero backend-dependent runtime skips, zero `test.fixme` — a test that skips itself when the backend is slow or absent is masking an infrastructure failure as a pass, which is exactly what the no-flaky rule forbids.
+**The default lane is green-by-construction.** Only deterministic capability gates may skip (e.g. "Vite dev server required for ESM import"). Zero backend-dependent runtime skips, zero `test.fixme`. A test that skips itself when the backend is slow or absent masks an infrastructure failure as a pass.
 
-**Backend-dependent tests are tagged, not skipped.** Specs that genuinely require a live backend (Ollama, real model round-trips) are tagged `@needs-live-backend` and excluded from the default lane via `grepInvert` (see ADR 0001 — `docs/adr/0001-ui-test-backend-boundary.md`). Run them before a release:
+**Backend-dependent tests are tagged, not skipped.** Specs that genuinely require a live backend (Ollama, real model round-trips) are tagged `@needs-live-backend` and excluded from the default lane via `grepInvert` (ADR 0001, `docs/adr/0001-ui-test-backend-boundary.md`). Run them before a release:
 
 ```powershell
 $env:EMBER_LIVE_BACKEND=1; npx playwright test --grep "@needs-live-backend"
 ```
 
-The UI's default lane proves rendering/interaction against a known API contract using mocked endpoints (synthetic fixtures only — Vault Privacy Rule). It deliberately does not prove the backend honors that contract; that is the backend repo's job plus the pre-release `@needs-live-backend` run.
+The default lane proves rendering and interaction against a known API contract using mocked endpoints (synthetic fixtures only, per the Vault Privacy Rule). It does not prove the backend honors that contract; that is the backend repo's job plus the pre-release live run.
 
-**Streaming regression coverage (`tests/e2e/streaming-regression.spec.cjs`).**
-Five scenarios covering the normal generation path plus the four terminal
-short-circuits (empty / override / clarification / onboarding). Each asserts the client requests `stream: true`, the ADR-040 v2
-frame families parse, the reply renders, and streaming terminates with no
-hang. The chat endpoint is mocked, so this lane proves the **UI half** — that
-the client asks for SSE and correctly consumes terminal frames. It cannot
-fail because the backend regressed to JSON.
+**Streaming regression (`tests/e2e/streaming-regression.spec.cjs`).** The default lane mocks the chat endpoint, so it proves only the UI half: the client asks for SSE and consumes the terminal frames. It cannot fail because the backend regressed to JSON. The `@needs-live-backend` lane in the same file removes the mock and would go red if the backend stopped emitting SSE. A failing live run on the clarification terminal may mean Ollama is down, not a contract break.
 
-The same file carries a `@needs-live-backend` lane (3 tests) that removes the
-mock and asserts the real adapter's output: override and clarification
-terminals emit `text/event-stream` with a stop chunk and `[DONE]`, plus one
-no-mocks end-to-end render. That lane is what would actually go red if the
-backend stopped emitting SSE. Only the two pure-function terminals are covered — empty is
-unreachable from the client, and onboarding would require arranging
-fresh-vault state on a live backend.
+**Flaky tests do not carry forward.** A flaky or condition-dependent test found during a release cycle must be fixed or moved to the `@needs-live-backend` lane before that release ships. A test that sometimes passes is broken.
 
-Note the asymmetry when reading a failing live run: the override terminal
-returns before any pipeline work, so it passes even against a backend with no
-model. The clarification terminal is enrichment-dependent (ADR-042) and needs
-Ollama up. `expectLiveSseTerminal` fails a 500 with an explicit "pipeline
-unavailable, not necessarily a streaming regression" message so an
-environment failure is not misread as a contract break.
-
-Backend emission is additionally covered by G's `test_streaming_regression.py`
-(Tier 3) and the Tier 2 manual check in `ember-2/docs/BUILDING_EMBER.md`.
-Retiring that manual check is a backend-repo decision, not a UI one.
-
-When a flaky or condition-dependent test is identified during a release cycle, it must be fixed or moved to the `@needs-live-backend` lane before that release ships. Flaky tests do not carry forward to the next release. A test that sometimes passes and sometimes fails is not passing — it is broken and must be resolved before the release gate is met.
-
-Any test asserting an absence ships with a positive control in the same commit. An assertion that nothing was recorded, nothing was written, no mismatch occurred, a value stayed inside a bound, or a count is zero, is satisfied by a fixture where the thing could never have happened. The control is a second test that makes the condition occur and asserts the first test's assertion fails. Without it, the absence test is vacuous and will stay green through the defect it exists to catch.
+**Absence assertions need a positive control.** Any test asserting an absence (nothing recorded, nothing written, count is zero, value stayed in bound) ships with a positive control in the same commit: a second test that makes the condition occur and asserts the first test's assertion fails. Without it the absence test is vacuous.
 
 ---
 
-## UI Design Gates
+## UI design gates
 
-**Internal fields never reach the user directly.**
-Database field names, taxonomy category keys, acquisition path values, source tags, and any other internal classification terms must never be rendered as user-facing labels. All user-facing display strings must be explicitly defined before UI implementation begins.
+**Internal fields never reach the user directly.** Database field names, taxonomy category keys, acquisition path values, source tags, and other internal classification terms must never be rendered as user-facing labels. Define all user-facing display strings before UI implementation begins.
 
-**Taxonomy display names must be approved before UI work starts.**
-If a feature introduces taxonomy categories, types, or classifications, the user-facing display name and description for each must be documented and approved in the ADR or feature spec before M writes any UI code. Internal key names (e.g. "ground", "character", "onboarding") are not display names.
+**Taxonomy display names must be approved before UI work starts.** If a feature introduces categories, types, or classifications, the user-facing name and description for each must be documented and approved in the ADR or feature spec before M writes UI code. Internal keys (e.g. "ground", "character", "onboarding") are not display names.
 
-**UI must be built against clean data.**
-Do not build or review UI against broken, partial, or pre-inference data. If the backend is not ready, M mocks clean data to spec. Real data is only connected after it meets the expected schema.
+**UI must be built against clean data.** Do not build or review UI against broken, partial, or pre-inference data. If the backend is not ready, M mocks clean data to spec. Connect real data only after it meets the expected schema.
 
-**Design before implementation.**
-For any panel or view that surfaces user data, the information architecture (what the user sees, in what order, what each element means) must be described and approved in this chat before M builds it. Prompts that skip this step will be sent back.
+**Design before implementation.** For any panel or view that surfaces user data, the information architecture (what the user sees, in what order, what each element means) must be described and approved in this chat before M builds it. Prompts that skip this step will be sent back.
 
 ---
 
-## Vault Privacy Rule
+## Vault privacy rule
 
-Vault contents — including names, conversation text, and record IDs — must never appear in code, tests, commits, scripts, or docs. This rule has no exceptions. If a test requires memory data, use synthetic fixture data only.
+Vault contents (names, conversation text, record IDs) must never appear in code, tests, commits, scripts, or docs. This rule has no exceptions. If a test requires memory data, use synthetic fixture data only.
 
 ---
 
-## Working Conventions
+## Working conventions
 
-- Small, frequent commits with clear messages
-- Commit before moving to next item
-- No releasing until the human says so
-- Component changes should not break mobile
-- If the human says PAUSE — stop and reorient
-- If the human says STOP — drop the topic entirely
+- Small, frequent commits with clear messages. Commit before moving to the next item.
+- No releasing until the human says so.
+- If the human says PAUSE, stop and reorient. If the human says STOP, drop the topic entirely.
 
 ---
 
 ## Doing the work
+
 - If the correct fix is blocked, larger than scoped, or a test looks wrong, stop and report it. Do not substitute a workaround, partial fix, or fallback that hides the failure.
 - Tests verify correctness; they do not define the solution. Do not edit a test to make it pass unless the prompt names it.
 - Comments: match the surrounding file's density. Comment only a non-obvious why. No comments that restate the code, narrate the change, or explain a shortcut.
@@ -199,93 +107,37 @@ Vault contents — including names, conversation text, and record IDs — must n
 
 ---
 
-## Release Process
+## Release process
 
-### Gates -- mandatory before any release or patch is cut
+Gates, mandatory before any release or patch is cut:
 
-**Documentation gate (all three repos):**
-- [ ] CLAUDE.md version and test count current
-- [ ] TDD updated to reflect what shipped (G only)
-- [ ] README reflects current features
-- [ ] CHANGELOG.md current (release-please handles via commits)
+- Documentation: CLAUDE.md version current, README reflects current features, CHANGELOG.md current (release-please handles it via commits).
+- Quality: all tests passing, no flaky tests carried forward.
+- Coordination: all three repos (G, M, Y) confirm docs and tests green; the human approves before any tag is created; no GitHub Release until the human says go.
 
-**Quality gate:**
-- [ ] All tests passing
-- [ ] Retrieval eval passing with no regression (G only)
-- [ ] No flaky tests carried forward
+Sequence: G, M, Y each complete the gates and report green to the manager. The manager confirms all three and gets human approval. G coordinates the release (tags all three repos, creates GitHub Releases). Y attaches installer artifacts (.exe, latest.yml). G verifies all three releases are public and reports the URLs; the release is not done until then. Y may cut an installer-only release with explicit human approval when no backend or UI changes are involved.
 
-**Coordination gate:**
-- [ ] All three repos confirm docs and tests green
-- [ ] Human approves before any tag is created
-- [ ] GitHub Release not created until human says go
-
-### Sequence
-
-1. G, M, Y each complete documentation and quality gates
-2. Each reports green to manager
-3. Manager confirms all three green and gets human approval
-4. G coordinates the release -- tags all three repos, creates GitHub Releases
-5. Y attaches installer artifacts (.exe, latest.yml)
-6. G verifies all three releases are publicly visible
-7. G reports release URLs -- release is not done until this step
-
-### Y independent releases
-
-Y may cut an installer-only release when:
-- Changes are installer-specific only (no backend or UI updates)
-- Human explicitly approves
-- Y completes documentation and quality gates independently
-- Y tags, creates GitHub Release, attaches artifacts, and reports URL
-
-Y does NOT cut independent releases when backend or UI changes are involved -- coordinate with G.
-
-### release-please
-
-All three repos use release-please for automated release PRs. Conventional commits are required. Release PRs require human approval before merging.
+release-please drives release PRs in all three repos. Conventional commits are required. Release PRs need human approval before merging.
 
 ---
 
-## Git Hooks (business hours push protection)
+## Git hooks (business hours push protection)
 
-Blocks pushes during US Eastern business hours (9am-5pm Mon-Fri). Two layers:
+Pushes are blocked during US Eastern business hours (9am-5pm Mon-Fri) by a local pre-push hook (`hooks/pre-push`) and a GitHub Actions check (`.github/workflows/business-hours-check.yml`). Git hooks are not committed; install after cloning:
 
-1. **Local pre-push hook** — `hooks/pre-push`. Git hooks are not committed, so install manually after cloning:
-   ```bash
-   cp hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
-   ```
-
-2. **GitHub Actions check** — `.github/workflows/business-hours-check.yml`. Fails the push workflow if the push arrived during business hours.
-
-Hook handles EST/EDT automatically via Python's `zoneinfo`.
+```bash
+cp hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+```
 
 ---
 
-## Hooks
+## Claude Code hooks
 
-Configured in `.claude/settings.json` (project-level, committed to repo).
+Configured in `.claude/settings.json` (project-level, committed).
 
-**PreToolUse — .env file protection:**
-Blocks any Edit or Write to files matching `.env*`. Returns a `decision: block` response. No exceptions — secrets stay out of version control artifacts.
+- **PreToolUse, `.env` protection:** blocks any Edit or Write to files matching `.env*` with a `decision: block` response. No exceptions.
+- **PostToolUse, Playwright runner:** after any Edit or Write to `src/**/*.{jsx,js,css}`, runs `npx playwright test --workers=2` via PowerShell in the background. Skips docs, config, and tests. Timeout 5 minutes.
 
-**PostToolUse — Playwright test runner:**
-After any Edit or Write to `src/**/*.{jsx,js,css}`, runs `npx playwright test --workers=2` via PowerShell asynchronously in the background. Does not block editing. Skips non-source files (docs, config, tests). Timeout: 5 minutes.
+Scheduled tasks: weekly dependency audit of package.json; pre-release cross-repo check that the UI matches backend API responses.
 
----
-
-## Claude Code Efficiency Rules
-
-**Hooks — always active:**
-- See "Hooks" above: `.env*` writes are blocked and source edits trigger the Playwright run.
-
-**Scheduled tasks:**
-- Weekly dependency audit — flag outdated or vulnerable packages in package.json
-- Pre-release cross-repo consistency check — verify UI matches backend API responses before any release
-
-**Session naming:**
-- Always name sessions descriptively, e.g. claude -n "vault-citation-backend"
-  Enables resumption with full context.
-
----
-
-## Repo Color
-MAGENTA — ember-2-ui (React frontend)
+Name sessions descriptively (`claude -n "vault-citation-backend"`) so they can be resumed.
