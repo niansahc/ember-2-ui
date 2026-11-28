@@ -210,7 +210,7 @@ export default function Sidebar({
     // PATCH in background — on failure, snap the checkbox back and say so
     updateTaskStatus(taskId, newStatus).catch(() => {
       setDoneTasks(snapshot)
-      setRowError(taskId, "Couldn't update — try again")
+      setRowError(taskId, "Couldn't update. Try again.")
     })
   }
 
@@ -220,7 +220,7 @@ export default function Sidebar({
       await deleteTask(taskId)
       setTasks((prev) => prev.filter((t) => t.id !== taskId))
     } catch {
-      setRowError(taskId, "Couldn't delete — try again")
+      setRowError(taskId, "Couldn't delete. Try again.")
     }
   }
 
@@ -327,7 +327,7 @@ export default function Sidebar({
         } catch {
           conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
           setConversations(snapshot)  // revert the title
-          setRowError(conv.id, "Couldn't rename — try again")
+          setRowError(conv.id, "Couldn't rename. Try again.")
         }
       },
     })
@@ -350,7 +350,7 @@ export default function Sidebar({
     } catch {
       conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
       setConversations(snapshot)  // row comes back
-      setRowError(conv.id, "Couldn't delete — try again")
+      setRowError(conv.id, "Couldn't delete. Try again.")
     }
   }
 
@@ -369,7 +369,7 @@ export default function Sidebar({
     } catch {
       conversationsWriteSeq.current += 1  // the rollback is newer than any load in flight
       setConversations(snapshot)  // back to its original group
-      setRowError(conv.id, "Couldn't move — try again")
+      setRowError(conv.id, "Couldn't move. Try again.")
     }
   }
 

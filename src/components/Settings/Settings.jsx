@@ -55,7 +55,7 @@ import './Settings.css'
 
 /** Human-readable byte size (e.g. 1024 → "1.0 KB"). Used for vault storage display. */
 function formatBytes(bytes) {
-  if (bytes == null) return '—'
+  if (bytes == null) return 'Unknown'
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -852,7 +852,7 @@ export default memo(function Settings({
 
               <Segmented
                 label="Density"
-                hint="Compact tightens spacing — handy on small screens."
+                hint="Compact tightens spacing, handy on small screens."
                 options={densities}
                 value={density}
                 onChange={setDensity}
@@ -1157,7 +1157,7 @@ export default memo(function Settings({
                     <span className="settings-row-hint">
                       {formatBytes(vaultStorage.current_bytes)}
                       {vaultStorage.projection_30d_bytes != null && (
-                        <> — projected {formatBytes(vaultStorage.projection_30d_bytes)} in 30 days</>
+                        <>, projected {formatBytes(vaultStorage.projection_30d_bytes)} in 30 days</>
                       )}
                     </span>
                   </div>

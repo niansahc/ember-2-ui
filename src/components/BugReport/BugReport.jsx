@@ -25,7 +25,7 @@ export default function BugReport({ isOpen, onClose }) {
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <span className="bugreport-info-tooltip">
-                This opens GitHub Issues in your browser. You write and submit the report directly on GitHub — Ember does not send any data on your behalf.
+                This opens GitHub Issues in your browser. You write and submit the report directly on GitHub. Ember does not send any data on your behalf.
               </span>
             </button>
           </h2>

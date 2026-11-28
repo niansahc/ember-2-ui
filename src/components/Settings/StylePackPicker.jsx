@@ -27,7 +27,7 @@ export default memo(function StylePackPicker({ stylePack, setStylePack, packs })
             onClick={() => setStylePack(p.id)}
             role="radio"
             aria-checked={active}
-            aria-label={`${p.name} — ${p.description}`}
+            aria-label={`${p.name}: ${p.description}`}
           >
             <span
               className={`style-pack-preview style-pack-preview-${p.id}`}
